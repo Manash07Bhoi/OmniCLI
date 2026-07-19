@@ -1,1 +1,2 @@
 - [OmniCLI build lessons](omnicli-build-lessons.md) — Rust workspace compilation fixes: libc/tempfile deps, thiserror named-field trap, age 0.10 API, clippy -D warnings patterns.
+- [OmniCLI setup lessons](omnicli-setup.md) — DB migration required on first boot, @workspace/api-zod symlink gap, Orval enum duplication pitfall, BLAKE3 stub in API server.

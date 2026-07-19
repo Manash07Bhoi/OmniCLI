@@ -20,10 +20,11 @@ impl ConfigFormat {
             .and_then(|e| e.to_str())
             .unwrap_or("")
             .to_lowercase();
-        Self::from_str(&ext).ok_or_else(|| ConfigError::UnsupportedFormat { fmt: ext })
+        Self::from_ext(&ext).ok_or_else(|| ConfigError::UnsupportedFormat { fmt: ext })
     }
 
-    pub fn from_str(s: &str) -> Option<Self> {
+    /// Parse a format from its file extension string (e.g. `"json"`, `"yaml"`).
+    pub fn from_ext(s: &str) -> Option<Self> {
         match s {
             "json" => Some(Self::Json),
             "yaml" | "yml" => Some(Self::Yaml),

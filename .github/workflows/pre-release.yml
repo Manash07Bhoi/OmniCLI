@@ -1,0 +1,87 @@
+name: Pre-release Gate
+
+on:
+  # Trigger when a release tag is about to be pushed; also runnable manually.
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version tag (e.g. v1.2.0)'
+        required: true
+
+env:
+  CARGO_TERM_COLOR: always
+  PNPM_VERSION: 10.x
+
+jobs:
+  # ── Enforce version consistency ───────────────────────────────────────────
+  version-check:
+    name: Version consistency
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check Cargo.toml version matches tag
+        if: github.event.inputs.version != ''
+        working-directory: omnicli
+        run: |
+          TAG="${{ github.event.inputs.version }}"
+          CARGO_VER=$(grep '^version' Cargo.toml | head -1 | sed 's/.*= "\(.*\)"/\1/')
+          if [ "v${CARGO_VER}" != "${TAG}" ]; then
+            echo "::error::Cargo.toml version v${CARGO_VER} != tag ${TAG}"
+            exit 1
+          fi
+          echo "Version ${CARGO_VER} matches tag ${TAG} ✓"
+
+  # ── Cross-platform smoke test ─────────────────────────────────────────────
+  smoke-matrix:
+    name: Smoke — ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            omnicli/target
+          key: smoke-${{ matrix.os }}-${{ hashFiles('omnicli/Cargo.lock') }}
+      - name: Install deps (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get install -y build-essential libssl-dev pkg-config
+      - name: Build release
+        working-directory: omnicli
+        run: cargo build --release
+      - name: Smoke tests
+        working-directory: omnicli
+        run: |
+          ./target/release/omni --version
+          ./target/release/omni --help
+          ./target/release/omni file find --path . --count
+          ./target/release/omni convert list
+          ./target/release/omni config show
+          ./target/release/omni dev uuid --count 1
+          ./target/release/omni dev hash --input "pre-release-check" --algo blake3
+          echo "All smoke tests passed ✓"
+
+  # ── Full TypeScript gate ──────────────────────────────────────────────────
+  ts-gate:
+    name: TypeScript gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+      - run: pnpm build
+        env:
+          PORT: '3000'
+          BASE_PATH: '/'
+          NODE_ENV: production

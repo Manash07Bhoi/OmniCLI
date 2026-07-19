@@ -289,7 +289,7 @@ fn dispatch_search(cmd: SearchCmd, out: &OutputConfig) -> Result<()> {
 
     match cmd {
         SearchCmd::Query { query, limit, r#in, regex } => {
-            let mut conn = open_index_db(&db_path).map_err(|e| anyhow::anyhow!("{e}"))?;
+            let conn = open_index_db(&db_path).map_err(|e| anyhow::anyhow!("{e}"))?;
             let content_filter = r#in
                 .as_deref()
                 .map(ContentFilter::parse)

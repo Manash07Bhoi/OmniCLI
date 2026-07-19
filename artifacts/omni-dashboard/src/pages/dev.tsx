@@ -107,7 +107,7 @@ function HashTool() {
             {hash.isPending ? <RefreshCw className="w-4 h-4 animate-spin" /> : "Hash"}
           </Button>
         </div>
-        {hash.isError && <ErrorState compact title="Hash failed" message={(hash.error as Error)?.message} onRetry={run} />}
+        {hash.isError && <ErrorState compact title="Hash failed" message={(hash.error as Error)?.message} onRetry={() => run()} />}
         {hash.data && <OutputBox value={hash.data.digest} label={`${hash.data.algo} digest`} />}
       </form>
     </ToolCard>

@@ -1,4 +1,4 @@
-use std::{ffi::OsString, path::PathBuf};
+use std::path::PathBuf;
 use clap::{Parser, Subcommand};
 
 /// OmniCLI — one binary, one grammar, twelve modules.

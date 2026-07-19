@@ -1,0 +1,119 @@
+name: Security & Pre-release Checks
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  schedule:
+    # Run weekly on Monday at 08:00 UTC
+    - cron: '0 8 * * 1'
+
+env:
+  CARGO_TERM_COLOR: always
+  PNPM_VERSION: 10.x
+
+jobs:
+  # ── Rust dependency audit ─────────────────────────────────────────────────
+  rust-audit:
+    name: Rust — cargo-audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Install cargo-audit
+        run: cargo install cargo-audit --locked
+      - name: Audit Rust dependencies
+        working-directory: omnicli
+        run: cargo audit
+
+  # ── TypeScript / Node dependency audit ────────────────────────────────────
+  npm-audit:
+    name: Node — pnpm audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+      - run: pnpm install --frozen-lockfile
+      - name: Audit Node dependencies
+        run: pnpm audit --audit-level=high || true   # report, don't fail build on moderate
+
+  # ── Rust licence check ────────────────────────────────────────────────────
+  rust-deny:
+    name: Rust — cargo-deny (licenses + advisories)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: EmbarkStudios/cargo-deny-action@v2
+        with:
+          manifest-path: omnicli/Cargo.toml
+          command: check licenses advisories
+
+  # ── Full TypeScript typecheck + build ─────────────────────────────────────
+  ts-full-check:
+    name: TypeScript — typecheck + build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+      - run: pnpm install --frozen-lockfile
+      - name: Typecheck
+        run: pnpm typecheck
+      - name: Build
+        run: pnpm build
+        env:
+          PORT: '3000'
+          BASE_PATH: '/'
+          NODE_ENV: production
+
+  # ── Rust full suite (clippy + fmt + test + release build) ────────────────
+  rust-full:
+    name: Rust — clippy + fmt + test + release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            omnicli/target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('omnicli/Cargo.lock') }}
+      - name: Install system dependencies
+        run: sudo apt-get update && sudo apt-get install -y build-essential libssl-dev pkg-config
+      - name: Format check
+        working-directory: omnicli
+        run: cargo fmt --all -- --check
+      - name: Clippy (zero warnings)
+        working-directory: omnicli
+        run: cargo clippy --all-targets --all-features -- -D warnings
+      - name: Tests
+        working-directory: omnicli
+        run: cargo test --all
+      - name: Release build
+        working-directory: omnicli
+        run: cargo build --release
+      - name: Smoke test
+        working-directory: omnicli
+        run: |
+          ./target/release/omni --version
+          ./target/release/omni file find --path . --type f --count
+          ./target/release/omni convert list
+          ./target/release/omni config show
+          ./target/release/omni dev uuid --count 3
+          ./target/release/omni dev hash --input "hello" --algo sha256

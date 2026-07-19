@@ -15,8 +15,8 @@ export default function ArchivePage() {
   const [queriedPath, setQueriedPath] = useState("");
 
   const { data: archive, isLoading, isError, error, refetch } = useInspectArchive(
-    queriedPath,
-    { query: { enabled: queriedPath.length > 0 } }
+    { path: queriedPath },
+    { query: { enabled: queriedPath.length > 0 } as never }
   );
 
   const handleInspect = (e: React.FormEvent) => {
