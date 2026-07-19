@@ -1,4 +1,5 @@
 use std::{
+    collections::HashSet,
     path::{Path, PathBuf},
     time::{Duration, SystemTime},
 };
@@ -132,6 +133,9 @@ pub struct FindOptions {
     pub path: PathBuf,
     /// Maximum depth (None = unlimited).
     pub max_depth: Option<usize>,
+    /// Follow symbolic links. When true, inode-based cycle detection prevents
+    /// infinite loops from circular symlinks. Default: false.
+    pub follow_symlinks: bool,
 }
 
 /// A matched filesystem entry.
@@ -142,9 +146,17 @@ pub struct FileEntry {
     pub size_bytes: u64,
     /// Unix timestamp of last modification.
     pub modified: i64,
+    /// Set to true when a circular symlink was detected and the entry was skipped.
+    #[serde(skip_serializing_if = "std::ops::Not::not")]
+    pub cycle_detected: bool,
 }
 
 /// Run `omni file find` and return matched entries.
+///
+/// When `opts.follow_symlinks` is true, the traversal follows symbolic links but
+/// detects cycles by tracking visited directory inodes. Circular symlinks cause a
+/// `FileEntry` with `cycle_detected: true` to be emitted (not traversed) so the
+/// caller can log or skip them without an infinite loop.
 pub fn find_files(opts: &FindOptions) -> Result<Vec<FileEntry>, FileError> {
     let root = if opts.path.as_os_str().is_empty() {
         Path::new(".")
@@ -165,7 +177,13 @@ pub fn find_files(opts: &FindOptions) -> Result<Vec<FileEntry>, FileError> {
     let now = SystemTime::now();
     let mut results = Vec::new();
 
-    let mut walker = WalkDir::new(root).follow_links(false);
+    // Inode-based cycle detection for --follow-symlinks.
+    // Key: (device_id, inode_number) — guaranteed unique per file/directory on Unix.
+    // On non-Unix targets we skip cycle detection (Windows doesn't expose real inodes via std).
+    #[cfg(unix)]
+    let mut visited_dirs: HashSet<(u64, u64)> = HashSet::new();
+
+    let mut walker = WalkDir::new(root).follow_links(opts.follow_symlinks);
     if let Some(d) = opts.max_depth {
         walker = walker.max_depth(d);
     }
@@ -173,10 +191,44 @@ pub fn find_files(opts: &FindOptions) -> Result<Vec<FileEntry>, FileError> {
     for entry_res in walker {
         let entry = match entry_res {
             Ok(e) => e,
-            Err(_) => continue, // skip permission-denied entries
+            Err(err) => {
+                // walkdir reports loop errors when follow_links=true; surface as cycle_detected.
+                if opts.follow_symlinks && err.loop_ancestor().is_some() {
+                    if let Some(p) = err.path() {
+                        results.push(FileEntry {
+                            path: p.display().to_string(),
+                            file_type: "symlink".to_owned(),
+                            size_bytes: 0,
+                            modified: 0,
+                            cycle_detected: true,
+                        });
+                    }
+                }
+                continue; // skip permission-denied and other errors
+            }
         };
 
         let ft = entry.file_type();
+
+        // On Unix, perform our own inode-based cycle guard for directories.
+        #[cfg(unix)]
+        if opts.follow_symlinks && ft.is_dir() {
+            use std::os::unix::fs::MetadataExt;
+            if let Ok(meta) = entry.metadata() {
+                let key = (meta.dev(), meta.ino());
+                if !visited_dirs.insert(key) {
+                    // Already visited this directory via a different path — circular symlink.
+                    results.push(FileEntry {
+                        path: entry.path().display().to_string(),
+                        file_type: "dir".to_owned(),
+                        size_bytes: 0,
+                        modified: 0,
+                        cycle_detected: true,
+                    });
+                    continue;
+                }
+            }
+        }
 
         // Type filter
         let matches_type = match opts.entry_type {
@@ -250,6 +302,7 @@ pub fn find_files(opts: &FindOptions) -> Result<Vec<FileEntry>, FileError> {
             file_type: type_str.to_owned(),
             size_bytes,
             modified: modified_ts,
+            cycle_detected: false,
         });
     }
 
@@ -309,9 +362,7 @@ mod tests {
     #[test]
     fn test_find_files_size_filter() {
         let dir = tempdir().unwrap();
-        // File larger than 100 bytes
         std::fs::write(dir.path().join("big.txt"), vec![b'x'; 200]).unwrap();
-        // File smaller than 100 bytes
         std::fs::write(dir.path().join("small.txt"), b"tiny").unwrap();
 
         let opts = FindOptions {
@@ -323,5 +374,36 @@ mod tests {
         let results = find_files(&opts).unwrap();
         assert_eq!(results.len(), 1);
         assert!(results[0].path.ends_with("big.txt"));
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn test_find_files_symlink_cycle_terminates() {
+        use std::os::unix::fs::symlink;
+        let dir = tempdir().unwrap();
+        let sub = dir.path().join("sub");
+        std::fs::create_dir(&sub).unwrap();
+        // Create a symlink loop: sub/loop -> sub
+        symlink(&sub, sub.join("loop")).unwrap();
+
+        let opts = FindOptions {
+            path: dir.path().to_owned(),
+            follow_symlinks: true,
+            ..Default::default()
+        };
+        // Must terminate without panic or infinite loop
+        let results = find_files(&opts).unwrap();
+        // At least one cycle_detected entry should be present
+        assert!(results.iter().any(|e| e.cycle_detected));
+    }
+
+    #[test]
+    fn test_find_files_no_follow_symlinks_by_default() {
+        // Default: follow_symlinks = false means WalkDir won't follow links
+        let opts = FindOptions {
+            path: std::path::PathBuf::from("."),
+            ..Default::default()
+        };
+        assert!(!opts.follow_symlinks);
     }
 }

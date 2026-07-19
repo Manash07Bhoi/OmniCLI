@@ -1,7 +1,7 @@
 use std::{
     io::Read,
     path::{Path, PathBuf},
-    time::UNIX_EPOCH,
+    time::{Duration, UNIX_EPOCH},
 };
 
 use anyhow::Result;
@@ -55,7 +55,12 @@ fn create_schema(conn: &Connection) -> Result<(), SearchError> {
 }
 
 /// Build (or rebuild) the search index for the given paths.
+///
 /// When `rebuild` is true, clears existing index data first.
+///
+/// Progress display:
+/// - On a TTY: shows a live spinner with a running file count, updated at most 10×/sec.
+/// - With `--json` / piped: no progress output (controlled by the caller via `quiet`).
 pub fn rebuild_index(
     conn: &mut Connection,
     paths: &[PathBuf],
@@ -72,12 +77,14 @@ pub fn rebuild_index(
     let mut files_skipped = 0u64;
     let mut content_docs_indexed = 0u64;
 
+    // Progress bar: live file count with spinner. Ticks at 100 ms → max 10 updates/sec.
     let pb = ProgressBar::new_spinner();
     pb.set_style(
         ProgressStyle::default_spinner()
-            .template("{spinner:.cyan} {msg}")
+            .template("{spinner:.cyan} Indexing… {pos} files  {elapsed_precise}")
             .unwrap_or_else(|_| ProgressStyle::default_spinner()),
     );
+    pb.enable_steady_tick(Duration::from_millis(100));
 
     let tx = conn.transaction()?;
     let now = std::time::SystemTime::now()
@@ -138,8 +145,6 @@ pub fn rebuild_index(
                 None
             };
 
-            pb.set_message(format!("indexing {path_str}"));
-
             tx.execute(
                 r#"INSERT INTO search_index (path, file_type, size_bytes, content_hash, mtime, indexed_at)
                    VALUES (?1, ?2, ?3, ?4, ?5, ?6)
@@ -153,6 +158,9 @@ pub fn rebuild_index(
             )?;
 
             files_indexed += 1;
+
+            // Advance the spinner counter (indicatif reads `pos` for {pos} in template)
+            pb.set_position(files_indexed);
 
             // Index text content for searchable file types
             if ft.is_file() {
@@ -197,7 +205,8 @@ fn extract_text_content(path: &Path, size_bytes: u64) -> Option<String> {
         "txt", "md", "rs", "py", "js", "ts", "go", "c", "cpp", "h", "hpp",
         "java", "rb", "sh", "bash", "zsh", "fish", "toml", "yaml", "yml",
         "json", "xml", "html", "htm", "css", "sql", "log", "conf", "cfg",
-        "ini", "env", "gitignore", "makefile", "cmake", "dockerfile",
+        "ini", "env", "gitignore", "makefile", "cmake", "dockerfile", "lock",
+        "mod", "sum", "tf", "hcl", "cs", "swift", "kt", "scala", "hs",
     ];
 
     if !text_extensions.contains(&ext.as_str()) && !ext.is_empty() {
@@ -240,7 +249,6 @@ mod tests {
         let dir = tempdir().unwrap();
         let db_path = dir.path().join("search.db");
 
-        // Create some test files
         std::fs::write(dir.path().join("hello.txt"), b"hello world rust").unwrap();
         std::fs::write(dir.path().join("code.rs"), b"fn main() { println!(\"hi\"); }").unwrap();
 
@@ -255,5 +263,35 @@ mod tests {
 
         assert!(stats.files_indexed >= 2);
         assert!(stats.content_docs_indexed >= 2);
+    }
+
+    #[test]
+    fn test_rebuild_index_excludes() {
+        let dir = tempdir().unwrap();
+        let db_path = dir.path().join("search.db");
+        let node_modules = dir.path().join("node_modules");
+        std::fs::create_dir(&node_modules).unwrap();
+        std::fs::write(node_modules.join("pkg.json"), b"{}").unwrap();
+        std::fs::write(dir.path().join("main.rs"), b"fn main() {}").unwrap();
+
+        let mut conn = open_index_db(&db_path).unwrap();
+        let stats = rebuild_index(
+            &mut conn,
+            &[dir.path().to_owned()],
+            &["node_modules".to_string()],
+            true,
+        )
+        .unwrap();
+
+        // node_modules/pkg.json must be excluded
+        let count: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM search_index WHERE path LIKE '%node_modules%'",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(count, 0);
+        assert!(stats.files_indexed >= 1);
     }
 }

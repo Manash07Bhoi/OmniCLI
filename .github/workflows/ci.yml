@@ -1,0 +1,95 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+env:
+  CARGO_TERM_COLOR: always
+  PNPM_VERSION: 10.x
+
+jobs:
+  # ── Rust ──────────────────────────────────────────────────────────────────────
+  rust:
+    name: Rust — ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain (stable)
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+
+      - name: Cache Cargo registry
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: omnicli
+
+      - name: Clippy (zero warnings)
+        working-directory: omnicli
+        run: cargo clippy --all-targets -- -D warnings
+
+      - name: Tests
+        working-directory: omnicli
+        run: cargo test
+
+      - name: Release build
+        working-directory: omnicli
+        run: cargo build --release
+
+      - name: Format check
+        working-directory: omnicli
+        run: cargo fmt --check
+
+      - name: Smoke test — version
+        shell: bash
+        run: |
+          if [[ "$RUNNER_OS" == "Windows" ]]; then
+            ./omnicli/target/release/omni.exe --version
+          else
+            ./omnicli/target/release/omni --version
+          fi
+
+      - name: Smoke test — commands
+        if: runner.os != 'Windows'
+        working-directory: omnicli
+        run: |
+          ./target/release/omni file find "*.toml" --count
+          ./target/release/omni dev uuid --count 2
+          ./target/release/omni dev hash "hello-omnicli" --algo blake3
+          ./target/release/omni dev hash "hello-omnicli" --algo sha256
+          ./target/release/omni convert list
+          ./target/release/omni completions bash | head -5
+          ./target/release/omni completions zsh  | head -5
+          ./target/release/omni completions fish | head -5
+
+  # ── TypeScript ────────────────────────────────────────────────────────────────
+  typescript:
+    name: TypeScript — typecheck & build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Typecheck all packages
+        run: pnpm typecheck
+
+      - name: Build all packages
+        run: pnpm build

@@ -49,6 +49,16 @@ pub enum Commands {
         #[command(subcommand)]
         cmd: FileCmd,
     },
+    /// Generate shell completion scripts (bash, zsh, fish, powershell, elvish).
+    ///
+    /// Usage:
+    ///   omni completions bash   >> ~/.bashrc
+    ///   omni completions zsh    >> ~/.zshrc
+    ///   omni completions fish   > ~/.config/fish/completions/omni.fish
+    Completions {
+        /// Target shell: bash, zsh, fish, powershell, elvish.
+        shell: String,
+    },
     /// Universal search across files, code, PDFs, SQLite, logs.
     ///
     /// Shorthand: `omni search "query"` runs an immediate search.
@@ -129,6 +139,11 @@ pub enum FileCmd {
         /// Maximum directory depth.
         #[arg(long, value_name = "N")]
         max_depth: Option<usize>,
+
+        /// Follow symbolic links. Circular symlink loops are detected via inode
+        /// tracking and emitted as entries with cycle_detected=true (never infinite-loop).
+        #[arg(long)]
+        follow_symlinks: bool,
     },
     /// Copy a file or directory to a destination.
     Copy {

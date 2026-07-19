@@ -29,6 +29,9 @@ async function buildAll() {
     // - use path traversal to read files (e.g. @google-cloud/secret-manager loads sibling .proto files)
     external: [
       "*.node",
+      // @noble/* uses ESM package.json subpath exports — let Node.js resolve them at runtime.
+      "@noble/hashes",
+      "@noble/hashes/*",
       "sharp",
       "better-sqlite3",
       "sqlite3",

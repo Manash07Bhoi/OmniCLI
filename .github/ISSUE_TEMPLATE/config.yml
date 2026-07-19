@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 💬 Discussions
+    url: https://github.com/Manash07Bhoi/OmniCLI/discussions
+    about: Ask questions, share ideas, or show off what you built with OmniCLI.
+  - name: 🔒 Security vulnerability
+    url: https://github.com/Manash07Bhoi/OmniCLI/security/advisories/new
+    about: Report a security vulnerability via GitHub's private advisory flow.

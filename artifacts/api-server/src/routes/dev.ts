@@ -1,5 +1,7 @@
 import { Router, type IRouter } from "express";
 import crypto from "crypto";
+import { blake3 } from "@noble/hashes/blake3.js";
+import { bytesToHex } from "@noble/hashes/utils.js";
 import {
   DevHashBody,
   DevHashResponse as DevHashResult,
@@ -25,13 +27,16 @@ router.post("/dev/hash", (req, res): void => {
   }
 
   const { input, algo = "sha256" } = parsed.data;
-  const nodeAlgo =
-    algo === "blake3" ? "sha256" : // Node.js doesn't support BLAKE3 natively; use SHA-256 as stand-in
-    algo === "sha256" ? "sha256" :
-    algo === "md5" ? "md5" :
-    algo === "sha1" ? "sha1" : "sha256";
 
-  const digest = crypto.createHash(nodeAlgo).update(input, "utf8").digest("hex");
+  let digest: string;
+  if (algo === "blake3") {
+    // Real BLAKE3 via @noble/hashes — pure TypeScript, no native compilation required.
+    digest = bytesToHex(blake3(new TextEncoder().encode(input)));
+  } else {
+    const nodeAlgo = algo === "sha256" ? "sha256" : algo === "md5" ? "md5" : algo === "sha1" ? "sha1" : "sha256";
+    digest = crypto.createHash(nodeAlgo).update(input, "utf8").digest("hex");
+  }
+
   res.json(DevHashResult.parse({ input, algo, digest }));
 });
 

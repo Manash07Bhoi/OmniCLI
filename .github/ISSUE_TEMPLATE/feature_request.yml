@@ -1,0 +1,63 @@
+name: "✨ Feature Request"
+description: Suggest an improvement or new capability.
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting a feature! The more context you give, the easier it is to prioritise and implement.
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Which area does this affect?
+      options:
+        - "omni file"
+        - "omni search"
+        - "omni archive"
+        - "omni convert"
+        - "omni config"
+        - "omni dev"
+        - "omni backup"
+        - "omni workspace"
+        - "Web Dashboard"
+        - "REST API"
+        - "Shell completions"
+        - "CI / release pipeline"
+        - "Documentation"
+        - "Other"
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      description: Describe the pain point or use case this feature addresses.
+      placeholder: "When I run `omni convert run` on a directory, I have to convert files one by one. I'd like to batch-convert an entire folder."
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: Describe what you'd like to happen. Include example commands or API shapes.
+      placeholder: |
+        Add `omni convert batch <input_dir> <output_dir> [--from csv] [--to json]`
+        that converts all matching files in parallel.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: What workarounds or alternative approaches did you consider?
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Links, prior art, screenshots, or anything else that helps.

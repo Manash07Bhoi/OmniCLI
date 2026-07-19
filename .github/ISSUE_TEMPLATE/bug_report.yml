@@ -1,0 +1,81 @@
+name: "🐛 Bug Report"
+description: Something is broken or behaving unexpectedly.
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug. Fill in as much detail as you can — it helps us fix it faster.
+
+  - type: input
+    id: version
+    attributes:
+      label: OmniCLI version
+      description: Run `omni --version` and paste the output here.
+      placeholder: "omni 0.1.0"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      options:
+        - Linux (x86_64)
+        - Linux (ARM64)
+        - Termux (Android aarch64)
+        - Termux (Android armv7)
+        - Kali Linux
+        - ParrotOS
+        - macOS
+        - Windows / WSL2
+        - Replit
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: A clear and concise description of the bug.
+      placeholder: "Running `omni file find ...` returned an empty list even though files exist."
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      description: Exact commands to reproduce the issue.
+      placeholder: |
+        1. `omni search index ~/projects`
+        2. `omni search "TODO"`
+        3. See error
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behaviour
+      placeholder: "Should have returned N results."
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behaviour (with `--json` output if applicable)
+      placeholder: |
+        Paste the error message or unexpected output here.
+        Use `omni <command> --json` for machine-readable output.
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context (logs, environment, related issues)
+      description: Paste relevant log output, environment variables, or links to related issues.

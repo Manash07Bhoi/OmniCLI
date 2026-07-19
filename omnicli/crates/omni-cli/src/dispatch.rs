@@ -6,17 +6,21 @@ use crate::cli::{
     SearchCmd, SnippetCmd, TodoCmd, WorkspaceCmd,
 };
 
+// Completions are handled in main.rs before dispatch is called.
+
 /// Route a parsed command to the appropriate module handler.
 pub fn dispatch(cmd: Commands, out: &OutputConfig, cfg: &OmniConfig) -> Result<()> {
     match cmd {
-        Commands::File      { cmd } => dispatch_file(cmd, out, cfg),
-        Commands::Search    { cmd } => dispatch_search(cmd, out),
-        Commands::Archive   { cmd } => dispatch_archive(cmd, out),
-        Commands::Convert   { cmd } => dispatch_convert(cmd, out),
-        Commands::Config    { cmd } => dispatch_config(cmd, out, cfg),
-        Commands::Dev       { cmd } => dispatch_dev(cmd, out),
-        Commands::Backup    { cmd } => dispatch_backup(cmd, out),
-        Commands::Workspace { cmd } => dispatch_workspace(cmd, out),
+        Commands::File        { cmd } => dispatch_file(cmd, out, cfg),
+        Commands::Search      { cmd } => dispatch_search(cmd, out),
+        Commands::Archive     { cmd } => dispatch_archive(cmd, out),
+        Commands::Convert     { cmd } => dispatch_convert(cmd, out),
+        Commands::Config      { cmd } => dispatch_config(cmd, out, cfg),
+        Commands::Dev         { cmd } => dispatch_dev(cmd, out),
+        Commands::Backup      { cmd } => dispatch_backup(cmd, out),
+        Commands::Workspace   { cmd } => dispatch_workspace(cmd, out),
+        // Completions are handled in main.rs before this function is called.
+        Commands::Completions { .. } => unreachable!("completions handled in main"),
     }
 }
 
@@ -48,6 +52,7 @@ fn dispatch_file(cmd: FileCmd, out: &OutputConfig, _cfg: &OmniConfig) -> Result<
             modified,
             path,
             max_depth,
+            follow_symlinks,
         } => {
             let entry_type = EntryType::parse(&r#type).map_err(|e| anyhow::anyhow!("{e}"))?;
             let size_filter = size
@@ -69,6 +74,7 @@ fn dispatch_file(cmd: FileCmd, out: &OutputConfig, _cfg: &OmniConfig) -> Result<
                 modified_within,
                 path: path.clone(),
                 max_depth,
+                follow_symlinks,
             };
 
             let entries = find_files(&opts).map_err(|e| anyhow::anyhow!("{e}"))?;

@@ -2,8 +2,16 @@ use std::path::{Path, PathBuf};
 
 /// Expand a leading `~` to the home directory.
 /// Returns the path unchanged if expansion is not possible.
+/// On Windows, also handles paths starting with `~\`.
 pub fn expand_tilde(path: &str) -> PathBuf {
     if let Some(rest) = path.strip_prefix("~/") {
+        if let Some(home) = dirs::home_dir() {
+            return home.join(rest);
+        }
+    }
+    // Windows-style: ~\ prefix
+    #[cfg(windows)]
+    if let Some(rest) = path.strip_prefix(r"~\") {
         if let Some(home) = dirs::home_dir() {
             return home.join(rest);
         }
@@ -11,14 +19,16 @@ pub fn expand_tilde(path: &str) -> PathBuf {
     PathBuf::from(path)
 }
 
-/// Return the OmniCLI data directory: `~/.local/share/omni`.
+/// Return the OmniCLI data directory: `~/.local/share/omni` (Linux/macOS)
+/// or `%LOCALAPPDATA%\omni` (Windows).
 pub fn data_dir() -> PathBuf {
     dirs::data_local_dir()
         .unwrap_or_else(|| PathBuf::from(".local/share"))
         .join("omni")
 }
 
-/// Return the default config file path: `~/.config/omni/omni.toml`.
+/// Return the default config file path: `~/.config/omni/omni.toml` (Linux/macOS)
+/// or `%APPDATA%\omni\omni.toml` (Windows).
 pub fn config_file_path() -> PathBuf {
     dirs::config_dir()
         .unwrap_or_else(|| PathBuf::from(".config"))
@@ -48,11 +58,11 @@ pub fn format_bytes(bytes: u64) -> String {
     }
 }
 
-/// Detect if stdout is connected to a TTY (used for auto-colour decisions).
+/// Detect whether stdout is connected to a terminal (TTY).
+/// Works on Linux, macOS, Windows, and WSL2 without any unsafe code.
 pub fn is_tty() -> bool {
-    use std::os::unix::io::AsRawFd;
-    // SAFETY: isatty is always safe to call with a valid fd.
-    unsafe { libc::isatty(std::io::stdout().as_raw_fd()) != 0 }
+    use std::io::IsTerminal;
+    std::io::stdout().is_terminal()
 }
 
 #[cfg(test)]
@@ -72,7 +82,7 @@ mod tests {
     #[test]
     fn test_expand_tilde() {
         let result = expand_tilde("~/foo/bar");
-        // Can't assert the exact home dir in CI, but path must be absolute and end with foo/bar
+        // Can't assert the exact home dir in CI, but path must end with foo/bar
         assert!(result.ends_with("foo/bar"));
     }
 
@@ -80,5 +90,12 @@ mod tests {
     fn test_expand_tilde_no_tilde() {
         let result = expand_tilde("/absolute/path");
         assert_eq!(result, PathBuf::from("/absolute/path"));
+    }
+
+    #[test]
+    fn test_expand_tilde_no_home() {
+        // Plain path without tilde must be returned as-is
+        let result = expand_tilde("relative/path");
+        assert_eq!(result, PathBuf::from("relative/path"));
     }
 }

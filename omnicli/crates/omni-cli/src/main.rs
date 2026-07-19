@@ -2,7 +2,8 @@ mod cli;
 mod dispatch;
 
 use anyhow::Result;
-use clap::Parser;
+use clap::{CommandFactory, Parser};
+use clap_complete::{generate, Shell};
 use omni_core::{
     config::load_config,
     output::{no_color_env, OutputConfig, OutputMode},
@@ -17,6 +18,17 @@ fn main() {
 
 fn run() -> Result<()> {
     let args = cli::Cli::parse();
+
+    // Shell completions are handled before building the output config because they
+    // write directly to stdout and must not be mixed with logging/colour output.
+    if let cli::Commands::Completions { shell } = &args.command {
+        let shell: Shell = shell
+            .parse()
+            .map_err(|_| anyhow::anyhow!("Unknown shell '{shell}'. Valid values: bash, zsh, fish, powershell, elvish"))?;
+        let mut cmd = cli::Cli::command();
+        generate(shell, &mut cmd, "omni", &mut std::io::stdout());
+        return Ok(());
+    }
 
     // Respect NO_COLOR env var and --no-color flag.
     let color_disabled = no_color_env() || args.no_color;
