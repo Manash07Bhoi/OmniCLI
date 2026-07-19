@@ -1,55 +1,80 @@
 # Contributing to OmniCLI
 
-Welcome! Before diving in, read both `PRD.md` and `AGENT.md` — they define the product spec and the **no-mock-data rule** that governs every contribution.
+Welcome! Before diving in, please read [README.md](../README.md) for the project overview and architecture.
+
+---
 
 ## Getting Started
 
-1. Pick a crate from `crates/` — each crate is self-contained
-2. Run tests for your crate: `cargo test -p omni-<module>`
-3. Check lints: `cargo clippy -p omni-<module> -- -D warnings`
-4. Format before committing: `cargo fmt`
+1. Fork the repo and clone: `git clone https://github.com/Manash07Bhoi/OmniCLI`
+2. Build: `cd OmniCLI/omnicli && cargo build`
+3. Pick a crate from `crates/` — each is self-contained
+4. Run tests: `cargo test -p omni-<module>`
+5. Check lints: `cargo clippy -p omni-<module> -- -D warnings`
+6. Format before committing: `cargo fmt`
 
-Good-first-issue label is reserved for single-module, single-verb tasks.
+Look for issues labelled **`good first issue`** — these are scoped to a single module and verb.
 
-## Phase Gate
+---
 
-A module is not mergeable unless its phase's exit criteria (PRD §2.2) are met:
-- All verbs in the PRD pass integration tests on real fixture data
-- `cargo clippy -- -D warnings` is clean
-- No `unwrap()`/`expect()` outside `main.rs` or `#[cfg(test)]`
+## Definition of Done
+
+A contribution is mergeable when:
+
+- All existing tests pass: `cargo test`
+- Clippy is clean: `cargo clippy -- -D warnings`
+- No `unwrap()` / `expect()` outside `main.rs` or `#[cfg(test)]`
+- Every new public function has at least one unit test
+- Every new command has `--json` output
+- `cargo build --release` succeeds
+- `cargo fmt --check` passes
+
+---
 
 ## PR Description Format
 
 ```
 ## What
-Brief description of the implemented verb(s).
+Brief description of the change.
 
 ## Tests
 What fixture data was used. Which platforms were tested.
 
-## Assumptions
-Any PRD ambiguities resolved per AGENT.md guidelines.
+## Notes
+Any design decisions or tradeoffs worth documenting.
 ```
+
+---
 
 ## Repository Layout
 
 ```
-omnicli/
-├── crates/          # One crate per module
-├── scripts/         # install.sh (Bash, POSIX-compatible)
-├── tests/fixtures/  # Real files used in integration tests (no synthetic data)
-└── docs/
-    ├── USAGE.md         # Practical command reference with examples
-    └── MEMORY_BANK.md   # Architecture decisions and gotchas
+OmniCLI/
+├── omnicli/                    ← Rust workspace (work here for CLI)
+│   ├── crates/                 ← One crate per module
+│   ├── tests/fixtures/         ← Real files for integration tests
+│   └── docs/
+│       ├── USAGE.md            ← Practical command reference with examples
+│       └── MEMORY_BANK.md      ← Architecture decisions and gotchas
+├── artifacts/
+│   ├── api-server/             ← Express + TypeScript REST API
+│   └── omni-dashboard/         ← React 19 + Vite dashboard
+└── lib/
+    ├── api-spec/               ← OpenAPI 3.1 specification
+    ├── api-client-react/       ← Generated React Query hooks
+    ├── api-zod/                ← Generated Zod schemas
+    └── db/                     ← Drizzle ORM + SQLite schema
 ```
 
-## Adding a New Module (Phase 2+)
+---
+
+## Adding a New CLI Module
 
 1. Create `crates/omni-<name>/` with its own `Cargo.toml` using `{ workspace = true }` deps
 2. Add a `CrateError` enum via `thiserror`
 3. Wire up a new variant in `omni-cli/src/cli.rs` and `dispatch.rs`
 4. Add an API route in `artifacts/api-server/src/routes/<name>.ts`
-5. Add a panel in `artifacts/omni-dashboard/src/` (if UI-facing)
+5. Add a panel in `artifacts/omni-dashboard/src/pages/` (if UI-facing)
 6. Update `lib/api-spec/openapi.yaml` and regenerate the client (`pnpm generate`)
 
 ## Adding a New Format Pair (`omni convert`)
@@ -61,10 +86,26 @@ omnicli/
 
 1. Add a variant to `ArchiveFormat` in `create.rs`
 2. Implement detection in `detect_format_by_magic()` in `extract.rs` and `list.rs`
-3. Add create/extract/list functions
-4. Wire up in `ArchiveCmd` dispatch
+3. Add create/extract/list functions and wire up in dispatch
+
+---
 
 ## Rust Workspace Notes
 
-- All shared dependency versions live in `[workspace.dependencies]` in `omnicli/Cargo.toml`. Per-crate `Cargo.toml` files use `{ workspace = true }` — never duplicate version numbers.
-- Run `cargo build` / `cargo test` from inside `omnicli/`, not from the repo root (which is a pnpm workspace, not a Cargo workspace).
+- All shared dependency versions live in `[workspace.dependencies]` in `omnicli/Cargo.toml`
+- Per-crate `Cargo.toml` files use `{ workspace = true }` — never duplicate version numbers
+- Run `cargo build` / `cargo test` from inside `omnicli/`, not from the repo root
+
+## Architecture Rules
+
+1. No function may return mock/hardcoded data — use `Err(...)` for unimplemented paths
+2. No `unwrap()` / `expect()` in library code — propagate errors with `?`
+3. `omni-core` has zero module dependencies — keep it lean
+4. `omni-cli` is the only crate that imports all modules
+5. Circular dependencies between crates are forbidden
+
+---
+
+## Code of Conduct
+
+Be respectful, specific, and constructive. Focus on the code, not the person.
