@@ -1,0 +1,14 @@
+Meeting notes — 2026-07-17
+==========================
+
+Topics discussed:
+- OmniCLI Phase 1 rollout timeline
+- CVE-2026-1234 patching schedule
+- Backup verification procedures
+
+Action items:
+- Run omni backup verify --name daily after each deployment
+- Check omni search index --rebuild on new machines
+- Review omni file duplicate --scan ~/projects weekly
+
+Next meeting: 2026-07-24

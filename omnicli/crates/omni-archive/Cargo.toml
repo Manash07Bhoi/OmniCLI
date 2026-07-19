@@ -1,0 +1,22 @@
+[package]
+name = "omni-archive"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+omni-core = { path = "../omni-core" }
+
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+flate2 = { workspace = true }
+tar = { workspace = true }
+zip = { workspace = true }
+xz2 = { workspace = true }
+bzip2 = { workspace = true }
+walkdir = { workspace = true }
+chrono = { workspace = true }
+indicatif = { workspace = true }
+console = { workspace = true }
+tempfile = { workspace = true }

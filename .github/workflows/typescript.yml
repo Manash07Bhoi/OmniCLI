@@ -1,0 +1,94 @@
+name: TypeScript CI
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - 'artifacts/**'
+      - 'lib/**'
+      - 'scripts/**'
+      - 'package.json'
+      - 'pnpm-workspace.yaml'
+      - '.github/workflows/typescript.yml'
+  pull_request:
+    branches: [main, master]
+    paths:
+      - 'artifacts/**'
+      - 'lib/**'
+      - 'scripts/**'
+      - 'package.json'
+      - 'pnpm-workspace.yaml'
+      - '.github/workflows/typescript.yml'
+
+env:
+  PNPM_VERSION: 10.x
+
+jobs:
+  typecheck-and-build:
+    name: Typecheck & Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck all packages
+        run: pnpm typecheck
+
+      - name: Build all packages
+        run: pnpm build
+        env:
+          PORT: '3000'
+          BASE_PATH: '/'
+          NODE_ENV: 'production'
+
+  api-health:
+    name: API server smoke test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build API server
+        working-directory: artifacts/api-server
+        run: pnpm build
+
+      - name: Push DB schema
+        working-directory: lib/db
+        run: pnpm push
+        env:
+          DB_PATH: '/tmp/omni-ci-test.db'
+
+      - name: Start API server and health-check
+        run: |
+          PORT=8080 DB_PATH=/tmp/omni-ci-test.db node --enable-source-maps \
+            artifacts/api-server/dist/index.mjs &
+          sleep 3
+          curl --fail http://localhost:8080/api/healthz
+          curl --fail http://localhost:8080/api/dashboard/stats
+          curl --fail http://localhost:8080/api/dashboard/module-status
+          kill %1

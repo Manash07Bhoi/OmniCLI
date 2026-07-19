@@ -1,0 +1,21 @@
+[package]
+name = "omni-convert"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+omni-core = { path = "../omni-core" }
+
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+serde_yaml = { workspace = true }
+toml = { workspace = true }
+csv = { workspace = true }
+pulldown-cmark = { workspace = true }
+image = { workspace = true }
+lopdf = { workspace = true }
+chrono = { workspace = true }
+console = { workspace = true }
+tempfile = { workspace = true }

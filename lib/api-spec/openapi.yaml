@@ -1,0 +1,1523 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: OmniCLI Dashboard API
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: dashboard
+    description: Dashboard overview and stats
+  - name: search
+    description: Full-text search across indexed files
+  - name: files
+    description: File operations and finder
+  - name: archive
+    description: Archive inspection
+  - name: backup
+    description: Backup jobs and snapshots
+  - name: workspace
+    description: Notes, todos, and snippets
+  - name: convert
+    description: Format conversion
+  - name: dev
+    description: Developer toolkit
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  # ── Dashboard ──────────────────────────────────────────────────────────────
+  /dashboard/stats:
+    get:
+      operationId: getDashboardStats
+      tags: [dashboard]
+      summary: Get overall system statistics
+      responses:
+        "200":
+          description: System statistics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardStats"
+
+  /dashboard/activity:
+    get:
+      operationId: getDashboardActivity
+      tags: [dashboard]
+      summary: Get recent activity feed
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: Recent activity items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ActivityItem"
+
+  /dashboard/module-status:
+    get:
+      operationId: getModuleStatus
+      tags: [dashboard]
+      summary: Get status of all OmniCLI modules
+      responses:
+        "200":
+          description: Module statuses
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ModuleStatus"
+
+  # ── Search ─────────────────────────────────────────────────────────────────
+  /search:
+    get:
+      operationId: searchFiles
+      tags: [search]
+      summary: Full-text search across indexed files
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: types
+          in: query
+          schema:
+            type: string
+            description: Comma-separated content types (files,code,pdf,json,logs,sqlite,zip)
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: regex
+          in: query
+          schema:
+            type: boolean
+            default: false
+        - name: caseSensitive
+          in: query
+          schema:
+            type: boolean
+            default: false
+      responses:
+        "200":
+          description: Search results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SearchResponse"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /search/index:
+    get:
+      operationId: getSearchIndexInfo
+      tags: [search]
+      summary: Get search index information and stats
+      responses:
+        "200":
+          description: Search index info
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SearchIndexInfo"
+    post:
+      operationId: triggerSearchIndex
+      tags: [search]
+      summary: Trigger a search index rebuild for given paths
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SearchIndexRequest"
+      responses:
+        "200":
+          description: Index triggered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SearchIndexInfo"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # ── Files ──────────────────────────────────────────────────────────────────
+  /files/find:
+    get:
+      operationId: findFiles
+      tags: [files]
+      summary: Find files matching a pattern
+      parameters:
+        - name: pattern
+          in: query
+          schema:
+            type: string
+        - name: path
+          in: query
+          schema:
+            type: string
+            default: "."
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [any, f, d, l]
+            default: any
+        - name: size
+          in: query
+          schema:
+            type: string
+        - name: modified
+          in: query
+          schema:
+            type: string
+        - name: maxDepth
+          in: query
+          schema:
+            type: integer
+        - name: regex
+          in: query
+          schema:
+            type: boolean
+            default: false
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 200
+      responses:
+        "200":
+          description: Found files
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FindResponse"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /files/hash:
+    get:
+      operationId: hashFile
+      tags: [files]
+      summary: Compute the hash of a file
+      parameters:
+        - name: path
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: algo
+          in: query
+          schema:
+            type: string
+            enum: [blake3, sha256, md5]
+            default: blake3
+      responses:
+        "200":
+          description: Hash result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HashResult"
+        "404":
+          description: File not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /files/stats:
+    get:
+      operationId: getFileStats
+      tags: [files]
+      summary: Get file system stats for a directory
+      parameters:
+        - name: path
+          in: query
+          schema:
+            type: string
+            default: "."
+      responses:
+        "200":
+          description: Directory statistics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FileStats"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # ── Archive ─────────────────────────────────────────────────────────────────
+  /archive/inspect:
+    get:
+      operationId: inspectArchive
+      tags: [archive]
+      summary: List contents of an archive without extracting
+      parameters:
+        - name: path
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Archive contents
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ArchiveInspectResult"
+        "404":
+          description: Archive not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "400":
+          description: Unsupported format
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # ── Backup ──────────────────────────────────────────────────────────────────
+  /backup/jobs:
+    get:
+      operationId: listBackupJobs
+      tags: [backup]
+      summary: List all backup jobs
+      responses:
+        "200":
+          description: List of backup jobs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/BackupJob"
+    post:
+      operationId: createBackupJob
+      tags: [backup]
+      summary: Create and run a new backup job
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BackupJobInput"
+      responses:
+        "201":
+          description: Backup job created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BackupJob"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /backup/jobs/{id}:
+    get:
+      operationId: getBackupJob
+      tags: [backup]
+      summary: Get a backup job by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Backup job
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BackupJob"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: deleteBackupJob
+      tags: [backup]
+      summary: Delete a backup job
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /backup/jobs/{id}/snapshots:
+    get:
+      operationId: listBackupSnapshots
+      tags: [backup]
+      summary: List snapshots for a backup job
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Snapshots
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/BackupSnapshot"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /backup/stats:
+    get:
+      operationId: getBackupStats
+      tags: [backup]
+      summary: Get backup system statistics
+      responses:
+        "200":
+          description: Backup statistics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BackupStats"
+
+  # ── Workspace ───────────────────────────────────────────────────────────────
+  /workspace/notes:
+    get:
+      operationId: listNotes
+      tags: [workspace]
+      summary: List all notes
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Notes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Note"
+    post:
+      operationId: createNote
+      tags: [workspace]
+      summary: Create a new note
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NoteInput"
+      responses:
+        "201":
+          description: Created note
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Note"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /workspace/notes/{id}:
+    get:
+      operationId: getNote
+      tags: [workspace]
+      summary: Get a note by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Note
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Note"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      operationId: updateNote
+      tags: [workspace]
+      summary: Update a note
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NoteUpdate"
+      responses:
+        "200":
+          description: Updated note
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Note"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: deleteNote
+      tags: [workspace]
+      summary: Delete a note
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /workspace/todos:
+    get:
+      operationId: listTodos
+      tags: [workspace]
+      summary: List all todos
+      parameters:
+        - name: done
+          in: query
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: Todos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Todo"
+    post:
+      operationId: createTodo
+      tags: [workspace]
+      summary: Create a todo
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TodoInput"
+      responses:
+        "201":
+          description: Created todo
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Todo"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /workspace/todos/{id}:
+    patch:
+      operationId: updateTodo
+      tags: [workspace]
+      summary: Update a todo (toggle done, edit description)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TodoUpdate"
+      responses:
+        "200":
+          description: Updated todo
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Todo"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: deleteTodo
+      tags: [workspace]
+      summary: Delete a todo
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /workspace/snippets:
+    get:
+      operationId: listSnippets
+      tags: [workspace]
+      summary: List all code snippets
+      parameters:
+        - name: language
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Snippets
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Snippet"
+    post:
+      operationId: createSnippet
+      tags: [workspace]
+      summary: Save a code snippet
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SnippetInput"
+      responses:
+        "201":
+          description: Created snippet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Snippet"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /workspace/snippets/{id}:
+    delete:
+      operationId: deleteSnippet
+      tags: [workspace]
+      summary: Delete a snippet
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /workspace/stats:
+    get:
+      operationId: getWorkspaceStats
+      tags: [workspace]
+      summary: Get workspace statistics
+      responses:
+        "200":
+          description: Workspace statistics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkspaceStats"
+
+  # ── Convert ─────────────────────────────────────────────────────────────────
+  /convert/formats:
+    get:
+      operationId: listConvertFormats
+      tags: [convert]
+      summary: List all supported conversion format pairs
+      responses:
+        "200":
+          description: Supported format pairs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ConvertFormat"
+
+  /convert/run:
+    post:
+      operationId: runConversion
+      tags: [convert]
+      summary: Convert a file from one format to another
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ConvertRequest"
+      responses:
+        "200":
+          description: Conversion result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConvertResult"
+        "400":
+          description: Unsupported format or error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # ── Dev Toolkit ─────────────────────────────────────────────────────────────
+  /dev/hash:
+    post:
+      operationId: devHash
+      tags: [dev]
+      summary: Hash text or file content
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DevHashInput"
+      responses:
+        "200":
+          description: Hash result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DevHashResult"
+
+  /dev/json:
+    post:
+      operationId: devJson
+      tags: [dev]
+      summary: Format, minify, or query JSON
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DevJsonInput"
+      responses:
+        "200":
+          description: JSON result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DevJsonResult"
+        "400":
+          description: Invalid JSON
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /dev/base64:
+    post:
+      operationId: devBase64
+      tags: [dev]
+      summary: Encode or decode base64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DevBase64Input"
+      responses:
+        "200":
+          description: Base64 result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DevBase64Result"
+
+  /dev/uuid:
+    get:
+      operationId: devUuid
+      tags: [dev]
+      summary: Generate a UUID v4
+      parameters:
+        - name: count
+          in: query
+          schema:
+            type: integer
+            default: 1
+            minimum: 1
+            maximum: 100
+      responses:
+        "200":
+          description: Generated UUIDs
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DevUuidResult"
+
+  /dev/regex:
+    post:
+      operationId: devRegex
+      tags: [dev]
+      summary: Test a regex pattern against text
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DevRegexInput"
+      responses:
+        "200":
+          description: Regex match results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DevRegexResult"
+        "400":
+          description: Invalid regex
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /dev/jwt:
+    post:
+      operationId: devJwt
+      tags: [dev]
+      summary: Decode and inspect a JWT token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DevJwtInput"
+      responses:
+        "200":
+          description: Decoded JWT
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DevJwtResult"
+        "400":
+          description: Invalid JWT
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+
+    # ── Dashboard ──────────────────────────────────────────────────────────────
+    DashboardStats:
+      type: object
+      required: [totalFiles, totalSizeBytes, indexedFiles, backupJobs, notes, todos, snippets, conversionFormats, modulesActive]
+      properties:
+        totalFiles:
+          type: integer
+        totalSizeBytes:
+          type: integer
+        indexedFiles:
+          type: integer
+        backupJobs:
+          type: integer
+        notes:
+          type: integer
+        todos:
+          type: integer
+        snippets:
+          type: integer
+        conversionFormats:
+          type: integer
+        modulesActive:
+          type: integer
+        lastIndexedAt:
+          type: ["string", "null"]
+
+    ActivityItem:
+      type: object
+      required: [id, type, description, timestamp]
+      properties:
+        id:
+          type: integer
+        type:
+          type: string
+          enum: [search, backup, convert, note, todo, snippet, file_find]
+        description:
+          type: string
+        timestamp:
+          type: string
+        metadata:
+          type: ["string", "null"]
+
+    ModuleStatus:
+      type: object
+      required: [name, phase, status, description, verbCount]
+      properties:
+        name:
+          type: string
+        phase:
+          type: integer
+        status:
+          type: string
+          enum: [active, phase2, phase3, phase4]
+        description:
+          type: string
+        verbCount:
+          type: integer
+        color:
+          type: string
+
+    # ── Search ─────────────────────────────────────────────────────────────────
+    SearchResult:
+      type: object
+      required: [path, fileType, sizeBytes, modified, snippet]
+      properties:
+        path:
+          type: string
+        fileType:
+          type: string
+        sizeBytes:
+          type: integer
+        modified:
+          type: integer
+        snippet:
+          type: ["string", "null"]
+        rank:
+          type: ["number", "null"]
+
+    SearchResponse:
+      type: object
+      required: [query, results, total, durationMs]
+      properties:
+        query:
+          type: string
+        results:
+          type: array
+          items:
+            $ref: "#/components/schemas/SearchResult"
+        total:
+          type: integer
+        durationMs:
+          type: number
+
+    SearchIndexInfo:
+      type: object
+      required: [totalEntries, lastUpdated, indexPath, status]
+      properties:
+        totalEntries:
+          type: integer
+        lastUpdated:
+          type: ["string", "null"]
+        indexPath:
+          type: string
+        status:
+          type: string
+          enum: [ready, indexing, empty, error]
+        indexedPaths:
+          type: array
+          items:
+            type: string
+
+    SearchIndexRequest:
+      type: object
+      required: [paths]
+      properties:
+        paths:
+          type: array
+          items:
+            type: string
+          minItems: 1
+        rebuild:
+          type: boolean
+          default: false
+
+    # ── Files ──────────────────────────────────────────────────────────────────
+    FileEntry:
+      type: object
+      required: [path, fileType, sizeBytes, modified]
+      properties:
+        path:
+          type: string
+        fileType:
+          type: string
+        sizeBytes:
+          type: integer
+        modified:
+          type: integer
+
+    FindResponse:
+      type: object
+      required: [entries, total, durationMs]
+      properties:
+        entries:
+          type: array
+          items:
+            $ref: "#/components/schemas/FileEntry"
+        total:
+          type: integer
+        durationMs:
+          type: number
+
+    HashResult:
+      type: object
+      required: [path, algo, digest, sizeBytes, durationMs]
+      properties:
+        path:
+          type: string
+        algo:
+          type: string
+        digest:
+          type: string
+        sizeBytes:
+          type: integer
+        durationMs:
+          type: number
+
+    FileStats:
+      type: object
+      required: [path, totalFiles, totalDirs, totalSizeBytes, largestFile, typeBreakdown]
+      properties:
+        path:
+          type: string
+        totalFiles:
+          type: integer
+        totalDirs:
+          type: integer
+        totalSizeBytes:
+          type: integer
+        largestFile:
+          type: ["string", "null"]
+        largestFileSizeBytes:
+          type: ["integer", "null"]
+        typeBreakdown:
+          type: array
+          items:
+            $ref: "#/components/schemas/FileTypeCount"
+
+    FileTypeCount:
+      type: object
+      required: [extension, count, totalSizeBytes]
+      properties:
+        extension:
+          type: string
+        count:
+          type: integer
+        totalSizeBytes:
+          type: integer
+
+    # ── Archive ─────────────────────────────────────────────────────────────────
+    ArchiveEntry:
+      type: object
+      required: [name, sizeBytes, compressedSizeBytes, isDir, modified]
+      properties:
+        name:
+          type: string
+        sizeBytes:
+          type: integer
+        compressedSizeBytes:
+          type: integer
+        isDir:
+          type: boolean
+        modified:
+          type: ["string", "null"]
+
+    ArchiveInspectResult:
+      type: object
+      required: [path, format, entries, totalFiles, totalSizeBytes, totalCompressedBytes]
+      properties:
+        path:
+          type: string
+        format:
+          type: string
+        entries:
+          type: array
+          items:
+            $ref: "#/components/schemas/ArchiveEntry"
+        totalFiles:
+          type: integer
+        totalSizeBytes:
+          type: integer
+        totalCompressedBytes:
+          type: integer
+
+    # ── Backup ──────────────────────────────────────────────────────────────────
+    BackupJob:
+      type: object
+      required: [id, name, sourcePath, destPath, createdAt, snapshotCount]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        sourcePath:
+          type: string
+        destPath:
+          type: string
+        createdAt:
+          type: string
+        snapshotCount:
+          type: integer
+        lastSnapshotAt:
+          type: ["string", "null"]
+        lastStatus:
+          type: ["string", "null"]
+
+    BackupJobInput:
+      type: object
+      required: [name, sourcePath, destPath]
+      properties:
+        name:
+          type: string
+          minLength: 1
+        sourcePath:
+          type: string
+          minLength: 1
+        destPath:
+          type: string
+          minLength: 1
+        incremental:
+          type: boolean
+          default: true
+
+    BackupSnapshot:
+      type: object
+      required: [id, jobId, startedAt, status, checksumRoot]
+      properties:
+        id:
+          type: integer
+        jobId:
+          type: integer
+        startedAt:
+          type: string
+        finishedAt:
+          type: ["string", "null"]
+        filesTotal:
+          type: ["integer", "null"]
+        filesChanged:
+          type: ["integer", "null"]
+        bytesTransferred:
+          type: ["integer", "null"]
+        status:
+          type: string
+          enum: [running, success, failed, verified, interrupted]
+        checksumRoot:
+          type: string
+
+    BackupStats:
+      type: object
+      required: [totalJobs, totalSnapshots, totalBytesStored, lastBackupAt]
+      properties:
+        totalJobs:
+          type: integer
+        totalSnapshots:
+          type: integer
+        totalBytesStored:
+          type: integer
+        lastBackupAt:
+          type: ["string", "null"]
+        successRate:
+          type: number
+
+    # ── Workspace ───────────────────────────────────────────────────────────────
+    Note:
+      type: object
+      required: [id, title, body, createdAt, updatedAt]
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        body:
+          type: string
+        tags:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+
+    NoteInput:
+      type: object
+      required: [title]
+      properties:
+        title:
+          type: string
+          minLength: 1
+        body:
+          type: string
+        tags:
+          type: string
+
+    NoteUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+        body:
+          type: string
+        tags:
+          type: string
+
+    Todo:
+      type: object
+      required: [id, description, done, createdAt]
+      properties:
+        id:
+          type: integer
+        description:
+          type: string
+        done:
+          type: boolean
+        dueAt:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    TodoInput:
+      type: object
+      required: [description]
+      properties:
+        description:
+          type: string
+          minLength: 1
+        dueAt:
+          type: string
+
+    TodoUpdate:
+      type: object
+      properties:
+        description:
+          type: string
+          minLength: 1
+        done:
+          type: boolean
+        dueAt:
+          type: ["string", "null"]
+
+    Snippet:
+      type: object
+      required: [id, name, body, createdAt]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        language:
+          type: ["string", "null"]
+        body:
+          type: string
+        createdAt:
+          type: string
+
+    SnippetInput:
+      type: object
+      required: [name, body]
+      properties:
+        name:
+          type: string
+          minLength: 1
+        language:
+          type: string
+        body:
+          type: string
+          minLength: 1
+
+    WorkspaceStats:
+      type: object
+      required: [totalNotes, totalTodos, pendingTodos, totalSnippets]
+      properties:
+        totalNotes:
+          type: integer
+        totalTodos:
+          type: integer
+        pendingTodos:
+          type: integer
+        totalSnippets:
+          type: integer
+        languages:
+          type: array
+          items:
+            type: string
+
+    # ── Convert ─────────────────────────────────────────────────────────────────
+    ConvertFormat:
+      type: object
+      required: [from, to, description]
+      properties:
+        from:
+          type: string
+        to:
+          type: string
+        description:
+          type: string
+
+    ConvertRequest:
+      type: object
+      required: [inputPath, outputPath]
+      properties:
+        inputPath:
+          type: string
+          minLength: 1
+        outputPath:
+          type: string
+          minLength: 1
+
+    ConvertResult:
+      type: object
+      required: [inputPath, outputPath, fromFormat, toFormat, durationMs]
+      properties:
+        inputPath:
+          type: string
+        outputPath:
+          type: string
+        fromFormat:
+          type: string
+        toFormat:
+          type: string
+        durationMs:
+          type: number
+        inputSizeBytes:
+          type: integer
+        outputSizeBytes:
+          type: integer
+
+    # ── Dev Toolkit ─────────────────────────────────────────────────────────────
+    DevHashInput:
+      type: object
+      required: [input]
+      properties:
+        input:
+          type: string
+          minLength: 1
+        algo:
+          type: string
+          enum: [blake3, sha256, md5, sha1]
+          default: sha256
+
+    DevHashResult:
+      type: object
+      required: [input, algo, digest]
+      properties:
+        input:
+          type: string
+        algo:
+          type: string
+        digest:
+          type: string
+
+    DevJsonInput:
+      type: object
+      required: [input]
+      properties:
+        input:
+          type: string
+          minLength: 1
+        action:
+          type: string
+          enum: [pretty, minify, validate]
+          default: pretty
+        query:
+          type: ["string", "null"]
+
+    DevJsonResult:
+      type: object
+      required: [valid, output]
+      properties:
+        valid:
+          type: boolean
+        output:
+          type: string
+        error:
+          type: ["string", "null"]
+
+    DevBase64Input:
+      type: object
+      required: [input]
+      properties:
+        input:
+          type: string
+          minLength: 1
+        decode:
+          type: boolean
+          default: false
+
+    DevBase64Result:
+      type: object
+      required: [input, output, decoded]
+      properties:
+        input:
+          type: string
+        output:
+          type: string
+        decoded:
+          type: boolean
+
+    DevUuidResult:
+      type: object
+      required: [uuids]
+      properties:
+        uuids:
+          type: array
+          items:
+            type: string
+
+    DevRegexInput:
+      type: object
+      required: [pattern, text]
+      properties:
+        pattern:
+          type: string
+          minLength: 1
+        text:
+          type: string
+        flags:
+          type: string
+
+    DevRegexResult:
+      type: object
+      required: [pattern, matched, matchCount, matches]
+      properties:
+        pattern:
+          type: string
+        matched:
+          type: boolean
+        matchCount:
+          type: integer
+        matches:
+          type: array
+          items:
+            $ref: "#/components/schemas/RegexMatch"
+        error:
+          type: ["string", "null"]
+
+    RegexMatch:
+      type: object
+      required: [match, start, end]
+      properties:
+        match:
+          type: string
+        start:
+          type: integer
+        end:
+          type: integer
+        groups:
+          type: array
+          items:
+            type: string
+
+    DevJwtInput:
+      type: object
+      required: [token]
+      properties:
+        token:
+          type: string
+          minLength: 1
+
+    DevJwtResult:
+      type: object
+      required: [valid, header, payload]
+      properties:
+        valid:
+          type: boolean
+        header:
+          type: string
+        payload:
+          type: string
+        signature:
+          type: string
+        isExpired:
+          type: ["boolean", "null"]
+        expiresAt:
+          type: ["string", "null"]
+        error:
+          type: ["string", "null"]

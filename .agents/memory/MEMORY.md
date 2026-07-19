@@ -1,0 +1,1 @@
+- [OmniCLI build lessons](omnicli-build-lessons.md) — Rust workspace compilation fixes: libc/tempfile deps, thiserror named-field trap, age 0.10 API, clippy -D warnings patterns.

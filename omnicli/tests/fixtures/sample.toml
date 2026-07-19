@@ -1,0 +1,14 @@
+name = "omnicli"
+version = "0.1.0"
+description = "One CLI for everything"
+
+features = ["file operations", "universal search", "format conversion"]
+
+[settings]
+color = "auto"
+output = "pretty"
+max_results = 100
+
+[database]
+path = "~/.local/share/omni/omni.db"
+wal_mode = true

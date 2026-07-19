@@ -1,0 +1,29 @@
+[package]
+name = "omni-cli"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "omni"
+path = "src/main.rs"
+
+[dependencies]
+omni-core      = { path = "../omni-core" }
+omni-file      = { path = "../omni-file" }
+omni-search    = { path = "../omni-search" }
+omni-archive   = { path = "../omni-archive" }
+omni-convert   = { path = "../omni-convert" }
+omni-dev       = { path = "../omni-dev" }
+omni-workspace = { path = "../omni-workspace" }
+omni-backup    = { path = "../omni-backup" }
+omni-config    = { path = "../omni-config" }
+
+clap       = { workspace = true }
+age        = { workspace = true }
+anyhow     = { workspace = true }
+serde_json = { workspace = true }
+serde      = { workspace = true }
+toml       = { workspace = true }
+chrono     = { workspace = true }
+tempfile   = { workspace = true }
+rusqlite   = { workspace = true }

@@ -1,0 +1,84 @@
+name: Rust CI
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - 'omnicli/**'
+      - '.github/workflows/rust.yml'
+  pull_request:
+    branches: [main, master]
+    paths:
+      - 'omnicli/**'
+      - '.github/workflows/rust.yml'
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+
+jobs:
+  test:
+    name: Test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, ubuntu-22.04]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+
+      - name: Cache Cargo registry + build
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            omnicli/target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('omnicli/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-
+
+      - name: Install system dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y build-essential libssl-dev pkg-config
+
+      - name: Check formatting
+        working-directory: omnicli
+        run: cargo fmt --all -- --check
+
+      - name: Clippy (zero warnings)
+        working-directory: omnicli
+        run: cargo clippy --all-targets --all-features -- -D warnings
+
+      - name: Run tests
+        working-directory: omnicli
+        run: cargo test --all
+
+      - name: Build release binary
+        working-directory: omnicli
+        run: cargo build --release
+
+      - name: Smoke test binary
+        working-directory: omnicli
+        run: |
+          ./target/release/omni --version
+          ./target/release/omni file find --path . --type f --count
+          ./target/release/omni convert list
+          ./target/release/omni config show
+
+  msrv:
+    name: Minimum Supported Rust Version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@1.88.0
+      - name: Install system dependencies
+        run: sudo apt-get update && sudo apt-get install -y build-essential libssl-dev pkg-config
+      - name: Build (MSRV check)
+        working-directory: omnicli
+        run: cargo build --release
