@@ -49,7 +49,7 @@ console = "0.15"
 flate2 = "1"
 tar = "0.4"
 zip = "2"
-xz2 = "0.1"
+xz2 = { version = "0.1", features = ["static"] }
 
 # Format conversion
 csv = "1"
