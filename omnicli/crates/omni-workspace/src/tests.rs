@@ -2,7 +2,7 @@
 mod tests {
     use rusqlite::Connection;
     use crate::{
-        open_workspace_db,
+
         notes::{create_note, delete_note, get_note, list_notes, update_note},
         todos::{create_todo, delete_todo, get_todo, list_todos, toggle_todo},
         snippets::{create_snippet, delete_snippet, get_snippet, list_snippets},

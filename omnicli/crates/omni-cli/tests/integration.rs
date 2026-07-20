@@ -278,7 +278,7 @@ fn test_find_files_by_pattern() {
         size: None,
         modified_within: None,
         path: dir.path().to_owned(),
-        max_depth: None,
+        max_depth: None, follow_symlinks: false,
     };
 
     let entries = find_files(&opts).unwrap();
@@ -302,7 +302,7 @@ fn test_find_files_all_types() {
         size: None,
         modified_within: None,
         path: dir.path().to_owned(),
-        max_depth: None,
+        max_depth: None, follow_symlinks: false,
     };
 
     let entries = find_files(&opts).unwrap();

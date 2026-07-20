@@ -1,7 +1,7 @@
 use md5::Md5;
 use serde::Serialize;
 use sha1::{Digest as _, Sha1};
-use sha2::{Digest as _, Sha256};
+use sha2::Sha256;
 
 use crate::error::DevError;
 
