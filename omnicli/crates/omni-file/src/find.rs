@@ -1,5 +1,6 @@
+#[cfg(unix)]
+use std::collections::HashSet;
 use std::{
-    collections::HashSet,
     path::{Path, PathBuf},
     time::{Duration, SystemTime},
 };
