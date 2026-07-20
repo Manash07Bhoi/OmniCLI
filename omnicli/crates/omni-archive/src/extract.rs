@@ -239,7 +239,9 @@ fn extract_tar_plain(archive: &Path, dest: &Path) -> Result<(u64, u64), ArchiveE
 }
 
 fn strip_archive_ext(name: &str) -> &str {
-    for ext in &[".tar.gz", ".tgz", ".tar.xz", ".txz", ".tar.bz2", ".tbz2", ".tar", ".zip"] {
+    for ext in &[
+        ".tar.gz", ".tgz", ".tar.xz", ".txz", ".tar.bz2", ".tbz2", ".tar", ".zip",
+    ] {
         if let Some(stripped) = name.strip_suffix(ext) {
             return stripped;
         }

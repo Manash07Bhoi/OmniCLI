@@ -1,6 +1,6 @@
 use std::{
     fs,
-    io::{self, Write, BufWriter},
+    io::{self, BufWriter, Write},
     path::{Path, PathBuf},
 };
 
@@ -142,10 +142,7 @@ fn create_zip(
 
     for input in inputs {
         if input.is_file() {
-            let name = input
-                .file_name()
-                .and_then(|n| n.to_str())
-                .unwrap_or("file");
+            let name = input.file_name().and_then(|n| n.to_str()).unwrap_or("file");
             pb.set_message(name.to_owned());
             zip.start_file(name, options)?;
             let mut f = fs::File::open(input)?;
@@ -190,7 +187,13 @@ fn create_tar(
         TarCompression::None => {
             let mut tar = TarBuilder::new(BufWriter::new(out_file));
             for input in inputs {
-                add_to_tar(&mut tar, input, pb, &mut files_added, &mut bytes_uncompressed)?;
+                add_to_tar(
+                    &mut tar,
+                    input,
+                    pb,
+                    &mut files_added,
+                    &mut bytes_uncompressed,
+                )?;
             }
             tar.finish()?;
         }
@@ -198,7 +201,13 @@ fn create_tar(
             let encoder = GzEncoder::new(BufWriter::new(out_file), Compression::best());
             let mut tar = TarBuilder::new(encoder);
             for input in inputs {
-                add_to_tar(&mut tar, input, pb, &mut files_added, &mut bytes_uncompressed)?;
+                add_to_tar(
+                    &mut tar,
+                    input,
+                    pb,
+                    &mut files_added,
+                    &mut bytes_uncompressed,
+                )?;
             }
             tar.into_inner()?.finish()?;
         }
@@ -206,7 +215,13 @@ fn create_tar(
             let encoder = XzEncoder::new(BufWriter::new(out_file), 6);
             let mut tar = TarBuilder::new(encoder);
             for input in inputs {
-                add_to_tar(&mut tar, input, pb, &mut files_added, &mut bytes_uncompressed)?;
+                add_to_tar(
+                    &mut tar,
+                    input,
+                    pb,
+                    &mut files_added,
+                    &mut bytes_uncompressed,
+                )?;
             }
             tar.into_inner()?.finish()?;
         }
@@ -214,7 +229,13 @@ fn create_tar(
             let encoder = BzEncoder::new(BufWriter::new(out_file), bzip2::Compression::best());
             let mut tar = TarBuilder::new(encoder);
             for input in inputs {
-                add_to_tar(&mut tar, input, pb, &mut files_added, &mut bytes_uncompressed)?;
+                add_to_tar(
+                    &mut tar,
+                    input,
+                    pb,
+                    &mut files_added,
+                    &mut bytes_uncompressed,
+                )?;
             }
             tar.into_inner()?.finish()?;
         }

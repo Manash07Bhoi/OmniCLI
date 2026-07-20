@@ -6,7 +6,7 @@ use std::{
 
 use anyhow::Result;
 use indicatif::{ProgressBar, ProgressStyle};
-use rusqlite::{Connection, params};
+use rusqlite::{params, Connection};
 use serde::Serialize;
 use walkdir::WalkDir;
 
@@ -68,9 +68,7 @@ pub fn rebuild_index(
     rebuild: bool,
 ) -> Result<IndexStats, SearchError> {
     if rebuild {
-        conn.execute_batch(
-            "DELETE FROM search_index; DELETE FROM search_content_fts;",
-        )?;
+        conn.execute_batch("DELETE FROM search_index; DELETE FROM search_content_fts;")?;
     }
 
     let mut files_indexed = 0u64;
@@ -202,11 +200,51 @@ fn extract_text_content(path: &Path, size_bytes: u64) -> Option<String> {
         .to_lowercase();
 
     let text_extensions = [
-        "txt", "md", "rs", "py", "js", "ts", "go", "c", "cpp", "h", "hpp",
-        "java", "rb", "sh", "bash", "zsh", "fish", "toml", "yaml", "yml",
-        "json", "xml", "html", "htm", "css", "sql", "log", "conf", "cfg",
-        "ini", "env", "gitignore", "makefile", "cmake", "dockerfile", "lock",
-        "mod", "sum", "tf", "hcl", "cs", "swift", "kt", "scala", "hs",
+        "txt",
+        "md",
+        "rs",
+        "py",
+        "js",
+        "ts",
+        "go",
+        "c",
+        "cpp",
+        "h",
+        "hpp",
+        "java",
+        "rb",
+        "sh",
+        "bash",
+        "zsh",
+        "fish",
+        "toml",
+        "yaml",
+        "yml",
+        "json",
+        "xml",
+        "html",
+        "htm",
+        "css",
+        "sql",
+        "log",
+        "conf",
+        "cfg",
+        "ini",
+        "env",
+        "gitignore",
+        "makefile",
+        "cmake",
+        "dockerfile",
+        "lock",
+        "mod",
+        "sum",
+        "tf",
+        "hcl",
+        "cs",
+        "swift",
+        "kt",
+        "scala",
+        "hs",
     ];
 
     if !text_extensions.contains(&ext.as_str()) && !ext.is_empty() {
@@ -241,7 +279,8 @@ mod tests {
         let db_path = dir.path().join("test.db");
         let conn = open_index_db(&db_path).unwrap();
         // Schema must exist
-        conn.execute_batch("SELECT * FROM search_index LIMIT 1;").unwrap();
+        conn.execute_batch("SELECT * FROM search_index LIMIT 1;")
+            .unwrap();
     }
 
     #[test]
@@ -250,16 +289,14 @@ mod tests {
         let db_path = dir.path().join("search.db");
 
         std::fs::write(dir.path().join("hello.txt"), b"hello world rust").unwrap();
-        std::fs::write(dir.path().join("code.rs"), b"fn main() { println!(\"hi\"); }").unwrap();
-
-        let mut conn = open_index_db(&db_path).unwrap();
-        let stats = rebuild_index(
-            &mut conn,
-            &[dir.path().to_owned()],
-            &[],
-            true,
+        std::fs::write(
+            dir.path().join("code.rs"),
+            b"fn main() { println!(\"hi\"); }",
         )
         .unwrap();
+
+        let mut conn = open_index_db(&db_path).unwrap();
+        let stats = rebuild_index(&mut conn, &[dir.path().to_owned()], &[], true).unwrap();
 
         assert!(stats.files_indexed >= 2);
         assert!(stats.content_docs_indexed >= 2);

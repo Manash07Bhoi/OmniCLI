@@ -1,9 +1,4 @@
-use std::{
-    fs,
-    io::Write,
-    path::Path,
-    str::FromStr,
-};
+use std::{fs, io::Write, path::Path, str::FromStr};
 
 use age::{x25519, Encryptor};
 use anyhow::Result;
@@ -33,7 +28,8 @@ pub fn encrypt_file(
     let recipient = x25519::Recipient::from_str(recipient_key)
         .map_err(|e| FileError::Encryption(format!("Invalid age public key: {e}")))?;
 
-    let plaintext = fs::read(source).map_err(|_| FileError::NotFound(source.display().to_string()))?;
+    let plaintext =
+        fs::read(source).map_err(|_| FileError::NotFound(source.display().to_string()))?;
 
     let encryptor = Encryptor::with_recipients(vec![Box::new(recipient)])
         .ok_or_else(|| FileError::Encryption("no recipients provided".into()))?;
@@ -44,7 +40,9 @@ pub fn encrypt_file(
             .wrap_output(&mut ciphertext)
             .map_err(|e| FileError::Encryption(e.to_string()))?;
         writer.write_all(&plaintext)?;
-        writer.finish().map_err(|e| FileError::Encryption(e.to_string()))?;
+        writer
+            .finish()
+            .map_err(|e| FileError::Encryption(e.to_string()))?;
     }
 
     fs::write(&dest, &ciphertext)?;
@@ -61,8 +59,8 @@ pub fn encrypt_file(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tempfile::tempdir;
     use age::x25519;
+    use tempfile::tempdir;
 
     #[test]
     fn test_encrypt_file() {

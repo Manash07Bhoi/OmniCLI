@@ -1,11 +1,8 @@
 #[cfg(test)]
-mod tests {
+mod backup_tests {
+    use crate::{backup_create, backup_restore, backup_verify, restore::list_snapshots};
     use std::fs;
     use tempfile::TempDir;
-    use crate::{
-        backup_create, backup_restore, backup_verify,
-        restore::list_snapshots,
-    };
 
     fn setup_source(dir: &TempDir) {
         fs::write(dir.path().join("file_a.txt"), b"Hello from OmniCLI backup").unwrap();
@@ -30,7 +27,6 @@ mod tests {
         assert!(result.bytes_transferred > 0);
         assert!(!result.snapshot_id.is_empty());
     }
-
 
     #[test]
     fn backup_create_nonexistent_source_returns_error() {
@@ -89,7 +85,11 @@ mod tests {
         // Verify restored files exist
         assert!(restore_target.path().join("file_a.txt").exists());
         assert!(restore_target.path().join("file_b.txt").exists());
-        assert!(restore_target.path().join("subdir").join("nested.txt").exists());
+        assert!(restore_target
+            .path()
+            .join("subdir")
+            .join("nested.txt")
+            .exists());
     }
 
     #[test]
@@ -111,13 +111,15 @@ mod tests {
         let created = backup_create(src.path(), dst.path(), "verify-job", true).unwrap();
         let result = backup_verify(dst.path(), &created.snapshot_id).unwrap();
 
-        assert_eq!(result.files_corrupt, 0, "intact backup should verify successfully");
+        assert_eq!(
+            result.files_corrupt, 0,
+            "intact backup should verify successfully"
+        );
         assert_eq!(result.files_checked as u64, created.files_total);
         assert_eq!(result.files_corrupt, 0);
     }
 
     // ── list_snapshots ────────────────────────────────────────────────────────
-
 
     #[test]
     fn list_snapshots_empty_for_unknown_job() {

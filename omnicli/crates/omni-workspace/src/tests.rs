@@ -1,12 +1,11 @@
 #[cfg(test)]
-mod tests {
-    use rusqlite::Connection;
+mod workspace_tests {
     use crate::{
-
         notes::{create_note, delete_note, get_note, list_notes},
-        todos::{create_todo, delete_todo, get_todo, list_todos, toggle_todo},
         snippets::{create_snippet, delete_snippet, get_snippet, list_snippets},
+        todos::{create_todo, delete_todo, get_todo, list_todos, toggle_todo},
     };
+    use rusqlite::Connection;
 
     fn in_memory_db() -> Connection {
         let conn = Connection::open_in_memory().expect("in-memory DB");
@@ -81,8 +80,6 @@ mod tests {
         assert_eq!(results.len(), 1);
         assert_eq!(results[0].title, "Rust guide");
     }
-
-
 
     #[test]
     fn delete_note_removes_it() {

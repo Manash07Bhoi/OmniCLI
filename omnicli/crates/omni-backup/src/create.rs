@@ -33,7 +33,9 @@ fn hash_file_blake3(path: &Path) -> Result<String, BackupError> {
     let mut buf = vec![0u8; 65_536];
     loop {
         let n = file.read(&mut buf)?;
-        if n == 0 { break; }
+        if n == 0 {
+            break;
+        }
         hasher.update(&buf[..n]);
     }
     Ok(hasher.finalize().to_hex().to_string())
@@ -77,11 +79,9 @@ pub fn backup_create(
     } else {
         let pb = ProgressBar::new(entries.len() as u64);
         pb.set_style(
-            ProgressStyle::with_template(
-                " {bar:40.cyan/blue} {pos}/{len} {msg}",
-            )
-            .unwrap()
-            .progress_chars("█▉▊▋▌▍▎▏  "),
+            ProgressStyle::with_template(" {bar:40.cyan/blue} {pos}/{len} {msg}")
+                .unwrap()
+                .progress_chars("█▉▊▋▌▍▎▏  "),
         );
         pb
     };
@@ -113,9 +113,7 @@ pub fn backup_create(
         let mtime = meta
             .modified()
             .ok()
-            .and_then(|t| {
-                t.duration_since(std::time::UNIX_EPOCH).ok()
-            })
+            .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
             .map(|d| d.as_secs() as i64)
             .unwrap_or(0);
 

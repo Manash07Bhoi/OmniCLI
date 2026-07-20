@@ -27,10 +27,7 @@ pub fn decode_jwt(token: &str) -> Result<JwtResult, DevError> {
     let parts: Vec<&str> = token.split('.').collect();
     if parts.len() != 3 {
         return Err(DevError::JwtDecode {
-            message: format!(
-                "Expected 3 dot-separated parts, got {}",
-                parts.len()
-            ),
+            message: format!("Expected 3 dot-separated parts, got {}", parts.len()),
         });
     }
 
@@ -57,23 +54,15 @@ pub fn decode_jwt(token: &str) -> Result<JwtResult, DevError> {
         .and_then(|v| v.as_u64())
         .map(|exp| now_secs > exp);
 
-    let expires_at = payload
-        .get("exp")
-        .and_then(|v| v.as_u64())
-        .map(|exp| {
-            let dt = chrono::DateTime::from_timestamp(exp as i64, 0)
-                .unwrap_or_default();
-            dt.format("%Y-%m-%dT%H:%M:%SZ").to_string()
-        });
+    let expires_at = payload.get("exp").and_then(|v| v.as_u64()).map(|exp| {
+        let dt = chrono::DateTime::from_timestamp(exp as i64, 0).unwrap_or_default();
+        dt.format("%Y-%m-%dT%H:%M:%SZ").to_string()
+    });
 
-    let issued_at = payload
-        .get("iat")
-        .and_then(|v| v.as_u64())
-        .map(|iat| {
-            let dt = chrono::DateTime::from_timestamp(iat as i64, 0)
-                .unwrap_or_default();
-            dt.format("%Y-%m-%dT%H:%M:%SZ").to_string()
-        });
+    let issued_at = payload.get("iat").and_then(|v| v.as_u64()).map(|iat| {
+        let dt = chrono::DateTime::from_timestamp(iat as i64, 0).unwrap_or_default();
+        dt.format("%Y-%m-%dT%H:%M:%SZ").to_string()
+    });
 
     let subject = payload
         .get("sub")

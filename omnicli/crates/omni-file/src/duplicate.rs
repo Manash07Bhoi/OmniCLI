@@ -1,4 +1,8 @@
-use std::{collections::HashMap, fs, path::{Path, PathBuf}};
+use std::{
+    collections::HashMap,
+    fs,
+    path::{Path, PathBuf},
+};
 
 use anyhow::Result;
 use indicatif::{ProgressBar, ProgressStyle};
@@ -34,7 +38,10 @@ pub fn scan_duplicates(dir: &Path) -> Result<DuplicateScanResult, FileError> {
             _ => continue,
         };
         let size = entry.metadata().map(|m| m.len()).unwrap_or(0);
-        by_size.entry(size).or_default().push(entry.path().to_owned());
+        by_size
+            .entry(size)
+            .or_default()
+            .push(entry.path().to_owned());
     }
 
     // Only hash groups where multiple files share the same size

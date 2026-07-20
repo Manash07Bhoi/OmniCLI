@@ -91,10 +91,7 @@ pub fn parse_size(s: &str) -> Result<SizeOp, FileError> {
 /// Parse a duration like `7d`, `2h`, `30m`, `1w`.
 pub fn parse_duration(s: &str) -> Result<Duration, FileError> {
     let s = s.trim();
-    let (digits, suffix) = s.split_at(
-        s.find(|c: char| !c.is_ascii_digit())
-            .unwrap_or(s.len()),
-    );
+    let (digits, suffix) = s.split_at(s.find(|c: char| !c.is_ascii_digit()).unwrap_or(s.len()));
 
     let n: u64 = digits
         .parse()
@@ -316,16 +313,26 @@ mod tests {
 
     #[test]
     fn test_parse_size() {
-        assert!(matches!(parse_size("+50M").unwrap(), SizeOp::GreaterThan(n) if n == 50 * 1024 * 1024));
+        assert!(
+            matches!(parse_size("+50M").unwrap(), SizeOp::GreaterThan(n) if n == 50 * 1024 * 1024)
+        );
         assert!(matches!(parse_size("-100K").unwrap(), SizeOp::LessThan(n) if n == 100 * 1024));
-        assert!(matches!(parse_size("1G").unwrap(), SizeOp::GreaterThan(n) if n == 1024 * 1024 * 1024));
+        assert!(
+            matches!(parse_size("1G").unwrap(), SizeOp::GreaterThan(n) if n == 1024 * 1024 * 1024)
+        );
     }
 
     #[test]
     fn test_parse_duration() {
-        assert_eq!(parse_duration("7d").unwrap(), Duration::from_secs(7 * 86_400));
+        assert_eq!(
+            parse_duration("7d").unwrap(),
+            Duration::from_secs(7 * 86_400)
+        );
         assert_eq!(parse_duration("2h").unwrap(), Duration::from_secs(7_200));
-        assert_eq!(parse_duration("1w").unwrap(), Duration::from_secs(7 * 86_400));
+        assert_eq!(
+            parse_duration("1w").unwrap(),
+            Duration::from_secs(7 * 86_400)
+        );
     }
 
     #[test]

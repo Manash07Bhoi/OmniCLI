@@ -25,10 +25,16 @@ pub fn list_notes(conn: &Connection, search: Option<&str>) -> Result<Vec<Note>, 
     } else {
         stmt.query_map([], row_to_note)?
     };
-    rows.collect::<Result<Vec<_>, _>>().map_err(WorkspaceError::from)
+    rows.collect::<Result<Vec<_>, _>>()
+        .map_err(WorkspaceError::from)
 }
 
-pub fn create_note(conn: &Connection, title: &str, body: &str, tags: Option<&str>) -> Result<Note, WorkspaceError> {
+pub fn create_note(
+    conn: &Connection,
+    title: &str,
+    body: &str,
+    tags: Option<&str>,
+) -> Result<Note, WorkspaceError> {
     conn.execute(
         "INSERT INTO notes (title, body, tags) VALUES (?1, ?2, ?3)",
         params![title, body, tags],
@@ -47,17 +53,31 @@ pub fn get_note(conn: &Connection, id: i64) -> Result<Note, WorkspaceError> {
         rusqlite::Error::QueryReturnedNoRows => WorkspaceError::NotFound {
             item: format!("note #{id}"),
         },
-        other => WorkspaceError::Database { message: other.to_string() },
+        other => WorkspaceError::Database {
+            message: other.to_string(),
+        },
     })
 }
 
-pub fn update_note(conn: &Connection, id: i64, title: Option<&str>, body: Option<&str>, tags: Option<&str>) -> Result<Note, WorkspaceError> {
+pub fn update_note(
+    conn: &Connection,
+    id: i64,
+    title: Option<&str>,
+    body: Option<&str>,
+    tags: Option<&str>,
+) -> Result<Note, WorkspaceError> {
     // Only update fields that are provided
     if title.is_some() || body.is_some() || tags.is_some() {
         let mut parts = vec!["updated_at = strftime('%s','now')"];
-        if title.is_some() { parts.push("title = ?2"); }
-        if body.is_some()  { parts.push("body = ?3"); }
-        if tags.is_some()  { parts.push("tags = ?4"); }
+        if title.is_some() {
+            parts.push("title = ?2");
+        }
+        if body.is_some() {
+            parts.push("body = ?3");
+        }
+        if tags.is_some() {
+            parts.push("tags = ?4");
+        }
         let sql = format!("UPDATE notes SET {} WHERE id = ?1", parts.join(", "));
         conn.execute(&sql, params![id, title, body, tags])?;
     }
@@ -67,7 +87,9 @@ pub fn update_note(conn: &Connection, id: i64, title: Option<&str>, body: Option
 pub fn delete_note(conn: &Connection, id: i64) -> Result<(), WorkspaceError> {
     let n = conn.execute("DELETE FROM notes WHERE id = ?1", params![id])?;
     if n == 0 {
-        Err(WorkspaceError::NotFound { item: format!("note #{id}") })
+        Err(WorkspaceError::NotFound {
+            item: format!("note #{id}"),
+        })
     } else {
         Ok(())
     }
@@ -75,10 +97,10 @@ pub fn delete_note(conn: &Connection, id: i64) -> Result<(), WorkspaceError> {
 
 fn row_to_note(row: &rusqlite::Row<'_>) -> rusqlite::Result<Note> {
     Ok(Note {
-        id:         row.get(0)?,
-        title:      row.get(1)?,
-        body:       row.get(2)?,
-        tags:       row.get(3)?,
+        id: row.get(0)?,
+        title: row.get(1)?,
+        body: row.get(2)?,
+        tags: row.get(3)?,
         created_at: row.get(4)?,
         updated_at: row.get(5)?,
     })

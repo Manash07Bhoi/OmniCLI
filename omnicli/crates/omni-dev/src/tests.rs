@@ -1,12 +1,7 @@
 #[cfg(test)]
-mod tests {
+mod dev_tests {
     use crate::{
-        base64::process_base64,
-        compute_hash,
-        generate_uuids,
-        process_json,
-        test_regex,
-        decode_jwt,
+        base64::process_base64, compute_hash, decode_jwt, generate_uuids, process_json, test_regex,
     };
 
     // ── hash ──────────────────────────────────────────────────────────────────
@@ -48,7 +43,10 @@ mod tests {
     fn hash_blake3_hello() {
         let r = compute_hash("hello", "blake3").unwrap();
         // blake3 of "hello" — fixed reference value
-        assert_eq!(r.digest, "ea8f163db38682925e4491c5e58d4bb3506ef8c14eb78a86e908c5624a67200f");
+        assert_eq!(
+            r.digest,
+            "ea8f163db38682925e4491c5e58d4bb3506ef8c14eb78a86e908c5624a67200f"
+        );
     }
 
     #[test]
@@ -61,7 +59,10 @@ mod tests {
     fn hash_long_input_truncated_in_display() {
         let long = "a".repeat(200);
         let r = compute_hash(&long, "sha256").unwrap();
-        assert!(r.input.contains('…'), "long input should be truncated with ellipsis");
+        assert!(
+            r.input.contains('…'),
+            "long input should be truncated with ellipsis"
+        );
         assert_eq!(r.input_len, 200);
     }
 
@@ -109,7 +110,10 @@ mod tests {
     fn json_minify_valid() {
         let input = "{\n  \"a\": 1,\n  \"b\": 2\n}";
         let r = process_json(input, "minify", None).unwrap();
-        assert!(!r.output.contains('\n'), "minified JSON should not contain newlines");
+        assert!(
+            !r.output.contains('\n'),
+            "minified JSON should not contain newlines"
+        );
     }
 
     #[test]
@@ -134,7 +138,11 @@ mod tests {
         assert_eq!(u.len(), 36);
         let parts: Vec<&str> = u.split('-').collect();
         assert_eq!(parts.len(), 5);
-        assert_eq!(parts[2].chars().next(), Some('4'), "UUIDv4 third group starts with 4");
+        assert_eq!(
+            parts[2].chars().next(),
+            Some('4'),
+            "UUIDv4 third group starts with 4"
+        );
     }
 
     #[test]

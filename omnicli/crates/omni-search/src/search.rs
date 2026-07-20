@@ -1,6 +1,6 @@
 use anyhow::Result;
 use regex::Regex;
-use rusqlite::{Connection, params};
+use rusqlite::{params, Connection};
 use serde::Serialize;
 
 use crate::error::SearchError;
@@ -202,7 +202,11 @@ pub fn search_query(
 }
 
 /// Extract a snippet and line number from content for the given query.
-fn extract_snippet(content: &str, query: &str, case_sensitive: bool) -> (Option<String>, Option<u64>) {
+fn extract_snippet(
+    content: &str,
+    query: &str,
+    case_sensitive: bool,
+) -> (Option<String>, Option<u64>) {
     let needle = if case_sensitive {
         query.to_owned()
     } else {
@@ -272,7 +276,9 @@ mod tests {
             ..Default::default()
         };
         let results = search_query(&conn, &opts).unwrap();
-        assert!(results.iter().any(|r| r.path.contains("my_unique_filename")));
+        assert!(results
+            .iter()
+            .any(|r| r.path.contains("my_unique_filename")));
     }
 
     #[test]

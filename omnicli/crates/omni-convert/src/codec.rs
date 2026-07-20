@@ -17,22 +17,86 @@ pub struct FormatPair {
 /// This is always generated from the actual codec implementations — never hand-maintained docs.
 pub fn list_supported_pairs() -> Vec<FormatPair> {
     vec![
-        FormatPair { from: "pdf".into(),  to: "txt".into(),  description: "Extract text from PDF".into() },
-        FormatPair { from: "csv".into(),  to: "json".into(), description: "CSV → JSON array of objects".into() },
-        FormatPair { from: "json".into(), to: "csv".into(),  description: "JSON array → CSV".into() },
-        FormatPair { from: "yaml".into(), to: "toml".into(), description: "YAML → TOML".into() },
-        FormatPair { from: "toml".into(), to: "yaml".into(), description: "TOML → YAML".into() },
-        FormatPair { from: "yaml".into(), to: "json".into(), description: "YAML → JSON".into() },
-        FormatPair { from: "json".into(), to: "yaml".into(), description: "JSON → YAML".into() },
-        FormatPair { from: "toml".into(), to: "json".into(), description: "TOML → JSON".into() },
-        FormatPair { from: "json".into(), to: "toml".into(), description: "JSON → TOML".into() },
-        FormatPair { from: "png".into(),  to: "webp".into(), description: "PNG → WebP image".into() },
-        FormatPair { from: "webp".into(), to: "png".into(),  description: "WebP → PNG image".into() },
-        FormatPair { from: "jpg".into(),  to: "png".into(),  description: "JPEG → PNG image".into() },
-        FormatPair { from: "jpg".into(),  to: "webp".into(), description: "JPEG → WebP image".into() },
-        FormatPair { from: "jpeg".into(), to: "png".into(),  description: "JPEG → PNG image".into() },
-        FormatPair { from: "jpeg".into(), to: "webp".into(), description: "JPEG → WebP image".into() },
-        FormatPair { from: "md".into(),   to: "html".into(), description: "Markdown → HTML".into() },
+        FormatPair {
+            from: "pdf".into(),
+            to: "txt".into(),
+            description: "Extract text from PDF".into(),
+        },
+        FormatPair {
+            from: "csv".into(),
+            to: "json".into(),
+            description: "CSV → JSON array of objects".into(),
+        },
+        FormatPair {
+            from: "json".into(),
+            to: "csv".into(),
+            description: "JSON array → CSV".into(),
+        },
+        FormatPair {
+            from: "yaml".into(),
+            to: "toml".into(),
+            description: "YAML → TOML".into(),
+        },
+        FormatPair {
+            from: "toml".into(),
+            to: "yaml".into(),
+            description: "TOML → YAML".into(),
+        },
+        FormatPair {
+            from: "yaml".into(),
+            to: "json".into(),
+            description: "YAML → JSON".into(),
+        },
+        FormatPair {
+            from: "json".into(),
+            to: "yaml".into(),
+            description: "JSON → YAML".into(),
+        },
+        FormatPair {
+            from: "toml".into(),
+            to: "json".into(),
+            description: "TOML → JSON".into(),
+        },
+        FormatPair {
+            from: "json".into(),
+            to: "toml".into(),
+            description: "JSON → TOML".into(),
+        },
+        FormatPair {
+            from: "png".into(),
+            to: "webp".into(),
+            description: "PNG → WebP image".into(),
+        },
+        FormatPair {
+            from: "webp".into(),
+            to: "png".into(),
+            description: "WebP → PNG image".into(),
+        },
+        FormatPair {
+            from: "jpg".into(),
+            to: "png".into(),
+            description: "JPEG → PNG image".into(),
+        },
+        FormatPair {
+            from: "jpg".into(),
+            to: "webp".into(),
+            description: "JPEG → WebP image".into(),
+        },
+        FormatPair {
+            from: "jpeg".into(),
+            to: "png".into(),
+            description: "JPEG → PNG image".into(),
+        },
+        FormatPair {
+            from: "jpeg".into(),
+            to: "webp".into(),
+            description: "JPEG → WebP image".into(),
+        },
+        FormatPair {
+            from: "md".into(),
+            to: "html".into(),
+            description: "Markdown → HTML".into(),
+        },
     ]
 }
 
@@ -61,7 +125,9 @@ pub fn convert(input: &Path, output: &Path) -> Result<ConvertResult, ConvertErro
         ("json", "yaml") | ("json", "yml") => convert_json_to_yaml(input, output)?,
         ("toml", "json") => convert_toml_to_json(input, output)?,
         ("json", "toml") => convert_json_to_toml(input, output)?,
-        ("png", "webp") | ("jpg", "webp") | ("jpeg", "webp") => convert_image(input, output, "webp")?,
+        ("png", "webp") | ("jpg", "webp") | ("jpeg", "webp") => {
+            convert_image(input, output, "webp")?
+        }
         ("webp", "png") | ("jpg", "png") | ("jpeg", "png") => convert_image(input, output, "png")?,
         ("md", "html") | ("markdown", "html") => convert_md_to_html(input, output)?,
         _ => {
@@ -117,7 +183,10 @@ fn convert_csv_to_json(input: &Path, output: &Path) -> Result<u64, ConvertError>
 
     let headers: Vec<String> = reader
         .headers()
-        .map_err(|e| ConvertError::ParseError { format: "csv".into(), detail: e.to_string() })?
+        .map_err(|e| ConvertError::ParseError {
+            format: "csv".into(),
+            detail: e.to_string(),
+        })?
         .iter()
         .map(|s| s.to_owned())
         .collect();
@@ -164,10 +233,11 @@ fn convert_json_to_csv(input: &Path, output: &Path) -> Result<u64, ConvertError>
         detail: e.to_string(),
     })?;
 
-    wtr.write_record(&headers).map_err(|e| ConvertError::EncodeError {
-        format: "csv".into(),
-        detail: e.to_string(),
-    })?;
+    wtr.write_record(&headers)
+        .map_err(|e| ConvertError::EncodeError {
+            format: "csv".into(),
+            detail: e.to_string(),
+        })?;
 
     for record in &records {
         let row: Vec<String> = headers
@@ -182,10 +252,11 @@ fn convert_json_to_csv(input: &Path, output: &Path) -> Result<u64, ConvertError>
                     .unwrap_or_default()
             })
             .collect();
-        wtr.write_record(&row).map_err(|e| ConvertError::EncodeError {
-            format: "csv".into(),
-            detail: e.to_string(),
-        })?;
+        wtr.write_record(&row)
+            .map_err(|e| ConvertError::EncodeError {
+                format: "csv".into(),
+                detail: e.to_string(),
+            })?;
     }
 
     wtr.flush()?;
@@ -195,10 +266,11 @@ fn convert_json_to_csv(input: &Path, output: &Path) -> Result<u64, ConvertError>
 
 fn convert_yaml_to_toml(input: &Path, output: &Path) -> Result<u64, ConvertError> {
     let raw = fs::read_to_string(input)?;
-    let value: serde_yaml::Value = serde_yaml::from_str(&raw).map_err(|e| ConvertError::ParseError {
-        format: "yaml".into(),
-        detail: e.to_string(),
-    })?;
+    let value: serde_yaml::Value =
+        serde_yaml::from_str(&raw).map_err(|e| ConvertError::ParseError {
+            format: "yaml".into(),
+            detail: e.to_string(),
+        })?;
 
     // Convert via JSON as a bridge
     let json_val: serde_json::Value =
@@ -249,10 +321,11 @@ fn convert_toml_to_yaml(input: &Path, output: &Path) -> Result<u64, ConvertError
 
 fn convert_yaml_to_json(input: &Path, output: &Path) -> Result<u64, ConvertError> {
     let raw = fs::read_to_string(input)?;
-    let value: serde_yaml::Value = serde_yaml::from_str(&raw).map_err(|e| ConvertError::ParseError {
-        format: "yaml".into(),
-        detail: e.to_string(),
-    })?;
+    let value: serde_yaml::Value =
+        serde_yaml::from_str(&raw).map_err(|e| ConvertError::ParseError {
+            format: "yaml".into(),
+            detail: e.to_string(),
+        })?;
     let json = serde_json::to_string_pretty(&value).map_err(|e| ConvertError::EncodeError {
         format: "json".into(),
         detail: e.to_string(),
@@ -264,10 +337,11 @@ fn convert_yaml_to_json(input: &Path, output: &Path) -> Result<u64, ConvertError
 
 fn convert_json_to_yaml(input: &Path, output: &Path) -> Result<u64, ConvertError> {
     let raw = fs::read_to_string(input)?;
-    let value: serde_json::Value = serde_json::from_str(&raw).map_err(|e| ConvertError::ParseError {
-        format: "json".into(),
-        detail: e.to_string(),
-    })?;
+    let value: serde_json::Value =
+        serde_json::from_str(&raw).map_err(|e| ConvertError::ParseError {
+            format: "json".into(),
+            detail: e.to_string(),
+        })?;
     let yaml_val: serde_yaml::Value =
         serde_json::from_value(value).map_err(|e| ConvertError::EncodeError {
             format: "yaml".into(),
@@ -352,7 +426,8 @@ mod tests {
         fs::write(&input, b"name,age\nAlice,30\nBob,25").unwrap();
 
         let _result = convert(&input, &output).unwrap();
-        let json: serde_json::Value = serde_json::from_str(&fs::read_to_string(&output).unwrap()).unwrap();
+        let json: serde_json::Value =
+            serde_json::from_str(&fs::read_to_string(&output).unwrap()).unwrap();
         assert_eq!(json[0]["name"], "Alice");
         assert_eq!(json[1]["age"], "25");
     }
@@ -419,7 +494,11 @@ mod tests {
         let dir = tempdir().unwrap();
         let input = dir.path().join("data.json");
         let output = dir.path().join("data.csv");
-        fs::write(&input, br#"[{"name":"Alice","age":"30"},{"name":"Bob","age":"25"}]"#).unwrap();
+        fs::write(
+            &input,
+            br#"[{"name":"Alice","age":"30"},{"name":"Bob","age":"25"}]"#,
+        )
+        .unwrap();
 
         convert(&input, &output).unwrap();
         let content = fs::read_to_string(&output).unwrap();

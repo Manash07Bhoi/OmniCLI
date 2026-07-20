@@ -1,9 +1,9 @@
 #[cfg(test)]
-mod tests {
+mod config_tests {
+    use crate::formats::{parse_content, serialise_value};
+    use crate::{get_key, set_key, show_config, validate_config, ConfigFormat};
     use std::io::Write;
     use tempfile::NamedTempFile;
-    use crate::{get_key, set_key, show_config, validate_config, ConfigFormat};
-    use crate::formats::{parse_content, serialise_value};
 
     fn write_temp(content: &str, ext: &str) -> NamedTempFile {
         let mut f = tempfile::Builder::new()
