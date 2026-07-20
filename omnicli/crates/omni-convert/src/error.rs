@@ -5,7 +5,9 @@ pub enum ConvertError {
     #[error("I/O error: {0}")]
     Io(#[from] std::io::Error),
 
-    #[error("Unsupported conversion: {from} → {to}. Run `omni convert --list` to see supported pairs.")]
+    #[error(
+        "Unsupported conversion: {from} → {to}. Run `omni convert --list` to see supported pairs."
+    )]
     UnsupportedPair { from: String, to: String },
 
     #[error("Cannot infer format from path: {0}")]

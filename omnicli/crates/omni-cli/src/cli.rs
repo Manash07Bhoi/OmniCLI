@@ -1,5 +1,5 @@
-use std::path::PathBuf;
 use clap::{Parser, Subcommand};
+use std::path::PathBuf;
 
 /// OmniCLI — one binary, one grammar, twelve modules.
 #[derive(Debug, Parser)]
@@ -159,10 +159,7 @@ pub enum FileCmd {
         verify: bool,
     },
     /// Move a file or directory.
-    Move {
-        source: PathBuf,
-        dest: PathBuf,
-    },
+    Move { source: PathBuf, dest: PathBuf },
     /// Compare two files or directories and report differences.
     Compare {
         a: PathBuf,
@@ -306,14 +303,9 @@ pub enum ArchiveCmd {
         to: Option<PathBuf>,
     },
     /// List contents without extracting.
-    List {
-        archive: PathBuf,
-    },
+    List { archive: PathBuf },
     /// Re-package one archive format into another.
-    Convert {
-        input: PathBuf,
-        output: PathBuf,
-    },
+    Convert { input: PathBuf, output: PathBuf },
 }
 
 // ── omni convert ──────────────────────────────────────────────────────────────
@@ -321,10 +313,7 @@ pub enum ArchiveCmd {
 #[derive(Debug, Subcommand)]
 pub enum ConvertCmd {
     /// Convert a file (format inferred from extension).
-    Run {
-        input: PathBuf,
-        output: PathBuf,
-    },
+    Run { input: PathBuf, output: PathBuf },
     /// List all supported conversion pairs.
     List,
 }
@@ -343,10 +332,7 @@ pub enum ConfigCmd {
         path: PathBuf,
     },
     /// Get a specific key from a config file using dotted path (e.g. database.host).
-    Get {
-        path: PathBuf,
-        key: String,
-    },
+    Get { path: PathBuf, key: String },
     /// Set a key in a config file. Value is parsed as JSON, falling back to string.
     Set {
         path: PathBuf,
@@ -354,9 +340,7 @@ pub enum ConfigCmd {
         value: String,
     },
     /// Validate a config file's syntax.
-    Validate {
-        path: PathBuf,
-    },
+    Validate { path: PathBuf },
 }
 
 // ── omni dev ──────────────────────────────────────────────────────────────────

@@ -104,6 +104,129 @@ open http://localhost:$PORT
 
 ---
 
+
+
+
+
+## Screenshots
+
+Explore OmniCLI's capabilities through our full-stack interface.
+
+### Web Dashboard
+
+#### Light Theme Dashboard
+<p align="center">
+  <img src="docs/assets/dashboard.png" alt="OmniCLI Command Center Dashboard Light Theme" width="800" />
+  <br>
+  <em>Real-time system telemetry, file counts, storage stats, and module status in Light Mode.</em>
+</p>
+
+#### Command Center
+<p align="center">
+  <img src="docs/assets/dashboard-dark.png" alt="OmniCLI Command Center Dashboard" width="800" />
+  <br>
+  <em>Real-time system telemetry, file counts, storage stats, and module status in Dark Mode.</em>
+</p>
+
+#### Format Converter
+<p align="center">
+  <img src="docs/assets/convert-dark.png" alt="Format Converter View" width="800" />
+  <br>
+  <em>Convert files between 16 formats via an intuitive drag-and-drop interface.</em>
+</p>
+
+### Core Features
+
+#### File Operations
+<p align="center">
+  <img src="docs/assets/files-dark.png" alt="File Finder Operations" width="800" />
+  <br>
+  <em>Browse the filesystem and inspect metadata effortlessly.</em>
+</p>
+
+#### Search & Find
+<p align="center">
+  <img src="docs/assets/search-dark.png" alt="Global Full-text Search" width="800" />
+  <br>
+  <em>Sub-second full-text queries across your indexed files using SQLite FTS5.</em>
+</p>
+
+#### Duplicate Finder
+<p align="center">
+  <img src="docs/assets/duplicate-dark.png" alt="Duplicate Finder Operations" width="800" />
+  <br>
+  <em>Find and manage duplicate files quickly within the File Operations suite.</em>
+</p>
+
+#### Hash Generator
+<p align="center">
+  <img src="docs/assets/hash-dark.png" alt="Hash Generator" width="800" />
+  <br>
+  <em>Generate cryptographically secure hashes directly from the web dashboard.</em>
+</p>
+
+#### Compression & Encryption
+<p align="center">
+  <img src="docs/assets/compression-encryption-dark.png" alt="Compression and Encryption" width="800" />
+  <br>
+  <em>Manage file compression and secure them with encryption via the dashboard.</em>
+</p>
+
+#### Sync & Backup
+<p align="center">
+  <img src="docs/assets/backup-dark.png" alt="Backup Operations" width="800" />
+  <br>
+  <em>Track incremental backups using BLAKE3 deduplication.</em>
+</p>
+
+#### Dev Toolkit
+<p align="center">
+  <img src="docs/assets/dev-dark.png" alt="Developer Toolkit" width="800" />
+  <br>
+  <em>Hash, Encode, UUID generation, regex testing, and JSON formatting.</em>
+</p>
+
+### Application Management
+
+#### Settings & Workspace
+<p align="center">
+  <img src="docs/assets/settings-dark.png" alt="Application Settings" width="800" />
+  <br>
+  <em>Configure workspace features, notes, and manage application state.</em>
+</p>
+
+#### Help & About (Archive Inspector)
+<p align="center">
+  <img src="docs/assets/about-dark.png" alt="Help and About" width="800" />
+  <br>
+  <em>Explore archive details and view in-depth information about your files.</em>
+</p>
+
+### CLI Experience
+
+#### Terminal Commands
+<p align="center">
+  <img src="docs/assets/cli-examples.png" alt="OmniCLI Terminal Output Examples" width="800" />
+  <br>
+  <em>Blazing fast file finding, hashing, and archive management.</em>
+</p>
+<p align="center">
+  <img src="docs/assets/cli-examples-2.png" alt="Advanced Terminal Output Examples" width="800" />
+  <br>
+  <em>Age X25519 encryption, compression, and syncing operations.</em>
+</p>
+
+### Mobile Experience
+
+#### Responsive Command Center
+<p align="center">
+  <img src="docs/assets/dashboard-mobile.png" alt="Mobile Dashboard View" width="300" />
+  <br>
+  <em>Full-stack power accessible from your phone or Termux environment.</em>
+</p>
+
+---
+
 ## Installation
 
 ### Replit (zero setup)

@@ -83,12 +83,7 @@ pub fn copy_path(opts: &CopyOptions) -> Result<CopyResult, FileError> {
     })
 }
 
-fn copy_single_file(
-    src: &Path,
-    dest: &Path,
-    verify: bool,
-    dry_run: bool,
-) -> Result<(), FileError> {
+fn copy_single_file(src: &Path, dest: &Path, verify: bool, dry_run: bool) -> Result<(), FileError> {
     if dry_run {
         return Ok(());
     }

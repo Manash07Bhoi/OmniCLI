@@ -20,6 +20,8 @@ pub enum WorkspaceError {
 
 impl From<rusqlite::Error> for WorkspaceError {
     fn from(e: rusqlite::Error) -> Self {
-        WorkspaceError::Database { message: e.to_string() }
+        WorkspaceError::Database {
+            message: e.to_string(),
+        }
     }
 }

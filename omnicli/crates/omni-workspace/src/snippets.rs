@@ -12,7 +12,10 @@ pub struct Snippet {
     pub created_at: i64,
 }
 
-pub fn list_snippets(conn: &Connection, language: Option<&str>) -> Result<Vec<Snippet>, WorkspaceError> {
+pub fn list_snippets(
+    conn: &Connection,
+    language: Option<&str>,
+) -> Result<Vec<Snippet>, WorkspaceError> {
     let (sql, use_lang) = match language {
         Some(_) => ("SELECT id, name, language, body, created_at FROM snippets WHERE language = ?1 ORDER BY name", true),
         None    => ("SELECT id, name, language, body, created_at FROM snippets ORDER BY name", false),
@@ -23,19 +26,29 @@ pub fn list_snippets(conn: &Connection, language: Option<&str>) -> Result<Vec<Sn
     } else {
         stmt.query_map([], row_to_snippet)?
     };
-    rows.collect::<Result<Vec<_>, _>>().map_err(WorkspaceError::from)
+    rows.collect::<Result<Vec<_>, _>>()
+        .map_err(WorkspaceError::from)
 }
 
-pub fn create_snippet(conn: &Connection, name: &str, language: Option<&str>, body: &str) -> Result<Snippet, WorkspaceError> {
+pub fn create_snippet(
+    conn: &Connection,
+    name: &str,
+    language: Option<&str>,
+    body: &str,
+) -> Result<Snippet, WorkspaceError> {
     conn.execute(
         "INSERT INTO snippets (name, language, body) VALUES (?1, ?2, ?3)",
         params![name, language, body],
     )
     .map_err(|e| {
         if e.to_string().contains("UNIQUE constraint") {
-            WorkspaceError::AlreadyExists { item: format!("snippet '{name}'") }
+            WorkspaceError::AlreadyExists {
+                item: format!("snippet '{name}'"),
+            }
         } else {
-            WorkspaceError::Database { message: e.to_string() }
+            WorkspaceError::Database {
+                message: e.to_string(),
+            }
         }
     })?;
     let id = conn.last_insert_rowid();
@@ -49,15 +62,21 @@ pub fn get_snippet(conn: &Connection, id: i64) -> Result<Snippet, WorkspaceError
         row_to_snippet,
     )
     .map_err(|e| match e {
-        rusqlite::Error::QueryReturnedNoRows => WorkspaceError::NotFound { item: format!("snippet #{id}") },
-        other => WorkspaceError::Database { message: other.to_string() },
+        rusqlite::Error::QueryReturnedNoRows => WorkspaceError::NotFound {
+            item: format!("snippet #{id}"),
+        },
+        other => WorkspaceError::Database {
+            message: other.to_string(),
+        },
     })
 }
 
 pub fn delete_snippet(conn: &Connection, id: i64) -> Result<(), WorkspaceError> {
     let n = conn.execute("DELETE FROM snippets WHERE id = ?1", params![id])?;
     if n == 0 {
-        Err(WorkspaceError::NotFound { item: format!("snippet #{id}") })
+        Err(WorkspaceError::NotFound {
+            item: format!("snippet #{id}"),
+        })
     } else {
         Ok(())
     }
@@ -65,10 +84,10 @@ pub fn delete_snippet(conn: &Connection, id: i64) -> Result<(), WorkspaceError> 
 
 fn row_to_snippet(row: &rusqlite::Row<'_>) -> rusqlite::Result<Snippet> {
     Ok(Snippet {
-        id:         row.get(0)?,
-        name:       row.get(1)?,
-        language:   row.get(2)?,
-        body:       row.get(3)?,
+        id: row.get(0)?,
+        name: row.get(1)?,
+        language: row.get(2)?,
+        body: row.get(3)?,
         created_at: row.get(4)?,
     })
 }

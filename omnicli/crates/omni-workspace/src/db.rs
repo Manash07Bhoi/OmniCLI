@@ -20,13 +20,16 @@ pub fn open_workspace_db(db_path: &Path) -> Result<Connection, WorkspaceError> {
         std::fs::create_dir_all(parent)?;
     }
     let conn = Connection::open(db_path)?;
-    conn.execute_batch("PRAGMA journal_mode=WAL; PRAGMA synchronous=NORMAL; PRAGMA foreign_keys=ON;")?;
+    conn.execute_batch(
+        "PRAGMA journal_mode=WAL; PRAGMA synchronous=NORMAL; PRAGMA foreign_keys=ON;",
+    )?;
     create_schema(&conn)?;
     Ok(conn)
 }
 
 fn create_schema(conn: &Connection) -> Result<(), WorkspaceError> {
-    conn.execute_batch(r#"
+    conn.execute_batch(
+        r#"
         CREATE TABLE IF NOT EXISTS notes (
             id        INTEGER PRIMARY KEY AUTOINCREMENT,
             title     TEXT    NOT NULL,
@@ -51,6 +54,7 @@ fn create_schema(conn: &Connection) -> Result<(), WorkspaceError> {
             body       TEXT    NOT NULL,
             created_at INTEGER NOT NULL DEFAULT (strftime('%s','now'))
         );
-    "#)?;
+    "#,
+    )?;
     Ok(())
 }

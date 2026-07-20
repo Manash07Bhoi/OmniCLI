@@ -1,8 +1,4 @@
-use std::{
-    collections::HashMap,
-    fs,
-    path::PathBuf,
-};
+use std::{collections::HashMap, fs, path::PathBuf};
 
 use anyhow::Result;
 use omni_core::hash::{hash_file, HashAlgo};

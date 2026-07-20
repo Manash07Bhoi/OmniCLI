@@ -1,4 +1,7 @@
-use std::{fs, time::{Duration, SystemTime}};
+use std::{
+    fs,
+    time::{Duration, SystemTime},
+};
 
 use anyhow::Result;
 use serde::Serialize;

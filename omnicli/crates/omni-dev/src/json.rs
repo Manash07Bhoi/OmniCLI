@@ -11,7 +11,11 @@ pub struct JsonResult {
     pub error: Option<String>,
 }
 
-pub fn process_json(input: &str, action: &str, query: Option<&str>) -> Result<JsonResult, DevError> {
+pub fn process_json(
+    input: &str,
+    action: &str,
+    query: Option<&str>,
+) -> Result<JsonResult, DevError> {
     let parsed: serde_json::Result<Value> = serde_json::from_str(input);
 
     match action {
@@ -32,7 +36,11 @@ pub fn process_json(input: &str, action: &str, query: Option<&str>) -> Result<Js
             let output = serde_json::to_string_pretty(&v).map_err(|e| DevError::Parse {
                 message: e.to_string(),
             })?;
-            Ok(JsonResult { valid: true, output, error: None })
+            Ok(JsonResult {
+                valid: true,
+                output,
+                error: None,
+            })
         }
         "minify" => {
             let v = parsed.map_err(|e| DevError::Parse {
@@ -42,7 +50,11 @@ pub fn process_json(input: &str, action: &str, query: Option<&str>) -> Result<Js
             let output = serde_json::to_string(&v).map_err(|e| DevError::Parse {
                 message: e.to_string(),
             })?;
-            Ok(JsonResult { valid: true, output, error: None })
+            Ok(JsonResult {
+                valid: true,
+                output,
+                error: None,
+            })
         }
         other => Err(DevError::InvalidInput {
             message: format!("Unknown action: {other}. Use: pretty, minify, validate"),

@@ -24,10 +24,15 @@ pub fn list_todos(conn: &Connection, done: Option<bool>) -> Result<Vec<Todo>, Wo
     } else {
         stmt.query_map([], row_to_todo)?
     };
-    rows.collect::<Result<Vec<_>, _>>().map_err(WorkspaceError::from)
+    rows.collect::<Result<Vec<_>, _>>()
+        .map_err(WorkspaceError::from)
 }
 
-pub fn create_todo(conn: &Connection, description: &str, due_at: Option<i64>) -> Result<Todo, WorkspaceError> {
+pub fn create_todo(
+    conn: &Connection,
+    description: &str,
+    due_at: Option<i64>,
+) -> Result<Todo, WorkspaceError> {
     conn.execute(
         "INSERT INTO todos (description, due_at) VALUES (?1, ?2)",
         params![description, due_at],
@@ -43,8 +48,12 @@ pub fn get_todo(conn: &Connection, id: i64) -> Result<Todo, WorkspaceError> {
         row_to_todo,
     )
     .map_err(|e| match e {
-        rusqlite::Error::QueryReturnedNoRows => WorkspaceError::NotFound { item: format!("todo #{id}") },
-        other => WorkspaceError::Database { message: other.to_string() },
+        rusqlite::Error::QueryReturnedNoRows => WorkspaceError::NotFound {
+            item: format!("todo #{id}"),
+        },
+        other => WorkspaceError::Database {
+            message: other.to_string(),
+        },
     })
 }
 
@@ -54,7 +63,9 @@ pub fn toggle_todo(conn: &Connection, id: i64) -> Result<Todo, WorkspaceError> {
         params![id],
     )?;
     if affected == 0 {
-        return Err(WorkspaceError::NotFound { item: format!("todo #{id}") });
+        return Err(WorkspaceError::NotFound {
+            item: format!("todo #{id}"),
+        });
     }
     get_todo(conn, id)
 }
@@ -62,7 +73,9 @@ pub fn toggle_todo(conn: &Connection, id: i64) -> Result<Todo, WorkspaceError> {
 pub fn delete_todo(conn: &Connection, id: i64) -> Result<(), WorkspaceError> {
     let n = conn.execute("DELETE FROM todos WHERE id = ?1", params![id])?;
     if n == 0 {
-        Err(WorkspaceError::NotFound { item: format!("todo #{id}") })
+        Err(WorkspaceError::NotFound {
+            item: format!("todo #{id}"),
+        })
     } else {
         Ok(())
     }
@@ -70,10 +83,10 @@ pub fn delete_todo(conn: &Connection, id: i64) -> Result<(), WorkspaceError> {
 
 fn row_to_todo(row: &rusqlite::Row<'_>) -> rusqlite::Result<Todo> {
     Ok(Todo {
-        id:          row.get(0)?,
+        id: row.get(0)?,
         description: row.get(1)?,
-        done:        row.get::<_, i32>(2)? != 0,
-        due_at:      row.get(3)?,
-        created_at:  row.get(4)?,
+        done: row.get::<_, i32>(2)? != 0,
+        due_at: row.get(3)?,
+        created_at: row.get(4)?,
     })
 }

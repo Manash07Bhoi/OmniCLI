@@ -1,9 +1,9 @@
 #[cfg(test)]
-mod tests {
+mod config_tests {
+    use crate::formats::{parse_content, serialise_value};
+    use crate::{get_key, set_key, show_config, validate_config, ConfigFormat};
     use std::io::Write;
     use tempfile::NamedTempFile;
-    use crate::{get_key, set_key, show_config, validate_config, ConfigFormat};
-    use crate::formats::{parse_content, serialise_value};
 
     fn write_temp(content: &str, ext: &str) -> NamedTempFile {
         let mut f = tempfile::Builder::new()
@@ -149,16 +149,16 @@ mod tests {
 
     #[test]
     fn parse_json_content() {
-        let v = parse_content(r#"{"x": 1}"#, &ConfigFormat::Json).unwrap();
+        let v = parse_content(r#"{"x": 1}"#, ConfigFormat::Json, "dummy.json").unwrap();
         assert_eq!(v["x"], 1);
     }
 
     #[test]
     fn roundtrip_json() {
         let input = r#"{"key":"value"}"#;
-        let parsed = parse_content(input, &ConfigFormat::Json).unwrap();
-        let out = serialise_value(&parsed, &ConfigFormat::Json).unwrap();
-        let reparsed = parse_content(&out, &ConfigFormat::Json).unwrap();
+        let parsed = parse_content(input, ConfigFormat::Json, "dummy.json").unwrap();
+        let out = serialise_value(&parsed, ConfigFormat::Json).unwrap();
+        let reparsed = parse_content(&out, ConfigFormat::Json, "dummy.json").unwrap();
         assert_eq!(parsed, reparsed);
     }
 }

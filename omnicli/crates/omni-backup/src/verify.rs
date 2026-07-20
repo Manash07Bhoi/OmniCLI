@@ -92,7 +92,9 @@ fn hash_file_blake3(path: &Path) -> Result<String, BackupError> {
     let mut buf = vec![0u8; 65_536];
     loop {
         let n = file.read(&mut buf)?;
-        if n == 0 { break; }
+        if n == 0 {
+            break;
+        }
         hasher.update(&buf[..n]);
     }
     Ok(hasher.finalize().to_hex().to_string())

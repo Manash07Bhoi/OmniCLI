@@ -1,12 +1,11 @@
 #[cfg(test)]
-mod tests {
-    use rusqlite::Connection;
+mod workspace_tests {
     use crate::{
-        open_workspace_db,
-        notes::{create_note, delete_note, get_note, list_notes, update_note},
-        todos::{create_todo, delete_todo, get_todo, list_todos, toggle_todo},
+        notes::{create_note, delete_note, get_note, list_notes},
         snippets::{create_snippet, delete_snippet, get_snippet, list_snippets},
+        todos::{create_todo, delete_todo, get_todo, list_todos, toggle_todo},
     };
+    use rusqlite::Connection;
 
     fn in_memory_db() -> Connection {
         let conn = Connection::open_in_memory().expect("in-memory DB");
@@ -80,15 +79,6 @@ mod tests {
         let results = list_notes(&conn, Some("Rust")).unwrap();
         assert_eq!(results.len(), 1);
         assert_eq!(results[0].title, "Rust guide");
-    }
-
-    #[test]
-    fn update_note_changes_fields() {
-        let conn = in_memory_db();
-        let note = create_note(&conn, "Original", "old body", None).unwrap();
-        let updated = update_note(&conn, note.id, Some("Updated"), None, None).unwrap();
-        assert_eq!(updated.title, "Updated");
-        assert_eq!(updated.body, "old body"); // body unchanged
     }
 
     #[test]

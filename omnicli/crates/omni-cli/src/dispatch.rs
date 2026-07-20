@@ -2,8 +2,8 @@ use anyhow::Result;
 use omni_core::{config::OmniConfig, output::OutputConfig};
 
 use crate::cli::{
-    ArchiveCmd, BackupCmd, Commands, ConfigCmd, ConvertCmd, DevCmd, FileCmd, NoteCmd,
-    SearchCmd, SnippetCmd, TodoCmd, WorkspaceCmd,
+    ArchiveCmd, BackupCmd, Commands, ConfigCmd, ConvertCmd, DevCmd, FileCmd, NoteCmd, SearchCmd,
+    SnippetCmd, TodoCmd, WorkspaceCmd,
 };
 
 // Completions are handled in main.rs before dispatch is called.
@@ -11,14 +11,14 @@ use crate::cli::{
 /// Route a parsed command to the appropriate module handler.
 pub fn dispatch(cmd: Commands, out: &OutputConfig, cfg: &OmniConfig) -> Result<()> {
     match cmd {
-        Commands::File        { cmd } => dispatch_file(cmd, out, cfg),
-        Commands::Search      { cmd } => dispatch_search(cmd, out),
-        Commands::Archive     { cmd } => dispatch_archive(cmd, out),
-        Commands::Convert     { cmd } => dispatch_convert(cmd, out),
-        Commands::Config      { cmd } => dispatch_config(cmd, out, cfg),
-        Commands::Dev         { cmd } => dispatch_dev(cmd, out),
-        Commands::Backup      { cmd } => dispatch_backup(cmd, out),
-        Commands::Workspace   { cmd } => dispatch_workspace(cmd, out),
+        Commands::File { cmd } => dispatch_file(cmd, out, cfg),
+        Commands::Search { cmd } => dispatch_search(cmd, out),
+        Commands::Archive { cmd } => dispatch_archive(cmd, out),
+        Commands::Convert { cmd } => dispatch_convert(cmd, out),
+        Commands::Config { cmd } => dispatch_config(cmd, out, cfg),
+        Commands::Dev { cmd } => dispatch_dev(cmd, out),
+        Commands::Backup { cmd } => dispatch_backup(cmd, out),
+        Commands::Workspace { cmd } => dispatch_workspace(cmd, out),
         // Completions are handled in main.rs before this function is called.
         Commands::Completions { .. } => unreachable!("completions handled in main"),
     }
@@ -97,26 +97,51 @@ fn dispatch_file(cmd: FileCmd, out: &OutputConfig, _cfg: &OmniConfig) -> Result<
             }
         }
 
-        FileCmd::Copy { source, dest, recursive, verify } => {
-            let opts = CopyOptions { source: source.clone(), dest: dest.clone(), recursive, verify, dry_run: false };
+        FileCmd::Copy {
+            source,
+            dest,
+            recursive,
+            verify,
+        } => {
+            let opts = CopyOptions {
+                source: source.clone(),
+                dest: dest.clone(),
+                recursive,
+                verify,
+                dry_run: false,
+            };
             let result = copy_path(&opts).map_err(|e| anyhow::anyhow!("{e}"))?;
             if out.is_json() {
                 out.print_json(&result);
             } else {
-                print_success(out, &format!(
-                    "Copied {} → {} ({} bytes)",
-                    source.display(), dest.display(), result.bytes_transferred
-                ));
+                print_success(
+                    out,
+                    &format!(
+                        "Copied {} → {} ({} bytes)",
+                        source.display(),
+                        dest.display(),
+                        result.bytes_transferred
+                    ),
+                );
             }
         }
 
         FileCmd::Move { source, dest } => {
-            let opts = CopyOptions { source: source.clone(), dest: dest.clone(), recursive: false, verify: false, dry_run: false };
+            let opts = CopyOptions {
+                source: source.clone(),
+                dest: dest.clone(),
+                recursive: false,
+                verify: false,
+                dry_run: false,
+            };
             let result = move_path(&opts).map_err(|e| anyhow::anyhow!("{e}"))?;
             if out.is_json() {
                 out.print_json(&result);
             } else {
-                print_success(out, &format!("Moved {} → {}", source.display(), dest.display()));
+                print_success(
+                    out,
+                    &format!("Moved {} → {}", source.display(), dest.display()),
+                );
             }
         }
 
@@ -131,12 +156,16 @@ fn dispatch_file(cmd: FileCmd, out: &OutputConfig, _cfg: &OmniConfig) -> Result<
                 if let Some(off) = result.first_diff_offset {
                     print_info(out, &format!("First difference at byte offset: {off}"));
                 }
-                print_info(out, &format!(
-                    "Size: {} vs {}  Hash-A: {}  Hash-B: {}",
-                    result.size_a, result.size_b,
-                    result.hash_a.as_deref().unwrap_or("-"),
-                    result.hash_b.as_deref().unwrap_or("-"),
-                ));
+                print_info(
+                    out,
+                    &format!(
+                        "Size: {} vs {}  Hash-A: {}  Hash-B: {}",
+                        result.size_a,
+                        result.size_b,
+                        result.hash_a.as_deref().unwrap_or("-"),
+                        result.hash_b.as_deref().unwrap_or("-"),
+                    ),
+                );
             }
         }
 
@@ -147,8 +176,11 @@ fn dispatch_file(cmd: FileCmd, out: &OutputConfig, _cfg: &OmniConfig) -> Result<
             } else if result.groups.is_empty() {
                 print_success(out, "No duplicates found.");
             } else {
-                println!("{} duplicate group(s)  {}  wasted:", result.groups.len(),
-                    format_bytes(result.wasted_bytes));
+                println!(
+                    "{} duplicate group(s)  {}  wasted:",
+                    result.groups.len(),
+                    format_bytes(result.wasted_bytes)
+                );
                 for group in &result.groups {
                     print_muted(out, &format!("  hash: {}", &group.content_hash[..12]));
                     for p in &group.files {
@@ -158,18 +190,36 @@ fn dispatch_file(cmd: FileCmd, out: &OutputConfig, _cfg: &OmniConfig) -> Result<
             }
         }
 
-        FileCmd::Clean { path, empty_dirs, pattern: _, dry_run } => {
-            let opts = CleanOptions { path, older_than: None, empty_dirs, dry_run };
+        FileCmd::Clean {
+            path,
+            empty_dirs,
+            pattern: _,
+            dry_run,
+        } => {
+            let opts = CleanOptions {
+                path,
+                older_than: None,
+                empty_dirs,
+                dry_run,
+            };
             let result = clean_path(&opts).map_err(|e| anyhow::anyhow!("{e}"))?;
             if out.is_json() {
                 out.print_json(&result);
             } else {
-                print_success(out, &format!(
-                    "{} file(s), {} dir(s) {}. {} freed.",
-                    result.files_removed, result.dirs_removed,
-                    if dry_run { "would be removed" } else { "removed" },
-                    format_bytes(result.bytes_freed),
-                ));
+                print_success(
+                    out,
+                    &format!(
+                        "{} file(s), {} dir(s) {}. {} freed.",
+                        result.files_removed,
+                        result.dirs_removed,
+                        if dry_run {
+                            "would be removed"
+                        } else {
+                            "removed"
+                        },
+                        format_bytes(result.bytes_freed),
+                    ),
+                );
             }
         }
 
@@ -181,12 +231,22 @@ fn dispatch_file(cmd: FileCmd, out: &OutputConfig, _cfg: &OmniConfig) -> Result<
                 out.print_json(&result);
             } else {
                 println!("{}  {}", result.digest, result.path);
-                print_muted(out, &format!("algo: {}  size: {}", result.algorithm,
-                    format_bytes(result.size_bytes)));
+                print_muted(
+                    out,
+                    &format!(
+                        "algo: {}  size: {}",
+                        result.algorithm,
+                        format_bytes(result.size_bytes)
+                    ),
+                );
             }
         }
 
-        FileCmd::Encrypt { path, recipient, output } => {
+        FileCmd::Encrypt {
+            path,
+            recipient,
+            output,
+        } => {
             use omni_file::encrypt::encrypt_file;
             let out_path_buf = output.unwrap_or_else(|| {
                 let mut s = path.display().to_string();
@@ -202,15 +262,20 @@ fn dispatch_file(cmd: FileCmd, out: &OutputConfig, _cfg: &OmniConfig) -> Result<
             }
         }
 
-        FileCmd::Decrypt { path, identity, output } => {
+        FileCmd::Decrypt {
+            path,
+            identity,
+            output,
+        } => {
             use omni_file::decrypt::decrypt_file;
             let out_path_buf = output.unwrap_or_else(|| {
                 let s = path.display().to_string();
                 std::path::PathBuf::from(s.trim_end_matches(".age"))
             });
             // Read the identity key from the file
-            let identity_str = std::fs::read_to_string(&identity)
-                .map_err(|e| anyhow::anyhow!("Cannot read identity file {}: {e}", identity.display()))?;
+            let identity_str = std::fs::read_to_string(&identity).map_err(|e| {
+                anyhow::anyhow!("Cannot read identity file {}: {e}", identity.display())
+            })?;
             let result = decrypt_file(&path, Some(out_path_buf.as_path()), identity_str.trim())
                 .map_err(|e| anyhow::anyhow!("{e}"))?;
             if out.is_json() {
@@ -220,7 +285,11 @@ fn dispatch_file(cmd: FileCmd, out: &OutputConfig, _cfg: &OmniConfig) -> Result<
             }
         }
 
-        FileCmd::Sync { source, dest, delete } => {
+        FileCmd::Sync {
+            source,
+            dest,
+            delete,
+        } => {
             let opts = SyncOptions {
                 source: source.clone(),
                 dest: dest.clone(),
@@ -231,11 +300,16 @@ fn dispatch_file(cmd: FileCmd, out: &OutputConfig, _cfg: &OmniConfig) -> Result<
             if out.is_json() {
                 out.print_json(&result);
             } else {
-                print_success(out, &format!(
-                    "Sync complete: {} added, {} updated, {} deleted — {} transferred",
-                    result.files_added, result.files_updated, result.files_deleted,
-                    format_bytes(result.bytes_transferred),
-                ));
+                print_success(
+                    out,
+                    &format!(
+                        "Sync complete: {} added, {} updated, {} deleted — {} transferred",
+                        result.files_added,
+                        result.files_updated,
+                        result.files_deleted,
+                        format_bytes(result.bytes_transferred),
+                    ),
+                );
             }
         }
 
@@ -243,10 +317,13 @@ fn dispatch_file(cmd: FileCmd, out: &OutputConfig, _cfg: &OmniConfig) -> Result<
             let meta = std::fs::metadata(&path)
                 .map_err(|e| anyhow::anyhow!("Cannot stat {}: {e}", path.display()))?;
             let size = meta.len();
-            let mtime = meta.modified().ok()
+            let mtime = meta
+                .modified()
+                .ok()
                 .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
                 .map(|d| {
-                    let dt = chrono::DateTime::from_timestamp(d.as_secs() as i64, 0).unwrap_or_default();
+                    let dt =
+                        chrono::DateTime::from_timestamp(d.as_secs() as i64, 0).unwrap_or_default();
                     dt.format("%Y-%m-%dT%H:%M:%SZ").to_string()
                 })
                 .unwrap_or_default();
@@ -294,7 +371,12 @@ fn dispatch_search(cmd: SearchCmd, out: &OutputConfig) -> Result<()> {
     let db_path = data_dir().join("search.db");
 
     match cmd {
-        SearchCmd::Query { query, limit, r#in, regex } => {
+        SearchCmd::Query {
+            query,
+            limit,
+            r#in,
+            regex,
+        } => {
             let conn = open_index_db(&db_path).map_err(|e| anyhow::anyhow!("{e}"))?;
             let content_filter = r#in
                 .as_deref()
@@ -321,7 +403,10 @@ fn dispatch_search(cmd: SearchCmd, out: &OutputConfig) -> Result<()> {
                 for r in &results {
                     println!("  \x1b[96m{}\x1b[0m", r.path);
                     if let Some(s) = &r.snippet {
-                        println!("    \x1b[90m{}\x1b[0m", s.chars().take(120).collect::<String>());
+                        println!(
+                            "    \x1b[90m{}\x1b[0m",
+                            s.chars().take(120).collect::<String>()
+                        );
                     }
                 }
             }
@@ -374,12 +459,16 @@ fn dispatch_archive(cmd: ArchiveCmd, out: &OutputConfig) -> Result<()> {
             if out.is_json() {
                 out.print_json(&result);
             } else {
-                println!("Created {} ({} files)", output.display(), result.files_added);
+                println!(
+                    "Created {} ({} files)",
+                    output.display(),
+                    result.files_added
+                );
             }
         }
         ArchiveCmd::Extract { archive, to } => {
-            let result = extract_archive(&archive, to.as_deref())
-                .map_err(|e| anyhow::anyhow!("{e}"))?;
+            let result =
+                extract_archive(&archive, to.as_deref()).map_err(|e| anyhow::anyhow!("{e}"))?;
             if out.is_json() {
                 out.print_json(&result);
             } else {
@@ -404,8 +493,8 @@ fn dispatch_archive(cmd: ArchiveCmd, out: &OutputConfig) -> Result<()> {
         ArchiveCmd::Convert { input, output } => {
             // Re-archive: extract to temp dir, then pack into new format
             let tmp = tempfile::tempdir()?;
-            let _ex = extract_archive(&input, Some(tmp.path()))
-                .map_err(|e| anyhow::anyhow!("{e}"))?;
+            let _ex =
+                extract_archive(&input, Some(tmp.path())).map_err(|e| anyhow::anyhow!("{e}"))?;
             let result = create_archive(&output, &[tmp.path().to_path_buf()])
                 .map_err(|e| anyhow::anyhow!("{e}"))?;
             if out.is_json() {
@@ -415,7 +504,12 @@ fn dispatch_archive(cmd: ArchiveCmd, out: &OutputConfig) -> Result<()> {
                     "files": result.files_added
                 }));
             } else {
-                println!("{} → {} ({} files)", input.display(), output.display(), result.files_added);
+                println!(
+                    "{} → {} ({} files)",
+                    input.display(),
+                    output.display(),
+                    result.files_added
+                );
             }
         }
     }
@@ -464,8 +558,7 @@ fn dispatch_config(cmd: ConfigCmd, out: &OutputConfig, cfg: &OmniConfig) -> Resu
             if out.is_json() {
                 out.print_json(cfg);
             } else {
-                let rendered = toml::to_string_pretty(cfg)
-                    .unwrap_or_else(|_| format!("{cfg:?}"));
+                let rendered = toml::to_string_pretty(cfg).unwrap_or_else(|_| format!("{cfg:?}"));
                 println!("{rendered}");
             }
         }
@@ -513,7 +606,10 @@ fn dispatch_config(cmd: ConfigCmd, out: &OutputConfig, cfg: &OmniConfig) -> Resu
             } else if result.valid {
                 println!("{} is valid {} ✓", path.display(), result.format);
             } else {
-                print_error(out, &format!("{}: {}", path.display(), result.error.unwrap_or_default()));
+                print_error(
+                    out,
+                    &format!("{}: {}", path.display(), result.error.unwrap_or_default()),
+                );
             }
         }
     }
@@ -540,17 +636,24 @@ fn dispatch_dev(cmd: DevCmd, out: &OutputConfig) -> Result<()> {
     match cmd {
         DevCmd::Hash { input, algo } => {
             let text = stdin_or(input)?;
-            let result = omni_dev::compute_hash(&text, &algo)
-                .map_err(|e| anyhow::anyhow!("{e}"))?;
+            let result =
+                omni_dev::compute_hash(&text, &algo).map_err(|e| anyhow::anyhow!("{e}"))?;
             if out.is_json() {
                 out.print_json(&result);
             } else {
                 println!("\x1b[96m{}\x1b[0m", result.digest);
-                print_muted(out, &format!("algo: {}  input: {} bytes", result.algo, result.input_len));
+                print_muted(
+                    out,
+                    &format!("algo: {}  input: {} bytes", result.algo, result.input_len),
+                );
             }
         }
 
-        DevCmd::Json { input, action, query } => {
+        DevCmd::Json {
+            input,
+            action,
+            query,
+        } => {
             let text = stdin_or(input)?;
             let result = omni_dev::process_json(&text, &action, query.as_deref())
                 .map_err(|e| anyhow::anyhow!("{e}"))?;
@@ -565,8 +668,8 @@ fn dispatch_dev(cmd: DevCmd, out: &OutputConfig) -> Result<()> {
 
         DevCmd::Base64 { input, decode } => {
             let text = stdin_or(input)?;
-            let result = omni_dev::process_base64(&text, decode)
-                .map_err(|e| anyhow::anyhow!("{e}"))?;
+            let result =
+                omni_dev::process_base64(&text, decode).map_err(|e| anyhow::anyhow!("{e}"))?;
             if out.is_json() {
                 out.print_json(&result);
             } else {
@@ -575,8 +678,8 @@ fn dispatch_dev(cmd: DevCmd, out: &OutputConfig) -> Result<()> {
         }
 
         DevCmd::Uuid { count, ver } => {
-            let result = omni_dev::generate_uuids(count, &ver)
-                .map_err(|e| anyhow::anyhow!("{e}"))?;
+            let result =
+                omni_dev::generate_uuids(count, &ver).map_err(|e| anyhow::anyhow!("{e}"))?;
             if out.is_json() {
                 out.print_json(&result);
             } else {
@@ -586,7 +689,11 @@ fn dispatch_dev(cmd: DevCmd, out: &OutputConfig) -> Result<()> {
             }
         }
 
-        DevCmd::Regex { pattern, text, flags } => {
+        DevCmd::Regex {
+            pattern,
+            text,
+            flags,
+        } => {
             let input = stdin_or(text)?;
             let result = omni_dev::test_regex(&pattern, &input, &flags)
                 .map_err(|e| anyhow::anyhow!("{e}"))?;
@@ -605,22 +712,31 @@ fn dispatch_dev(cmd: DevCmd, out: &OutputConfig) -> Result<()> {
         DevCmd::Jwt { token } => {
             use omni_core::output::{print_success, print_warning};
             let text = stdin_or(token)?;
-            let result = omni_dev::decode_jwt(&text)
-                .map_err(|e| anyhow::anyhow!("{e}"))?;
+            let result = omni_dev::decode_jwt(&text).map_err(|e| anyhow::anyhow!("{e}"))?;
             if out.is_json() {
                 out.print_json(&result);
             } else {
                 println!("\x1b[90m── Header ─────────────────────────────────────\x1b[0m");
-                println!("{}", serde_json::to_string_pretty(&result.header).unwrap_or_default());
+                println!(
+                    "{}",
+                    serde_json::to_string_pretty(&result.header).unwrap_or_default()
+                );
                 println!("\x1b[90m── Payload ────────────────────────────────────\x1b[0m");
-                println!("{}", serde_json::to_string_pretty(&result.payload).unwrap_or_default());
+                println!(
+                    "{}",
+                    serde_json::to_string_pretty(&result.payload).unwrap_or_default()
+                );
                 if let Some(exp) = result.is_expired {
                     if exp {
-                        print_warning(out, &format!("⚠  EXPIRED at {}",
-                            result.expires_at.unwrap_or_default()));
+                        print_warning(
+                            out,
+                            &format!("⚠  EXPIRED at {}", result.expires_at.unwrap_or_default()),
+                        );
                     } else {
-                        print_success(out, &format!("✓  Valid until {}",
-                            result.expires_at.unwrap_or_default()));
+                        print_success(
+                            out,
+                            &format!("✓  Valid until {}", result.expires_at.unwrap_or_default()),
+                        );
                     }
                 }
             }
@@ -633,7 +749,10 @@ fn dispatch_dev(cmd: DevCmd, out: &OutputConfig) -> Result<()> {
 
 fn dispatch_backup(cmd: BackupCmd, out: &OutputConfig) -> Result<()> {
     use omni_backup::{backup_create, backup_restore, backup_verify, list_snapshots};
-    use omni_core::{output::{print_error, print_muted, print_success}, platform::format_bytes};
+    use omni_core::{
+        output::{print_error, print_muted, print_success},
+        platform::format_bytes,
+    };
 
     match cmd {
         BackupCmd::Create { source, dest, name } => {
@@ -643,41 +762,61 @@ fn dispatch_backup(cmd: BackupCmd, out: &OutputConfig) -> Result<()> {
                 out.print_json(&result);
             } else {
                 print_success(out, &format!("Snapshot: {}", result.snapshot_id));
-                print_muted(out, &format!(
-                    "  {} total — {} new, {} unchanged — {} in {}ms",
-                    result.files_total, result.files_new, result.files_unchanged,
-                    format_bytes(result.bytes_transferred), result.duration_ms
-                ));
+                print_muted(
+                    out,
+                    &format!(
+                        "  {} total — {} new, {} unchanged — {} in {}ms",
+                        result.files_total,
+                        result.files_new,
+                        result.files_unchanged,
+                        format_bytes(result.bytes_transferred),
+                        result.duration_ms
+                    ),
+                );
             }
         }
-        BackupCmd::Restore { backup_dir, snapshot_id, to } => {
+        BackupCmd::Restore {
+            backup_dir,
+            snapshot_id,
+            to,
+        } => {
             let result = backup_restore(&backup_dir, &snapshot_id, &to)
                 .map_err(|e| anyhow::anyhow!("{e}"))?;
             if out.is_json() {
                 out.print_json(&result);
             } else {
-                print_success(out, &format!(
-                    "Restored {} file(s) ({}) to {}",
-                    result.files_restored,
-                    format_bytes(result.bytes_restored),
-                    result.target_path
-                ));
+                print_success(
+                    out,
+                    &format!(
+                        "Restored {} file(s) ({}) to {}",
+                        result.files_restored,
+                        format_bytes(result.bytes_restored),
+                        result.target_path
+                    ),
+                );
             }
         }
-        BackupCmd::Verify { backup_dir, snapshot_id } => {
-            let result = backup_verify(&backup_dir, &snapshot_id)
-                .map_err(|e| anyhow::anyhow!("{e}"))?;
+        BackupCmd::Verify {
+            backup_dir,
+            snapshot_id,
+        } => {
+            let result =
+                backup_verify(&backup_dir, &snapshot_id).map_err(|e| anyhow::anyhow!("{e}"))?;
             if out.is_json() {
                 out.print_json(&result);
             } else if result.passed {
-                print_success(out, &format!(
-                    "All {} file(s) verified — intact.", result.files_checked
-                ));
+                print_success(
+                    out,
+                    &format!("All {} file(s) verified — intact.", result.files_checked),
+                );
             } else {
-                print_error(out, &format!(
-                    "FAILED: {} missing, {} corrupt / {} total.",
-                    result.files_missing, result.files_corrupt, result.files_checked
-                ));
+                print_error(
+                    out,
+                    &format!(
+                        "FAILED: {} missing, {} corrupt / {} total.",
+                        result.files_missing, result.files_corrupt, result.files_checked
+                    ),
+                );
                 for e in result.entries.iter().filter(|e| e.status != "ok") {
                     eprintln!("  [{:>7}] {}", e.status.to_uppercase(), e.rel_path);
                 }
@@ -713,13 +852,19 @@ fn dispatch_workspace(cmd: WorkspaceCmd, out: &OutputConfig) -> Result<()> {
     let conn = open_workspace_db(&db_path).map_err(|e| anyhow::anyhow!("{e}"))?;
 
     match cmd {
-        WorkspaceCmd::Note { cmd }    => dispatch_note(cmd, &conn, out)?,
-        WorkspaceCmd::Todo { cmd }    => dispatch_todo(cmd, &conn, out)?,
+        WorkspaceCmd::Note { cmd } => dispatch_note(cmd, &conn, out)?,
+        WorkspaceCmd::Todo { cmd } => dispatch_todo(cmd, &conn, out)?,
         WorkspaceCmd::Snippet { cmd } => dispatch_snippet(cmd, &conn, out)?,
         WorkspaceCmd::Stats => {
-            let notes: i64    = conn.query_row("SELECT COUNT(*) FROM notes",    [], |r| r.get(0)).unwrap_or(0);
-            let todos: i64    = conn.query_row("SELECT COUNT(*) FROM todos",    [], |r| r.get(0)).unwrap_or(0);
-            let snippets: i64 = conn.query_row("SELECT COUNT(*) FROM snippets", [], |r| r.get(0)).unwrap_or(0);
+            let notes: i64 = conn
+                .query_row("SELECT COUNT(*) FROM notes", [], |r| r.get(0))
+                .unwrap_or(0);
+            let todos: i64 = conn
+                .query_row("SELECT COUNT(*) FROM todos", [], |r| r.get(0))
+                .unwrap_or(0);
+            let snippets: i64 = conn
+                .query_row("SELECT COUNT(*) FROM snippets", [], |r| r.get(0))
+                .unwrap_or(0);
             let stats = serde_json::json!({ "notes": notes, "todos": todos, "snippets": snippets });
             if out.is_json() {
                 out.print_json(&stats);
@@ -754,21 +899,29 @@ fn dispatch_note(cmd: NoteCmd, conn: &rusqlite::Connection, out: &OutputConfig) 
         NoteCmd::New { title, body, tags } => {
             let n = create_note(conn, &title, body.as_deref().unwrap_or(""), tags.as_deref())
                 .map_err(|e| anyhow::anyhow!("{e}"))?;
-            if out.is_json() { out.print_json(&n); } else {
+            if out.is_json() {
+                out.print_json(&n);
+            } else {
                 print_success(out, &format!("Note #{} created: {}", n.id, n.title));
             }
         }
         NoteCmd::Show { id } => {
             let n = get_note(conn, id).map_err(|e| anyhow::anyhow!("{e}"))?;
-            if out.is_json() { out.print_json(&n); } else {
+            if out.is_json() {
+                out.print_json(&n);
+            } else {
                 println!("\x1b[1m{}\x1b[0m", n.title);
-                if let Some(t) = &n.tags { println!("\x1b[90mtags: {t}\x1b[0m"); }
+                if let Some(t) = &n.tags {
+                    println!("\x1b[90mtags: {t}\x1b[0m");
+                }
                 println!("{}", n.body);
             }
         }
         NoteCmd::Delete { id } => {
             delete_note(conn, id).map_err(|e| anyhow::anyhow!("{e}"))?;
-            if out.is_json() { out.print_json(&serde_json::json!({ "deleted": id })); } else {
+            if out.is_json() {
+                out.print_json(&serde_json::json!({ "deleted": id }));
+            } else {
                 print_success(out, &format!("Note #{id} deleted."));
             }
         }
@@ -783,31 +936,43 @@ fn dispatch_todo(cmd: TodoCmd, conn: &rusqlite::Connection, out: &OutputConfig) 
     match cmd {
         TodoCmd::List { done } => {
             let todos = list_todos(conn, done).map_err(|e| anyhow::anyhow!("{e}"))?;
-            if out.is_json() { out.print_json(&todos); } else if todos.is_empty() {
+            if out.is_json() {
+                out.print_json(&todos);
+            } else if todos.is_empty() {
                 print_muted(out, "No todos.");
             } else {
                 for t in &todos {
-                    let mark = if t.done { "\x1b[32m✓\x1b[0m" } else { "\x1b[90m○\x1b[0m" };
+                    let mark = if t.done {
+                        "\x1b[32m✓\x1b[0m"
+                    } else {
+                        "\x1b[90m○\x1b[0m"
+                    };
                     println!("  {mark} \x1b[96m#{:<4}\x1b[0m  {}", t.id, t.description);
                 }
             }
         }
         TodoCmd::Add { description, due } => {
             let t = create_todo(conn, &description, due).map_err(|e| anyhow::anyhow!("{e}"))?;
-            if out.is_json() { out.print_json(&t); } else {
+            if out.is_json() {
+                out.print_json(&t);
+            } else {
                 print_success(out, &format!("Todo #{} added.", t.id));
             }
         }
         TodoCmd::Toggle { id } => {
             let t = toggle_todo(conn, id).map_err(|e| anyhow::anyhow!("{e}"))?;
-            if out.is_json() { out.print_json(&t); } else {
+            if out.is_json() {
+                out.print_json(&t);
+            } else {
                 let state = if t.done { "done" } else { "pending" };
                 print_success(out, &format!("Todo #{id} marked {state}."));
             }
         }
         TodoCmd::Delete { id } => {
             delete_todo(conn, id).map_err(|e| anyhow::anyhow!("{e}"))?;
-            if out.is_json() { out.print_json(&serde_json::json!({ "deleted": id })); } else {
+            if out.is_json() {
+                out.print_json(&serde_json::json!({ "deleted": id }));
+            } else {
                 print_success(out, &format!("Todo #{id} deleted."));
             }
         }
@@ -815,40 +980,58 @@ fn dispatch_todo(cmd: TodoCmd, conn: &rusqlite::Connection, out: &OutputConfig) 
     Ok(())
 }
 
-fn dispatch_snippet(cmd: SnippetCmd, conn: &rusqlite::Connection, out: &OutputConfig) -> Result<()> {
+fn dispatch_snippet(
+    cmd: SnippetCmd,
+    conn: &rusqlite::Connection,
+    out: &OutputConfig,
+) -> Result<()> {
     use omni_core::output::{print_muted, print_success};
     use omni_workspace::{create_snippet, delete_snippet, get_snippet, list_snippets};
 
     match cmd {
         SnippetCmd::List { lang } => {
             let snips = list_snippets(conn, lang.as_deref()).map_err(|e| anyhow::anyhow!("{e}"))?;
-            if out.is_json() { out.print_json(&snips); } else if snips.is_empty() {
+            if out.is_json() {
+                out.print_json(&snips);
+            } else if snips.is_empty() {
                 print_muted(out, "No snippets.");
             } else {
                 for s in &snips {
                     let lang = s.language.as_deref().unwrap_or("-");
-                    println!("  \x1b[96m#{:<4}\x1b[0m  \x1b[93m{:<8}\x1b[0m  {}", s.id, lang, s.name);
+                    println!(
+                        "  \x1b[96m#{:<4}\x1b[0m  \x1b[93m{:<8}\x1b[0m  {}",
+                        s.id, lang, s.name
+                    );
                 }
             }
         }
         SnippetCmd::Save { name, lang, body } => {
             let s = create_snippet(conn, &name, lang.as_deref(), &body)
                 .map_err(|e| anyhow::anyhow!("{e}"))?;
-            if out.is_json() { out.print_json(&s); } else {
+            if out.is_json() {
+                out.print_json(&s);
+            } else {
                 print_success(out, &format!("Snippet #{} saved: {}", s.id, s.name));
             }
         }
         SnippetCmd::Show { id } => {
             let s = get_snippet(conn, id).map_err(|e| anyhow::anyhow!("{e}"))?;
-            if out.is_json() { out.print_json(&s); } else {
-                println!("\x1b[1m{}\x1b[0m  \x1b[90m{}\x1b[0m",
-                    s.name, s.language.as_deref().unwrap_or(""));
+            if out.is_json() {
+                out.print_json(&s);
+            } else {
+                println!(
+                    "\x1b[1m{}\x1b[0m  \x1b[90m{}\x1b[0m",
+                    s.name,
+                    s.language.as_deref().unwrap_or("")
+                );
                 println!("{}", s.body);
             }
         }
         SnippetCmd::Delete { id } => {
             delete_snippet(conn, id).map_err(|e| anyhow::anyhow!("{e}"))?;
-            if out.is_json() { out.print_json(&serde_json::json!({ "deleted": id })); } else {
+            if out.is_json() {
+                out.print_json(&serde_json::json!({ "deleted": id }));
+            } else {
                 print_success(out, &format!("Snippet #{id} deleted."));
             }
         }

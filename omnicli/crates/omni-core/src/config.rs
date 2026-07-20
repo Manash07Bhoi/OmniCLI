@@ -162,22 +162,54 @@ impl Default for ColorsConfig {
 }
 
 // ── Default helpers ───────────────────────────────────────────────────────────
-fn default_color() -> String { "auto".into() }
-fn default_output() -> String { "pretty".into() }
-fn default_editor() -> String { "$EDITOR".into() }
-fn default_hash() -> String { "blake3".into() }
-fn default_true() -> bool { true }
-fn default_index_paths() -> Vec<String> { vec!["~/".into(), "~/storage/shared".into()] }
-fn default_exclude() -> Vec<String> { vec![".git".into(), "node_modules".into(), ".cache".into()] }
-fn default_backup_dest() -> String { "~/omni-backups".into() }
-fn default_workspace_db() -> String { "~/.local/share/omni/workspace.db".into() }
-fn default_sandbox() -> String { "wasm".into() }
-fn c_success() -> String { "#2ECC71".into() }
-fn c_error() -> String { "#E74C3C".into() }
-fn c_warning() -> String { "#F1C40F".into() }
-fn c_info() -> String { "#3498DB".into() }
-fn c_accent() -> String { "#9B59B6".into() }
-fn c_muted() -> String { "#7F8C8D".into() }
+fn default_color() -> String {
+    "auto".into()
+}
+fn default_output() -> String {
+    "pretty".into()
+}
+fn default_editor() -> String {
+    "$EDITOR".into()
+}
+fn default_hash() -> String {
+    "blake3".into()
+}
+fn default_true() -> bool {
+    true
+}
+fn default_index_paths() -> Vec<String> {
+    vec!["~/".into(), "~/storage/shared".into()]
+}
+fn default_exclude() -> Vec<String> {
+    vec![".git".into(), "node_modules".into(), ".cache".into()]
+}
+fn default_backup_dest() -> String {
+    "~/omni-backups".into()
+}
+fn default_workspace_db() -> String {
+    "~/.local/share/omni/workspace.db".into()
+}
+fn default_sandbox() -> String {
+    "wasm".into()
+}
+fn c_success() -> String {
+    "#2ECC71".into()
+}
+fn c_error() -> String {
+    "#E74C3C".into()
+}
+fn c_warning() -> String {
+    "#F1C40F".into()
+}
+fn c_info() -> String {
+    "#3498DB".into()
+}
+fn c_accent() -> String {
+    "#9B59B6".into()
+}
+fn c_muted() -> String {
+    "#7F8C8D".into()
+}
 
 // ── Loader ────────────────────────────────────────────────────────────────────
 

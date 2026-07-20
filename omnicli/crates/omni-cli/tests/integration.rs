@@ -24,7 +24,13 @@ fn test_hash_and_compare_pipeline() {
     assert_eq!(h1.len(), 64, "BLAKE3 digest should be 64 hex chars");
 
     // Copy, then compare — must be identical.
-    let opts = CopyOptions { source: src.clone(), dest: dst.clone(), recursive: false, verify: true, dry_run: false };
+    let opts = CopyOptions {
+        source: src.clone(),
+        dest: dst.clone(),
+        recursive: false,
+        verify: true,
+        dry_run: false,
+    };
     let result = copy_path(&opts).unwrap();
     assert_eq!(result.files_copied, 1);
 
@@ -99,7 +105,11 @@ fn test_conversion_md_to_html() {
     let dir = tempdir().unwrap();
     let md = dir.path().join("doc.md");
     let html = dir.path().join("doc.html");
-    std::fs::write(&md, b"# OmniCLI\n\nOne CLI to rule them all.\n\n- file ops\n- search\n").unwrap();
+    std::fs::write(
+        &md,
+        b"# OmniCLI\n\nOne CLI to rule them all.\n\n- file ops\n- search\n",
+    )
+    .unwrap();
 
     convert(&md, &html).unwrap();
     let content = std::fs::read_to_string(&html).unwrap();
@@ -151,7 +161,10 @@ fn test_archive_tar_gz_roundtrip() {
     let out = dir.path().join("out");
     let extracted = extract_archive(&archive, Some(&out)).unwrap();
     assert_eq!(extracted.files_extracted, 1);
-    assert_eq!(std::fs::read(out.join("notes.txt")).unwrap(), b"compressed notes here");
+    assert_eq!(
+        std::fs::read(out.join("notes.txt")).unwrap(),
+        b"compressed notes here"
+    );
 }
 
 #[test]
@@ -172,13 +185,16 @@ fn test_archive_tar_bz2_roundtrip() {
     let out = dir.path().join("bz2_extracted");
     let result = extract_archive(&archive, Some(&out)).unwrap();
     assert_eq!(result.files_extracted, 1);
-    assert_eq!(std::fs::read(out.join("data.txt")).unwrap(), b"bzip2 integration test content");
+    assert_eq!(
+        std::fs::read(out.join("data.txt")).unwrap(),
+        b"bzip2 integration test content"
+    );
 }
 
 #[test]
 fn test_archive_convert_zip_to_tar_gz() {
-    use omni_archive::{create_archive, extract_archive};
     use omni_archive::create::create_archive as ca;
+    use omni_archive::{create_archive, extract_archive};
 
     let dir = tempdir().unwrap();
     let src = dir.path().join("readme.txt");
@@ -231,17 +247,25 @@ fn test_encrypt_decrypt_roundtrip() {
 
 #[test]
 fn test_search_index_and_query() {
-    use omni_search::{open_index_db, rebuild_index, search_query, SearchOptions};
     use omni_search::search::ContentFilter;
+    use omni_search::{open_index_db, rebuild_index, search_query, SearchOptions};
 
     let dir = tempdir().unwrap();
 
     // Create corpus files
     let code_file = dir.path().join("vuln_report.rs");
-    std::fs::write(&code_file, b"// CVE-2026-9999: buffer overflow in omni_parse\nfn parse() {}").unwrap();
+    std::fs::write(
+        &code_file,
+        b"// CVE-2026-9999: buffer overflow in omni_parse\nfn parse() {}",
+    )
+    .unwrap();
 
     let notes_file = dir.path().join("notes.txt");
-    std::fs::write(&notes_file, b"See CVE-2026-9999 for the full advisory details.").unwrap();
+    std::fs::write(
+        &notes_file,
+        b"See CVE-2026-9999 for the full advisory details.",
+    )
+    .unwrap();
 
     let db_path = dir.path().join("search.db");
     let mut conn = open_index_db(&db_path).unwrap();
@@ -257,7 +281,9 @@ fn test_search_index_and_query() {
     };
     let results = search_query(&conn, &opts).unwrap();
     assert!(!results.is_empty(), "should find at least one CVE match");
-    assert!(results.iter().any(|r| r.path.contains("vuln_report") || r.path.contains("notes")));
+    assert!(results
+        .iter()
+        .any(|r| r.path.contains("vuln_report") || r.path.contains("notes")));
 }
 
 // ── Find files ────────────────────────────────────────────────────────────────
@@ -279,6 +305,7 @@ fn test_find_files_by_pattern() {
         modified_within: None,
         path: dir.path().to_owned(),
         max_depth: None,
+        follow_symlinks: false,
     };
 
     let entries = find_files(&opts).unwrap();
@@ -303,6 +330,7 @@ fn test_find_files_all_types() {
         modified_within: None,
         path: dir.path().to_owned(),
         max_depth: None,
+        follow_symlinks: false,
     };
 
     let entries = find_files(&opts).unwrap();
@@ -319,7 +347,11 @@ fn test_duplicate_detection() {
     let payload = b"identical content for duplicate test";
     std::fs::write(dir.path().join("copy1.txt"), payload).unwrap();
     std::fs::write(dir.path().join("copy2.txt"), payload).unwrap();
-    std::fs::write(dir.path().join("unique.txt"), b"something completely different").unwrap();
+    std::fs::write(
+        dir.path().join("unique.txt"),
+        b"something completely different",
+    )
+    .unwrap();
 
     let result = scan_duplicates(dir.path()).unwrap();
     assert_eq!(result.groups.len(), 1, "exactly one duplicate group");

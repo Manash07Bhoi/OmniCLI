@@ -1,9 +1,9 @@
-use std::path::Path;
-
 use serde_json::Value;
+use std::path::Path;
 
 use crate::error::ConfigError;
 
+/// Format of the configuration file.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ConfigFormat {
     Json,
@@ -20,11 +20,10 @@ impl ConfigFormat {
             .and_then(|e| e.to_str())
             .unwrap_or("")
             .to_lowercase();
-        Self::from_ext(&ext).ok_or_else(|| ConfigError::UnsupportedFormat { fmt: ext })
+        Self::parse_str(&ext).ok_or_else(|| ConfigError::UnsupportedFormat { fmt: ext })
     }
 
-    /// Parse a format from its file extension string (e.g. `"json"`, `"yaml"`).
-    pub fn from_ext(s: &str) -> Option<Self> {
+    pub fn parse_str(s: &str) -> Option<Self> {
         match s {
             "json" => Some(Self::Json),
             "yaml" | "yml" => Some(Self::Yaml),
@@ -40,8 +39,8 @@ impl ConfigFormat {
             Self::Json => "json",
             Self::Yaml => "yaml",
             Self::Toml => "toml",
-            Self::Xml  => "xml",
-            Self::Ini  => "ini",
+            Self::Xml => "xml",
+            Self::Ini => "ini",
         }
     }
 }
@@ -49,7 +48,9 @@ impl ConfigFormat {
 /// Parse a config file into a serde_json Value tree.
 pub fn read_config(path: &Path) -> Result<Value, ConfigError> {
     if !path.exists() {
-        return Err(ConfigError::NotFound { path: path.display().to_string() });
+        return Err(ConfigError::NotFound {
+            path: path.display().to_string(),
+        });
     }
     let content = std::fs::read_to_string(path)?;
     let fmt = ConfigFormat::from_path(path)?;
@@ -92,16 +93,19 @@ pub fn write_config(path: &Path, value: &Value) -> Result<(), ConfigError> {
 
 pub fn serialise_value(value: &Value, fmt: ConfigFormat) -> Result<String, ConfigError> {
     match fmt {
-        ConfigFormat::Json => serde_json::to_string_pretty(value).map_err(|e| ConfigError::Serialise {
-            message: e.to_string(),
-        }),
+        ConfigFormat::Json => {
+            serde_json::to_string_pretty(value).map_err(|e| ConfigError::Serialise {
+                message: e.to_string(),
+            })
+        }
         ConfigFormat::Yaml => serde_yaml::to_string(value).map_err(|e| ConfigError::Serialise {
             message: e.to_string(),
         }),
         ConfigFormat::Toml => {
-            let t: toml::Value = serde_json::from_value(value.clone()).map_err(|e| ConfigError::Serialise {
-                message: e.to_string(),
-            })?;
+            let t: toml::Value =
+                serde_json::from_value(value.clone()).map_err(|e| ConfigError::Serialise {
+                    message: e.to_string(),
+                })?;
             toml::to_string_pretty(&t).map_err(|e| ConfigError::Serialise {
                 message: e.to_string(),
             })
@@ -184,7 +188,7 @@ fn value_to_ini_scalar(v: &Value) -> String {
 fn parse_xml(content: &str, path: &str) -> Result<Value, ConfigError> {
     // Parse XML into a simple nested JSON object where element names are keys
     // and text content is the value.
-    use quick_xml::{events::Event, Reader};
+    use quick_xml::{escape::unescape, events::Event, Reader};
     let mut reader = Reader::from_str(content);
     reader.config_mut().trim_text(true);
 
@@ -198,20 +202,26 @@ fn parse_xml(content: &str, path: &str) -> Result<Value, ConfigError> {
                 stack.push((name, serde_json::Map::new()));
             }
             Ok(Event::Text(e)) => {
-                let text = e.unescape().map_err(|e| ConfigError::Parse {
-                    path: path.to_owned(),
-                    message: e.to_string(),
-                })?;
+                let text_str = String::from_utf8_lossy(e.as_ref());
+                let text = unescape(&text_str)
+                    .map_err(|e| ConfigError::Parse {
+                        path: path.to_owned(),
+                        message: e.to_string(),
+                    })?
+                    .into_owned();
                 if let Some((_, map)) = stack.last_mut() {
                     if !text.trim().is_empty() {
-                        map.insert("#text".to_owned(), Value::String(text.into_owned()));
+                        map.insert("#text".to_owned(), Value::String(text));
                     }
                 }
             }
             Ok(Event::End(_)) => {
                 if let Some((name, map)) = stack.pop() {
                     let val = if map.len() == 1 && map.contains_key("#text") {
-                        map.into_iter().next().map(|(_, v)| v).unwrap_or(Value::Null)
+                        map.into_iter()
+                            .next()
+                            .map(|(_, v)| v)
+                            .unwrap_or(Value::Null)
                     } else if map.is_empty() {
                         Value::Null
                     } else {

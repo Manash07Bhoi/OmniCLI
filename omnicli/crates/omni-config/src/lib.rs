@@ -5,9 +5,7 @@ pub mod formats;
 mod tests;
 
 pub use error::ConfigError;
-pub use formats::{
-    parse_content, read_config, serialise_value, write_config, ConfigFormat,
-};
+pub use formats::{parse_content, read_config, serialise_value, write_config, ConfigFormat};
 
 use serde::Serialize;
 use serde_json::Value;
@@ -36,7 +34,9 @@ pub fn get_key(path: &std::path::Path, key: &str) -> Result<Value, ConfigError> 
     for part in key.split('.') {
         value = value
             .get(part)
-            .ok_or_else(|| ConfigError::KeyNotFound { key: key.to_owned() })?
+            .ok_or_else(|| ConfigError::KeyNotFound {
+                key: key.to_owned(),
+            })?
             .clone();
     }
     Ok(value)
@@ -48,8 +48,8 @@ pub fn set_key(path: &std::path::Path, key: &str, raw_value: &str) -> Result<(),
     let parts: Vec<&str> = key.split('.').collect();
 
     // Parse raw_value as JSON, falling back to string
-    let new_val: Value = serde_json::from_str(raw_value)
-        .unwrap_or_else(|_| Value::String(raw_value.to_owned()));
+    let new_val: Value =
+        serde_json::from_str(raw_value).unwrap_or_else(|_| Value::String(raw_value.to_owned()));
 
     // Navigate to the parent and set the final key
     fn set_nested(v: &mut Value, keys: &[&str], val: Value) -> Result<(), ConfigError> {
@@ -61,7 +61,9 @@ pub fn set_key(path: &std::path::Path, key: &str, raw_value: &str) -> Result<(),
                 map.insert(keys[0].to_owned(), val);
                 return Ok(());
             }
-            return Err(ConfigError::KeyNotFound { key: keys[0].to_owned() });
+            return Err(ConfigError::KeyNotFound {
+                key: keys[0].to_owned(),
+            });
         }
         match v {
             Value::Object(map) => {
@@ -70,7 +72,9 @@ pub fn set_key(path: &std::path::Path, key: &str, raw_value: &str) -> Result<(),
                     .or_insert_with(|| Value::Object(serde_json::Map::new()));
                 set_nested(next, &keys[1..], val)
             }
-            _ => Err(ConfigError::KeyNotFound { key: keys[0].to_owned() }),
+            _ => Err(ConfigError::KeyNotFound {
+                key: keys[0].to_owned(),
+            }),
         }
     }
 

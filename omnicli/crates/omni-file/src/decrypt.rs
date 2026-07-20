@@ -71,8 +71,8 @@ pub fn decrypt_file(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use age::secrecy::ExposeSecret;
     use crate::encrypt::encrypt_file;
+    use age::secrecy::ExposeSecret;
     use tempfile::tempdir;
 
     #[test]
@@ -116,7 +116,11 @@ mod tests {
         let dir = tempdir().unwrap();
         let identity = x25519::Identity::generate();
         let priv_key = identity.to_string();
-        let result = decrypt_file(&dir.path().join("ghost.age"), None, priv_key.expose_secret());
+        let result = decrypt_file(
+            &dir.path().join("ghost.age"),
+            None,
+            priv_key.expose_secret(),
+        );
         assert!(matches!(result, Err(FileError::NotFound(_))));
     }
 }
