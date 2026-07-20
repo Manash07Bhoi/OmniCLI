@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
     use crate::{
-        base64::{process_base64, Base64Result},
+        base64::process_base64,
         compute_hash,
         generate_uuids,
         process_json,
@@ -97,7 +97,6 @@ mod tests {
     #[test]
     // ── json ──────────────────────────────────────────────────────────────────
 
-    #[test]
     fn json_format_valid() {
         let r = process_json(r#"{"a":1,"b":2}"#, "format", None).unwrap();
         // formatted output should be valid JSON
@@ -172,7 +171,6 @@ mod tests {
     #[test]
     // ── jwt ───────────────────────────────────────────────────────────────────
 
-    #[test]
     fn jwt_decodes_known_token() {
         // Unsigned test JWT: header.payload (no signature validation — decode only)
         // Header: {"alg":"HS256","typ":"JWT"}

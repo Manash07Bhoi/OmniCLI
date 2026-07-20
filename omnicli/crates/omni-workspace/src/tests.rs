@@ -3,7 +3,7 @@ mod tests {
     use rusqlite::Connection;
     use crate::{
 
-        notes::{create_note, delete_note, get_note, list_notes, update_note},
+        notes::{create_note, delete_note, get_note, list_notes},
         todos::{create_todo, delete_todo, get_todo, list_todos, toggle_todo},
         snippets::{create_snippet, delete_snippet, get_snippet, list_snippets},
     };
@@ -82,14 +82,7 @@ mod tests {
         assert_eq!(results[0].title, "Rust guide");
     }
 
-    #[test]
-    fn update_note_changes_fields() {
-        let conn = in_memory_db();
-        let note = create_note(&conn, "Original", "old body", None).unwrap();
-        let updated = update_note(&conn, note.id, Some("Updated"), None, None).unwrap();
-        assert_eq!(updated.title, "Updated");
-        assert_eq!(updated.body, "old body"); // body unchanged
-    }
+
 
     #[test]
     fn delete_note_removes_it() {

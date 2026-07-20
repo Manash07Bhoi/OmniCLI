@@ -5,7 +5,7 @@
 [advisories]
 # Emit a warning (not error) for unmaintained crates; error only on
 # crates with active security advisories.
-unmaintained = "warn"
+unmaintained = "warning"
 yanked = "deny"
 notice = "warn"
 

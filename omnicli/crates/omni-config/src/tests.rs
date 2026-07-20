@@ -149,16 +149,16 @@ mod tests {
 
     #[test]
     fn parse_json_content() {
-        let v = parse_content(r#"{"x": 1}"#, &ConfigFormat::Json).unwrap();
+        let v = parse_content(r#"{"x": 1}"#, ConfigFormat::Json, "dummy.json").unwrap();
         assert_eq!(v["x"], 1);
     }
 
     #[test]
     fn roundtrip_json() {
         let input = r#"{"key":"value"}"#;
-        let parsed = parse_content(input, &ConfigFormat::Json).unwrap();
-        let out = serialise_value(&parsed, &ConfigFormat::Json).unwrap();
-        let reparsed = parse_content(&out, &ConfigFormat::Json).unwrap();
+        let parsed = parse_content(input, ConfigFormat::Json, "dummy.json").unwrap();
+        let out = serialise_value(&parsed, ConfigFormat::Json).unwrap();
+        let reparsed = parse_content(&out, ConfigFormat::Json, "dummy.json").unwrap();
         assert_eq!(parsed, reparsed);
     }
 }
