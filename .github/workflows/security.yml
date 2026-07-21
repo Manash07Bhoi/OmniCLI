@@ -116,4 +116,4 @@ jobs:
           ./target/release/omni convert list
           ./target/release/omni config show
           ./target/release/omni dev uuid --count 3
-          ./target/release/omni dev hash --input "hello" --algo sha256
+          ./target/release/omni dev hash "hello" --algo sha256

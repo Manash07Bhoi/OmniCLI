@@ -62,7 +62,7 @@ jobs:
           ./target/release/omni convert list
           ./target/release/omni config show
           ./target/release/omni dev uuid --count 1
-          ./target/release/omni dev hash --input "pre-release-check" --algo blake3
+          ./target/release/omni dev hash "pre-release-check" --algo blake3
           echo "All smoke tests passed ✓"
 
   # ── Full TypeScript gate ──────────────────────────────────────────────────

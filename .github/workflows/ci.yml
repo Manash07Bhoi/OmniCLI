@@ -93,3 +93,7 @@ jobs:
 
       - name: Build all packages
         run: pnpm build
+        env:
+          PORT: '3000'
+          BASE_PATH: '/'
+          NODE_ENV: 'production'
