@@ -249,25 +249,53 @@ cd omnicli && cargo build --release
 ### Termux (Android)
 
 ```bash
-pkg update && pkg install rust git
+# 1. Install Rust, Git, and Node.js
+pkg update && pkg install rust git nodejs
+
+# 2. Clone and build the Rust CLI
 git clone https://github.com/Manash07Bhoi/OmniCLI
-cd OmniCLI/omnicli && cargo build --release
+cd OmniCLI
+cd omnicli && cargo build --release
 cp target/release/omni $PREFIX/bin/
 omni --version
+
+# 3. Start the Web Dashboard
+cd ..
+npm install -g pnpm
+pnpm install
+pnpm --filter @workspace/db run push
+
+# Run the dashboard and API in development mode
+# It will start the API on port 8080 and the Dashboard on port 3000
+pnpm run dev
 ```
+*Open your mobile browser and navigate to `http://localhost:3000` to view the dashboard!*
 
 ### Kali Linux / ParrotOS / Debian
 
 ```bash
-sudo apt install build-essential libssl-dev pkg-config
+# 1. Install dependencies
+sudo apt install build-essential libssl-dev pkg-config nodejs npm
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 source $HOME/.cargo/env
 
+# 2. Clone and build the Rust CLI
 git clone https://github.com/Manash07Bhoi/OmniCLI
-cd OmniCLI/omnicli && cargo build --release
+cd OmniCLI
+cd omnicli && cargo build --release
 sudo cp target/release/omni /usr/local/bin/
 omni --version
+
+# 3. Start the Web Dashboard
+cd ..
+sudo npm install -g pnpm
+pnpm install
+pnpm --filter @workspace/db run push
+
+# Run the dashboard and API in development mode
+pnpm run dev
 ```
+*Open a web browser and navigate to `http://localhost:3000` to view the dashboard!*
 
 ### Build from source
 
