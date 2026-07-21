@@ -680,7 +680,42 @@ All errors are printed to **stderr**. `--json` output always goes to **stdout**.
 
 ## Web dashboard panels
 
-The dashboard is served by `artifacts/omni-dashboard` and connects to the REST API at `artifacts/api-server`. Start both with `pnpm run dev` (Replit workflows handle this automatically).
+The dashboard is a powerful web-based UI served by `artifacts/omni-dashboard` that connects to the REST API running at `artifacts/api-server`.
+
+### How to access the dashboard
+
+On **Termux**, **Kali Linux**, or other standard environments, you can start the dashboard using the built-in development server. Make sure you have Node.js and `pnpm` installed.
+
+**Real Example (Termux):**
+```bash
+# 1. Install Node.js and pnpm if you haven't already
+pkg install nodejs
+npm install -g pnpm
+
+# 2. Go to the project root
+cd OmniCLI
+
+# 3. Install dependencies and set up the database (first run only)
+pnpm install
+pnpm --filter @workspace/db run push
+
+# 4. Start the dashboard
+pnpm run dev
+```
+*Once it's running, open your mobile browser and navigate to `http://localhost:3000`! You can manage files, run conversions, and use the dev toolkit right from your phone.*
+
+**Real Example (Kali/Debian/macOS):**
+```bash
+# Navigate to the project root
+cd OmniCLI
+# Install dependencies
+pnpm install
+# Push DB schema
+pnpm --filter @workspace/db run push
+# Start the web server and API
+pnpm run dev
+```
+*Open `http://localhost:3000` in your web browser. The API server runs in the background on port `8080`.*
 
 | Panel | URL path | What it shows |
 |-------|----------|--------------|
