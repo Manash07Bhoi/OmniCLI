@@ -40,6 +40,22 @@ cp target/release/omni $PREFIX/bin/               # Termux
 omni --version
 ```
 
+### Windows
+
+#### Installing using pre-built release (Recommended)
+1. Download `omnicli-windows.zip` from [GitHub Releases](https://github.com/Manash07Bhoi/OmniCLI/releases).
+2. Extract and move `omni.exe` to a folder (e.g., `C:\Program Files\OmniCLI`).
+3. Add the folder to your `PATH` environment variable.
+4. Verify in PowerShell: `omni --version`
+
+#### Building from source (Developer)
+```powershell
+git clone https://github.com/Manash07Bhoi/OmniCLI
+cd OmniCLI\omnicli
+cargo build --release
+# The binary is located at target\release\omni.exe
+```
+
 See [README.md](../../README.md#installation) for platform-specific (Termux, Kali, ParrotOS, Replit) instructions.
 
 ---

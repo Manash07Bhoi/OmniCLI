@@ -246,6 +246,80 @@ cd omnicli && cargo build --release
 ./target/release/omni --help
 ```
 
+### Windows
+
+#### System Requirements
+- Windows 10 or Windows 11
+- PowerShell 5.1 or later
+
+#### Installing using pre-built release (Recommended)
+1. Go to the [GitHub Releases](https://github.com/Manash07Bhoi/OmniCLI/releases) page.
+2. Download the latest `omnicli-windows.zip` (or `.exe` if provided directly).
+3. Extract the `.zip` file.
+4. Move `omni.exe` to a directory of your choice (e.g., `C:\Program Files\OmniCLI`).
+5. Add that directory to your system `PATH` environment variable.
+6. Open a new PowerShell window to verify:
+```powershell
+omni --version
+```
+*Note: winget is not currently available. Installation via GitHub Releases is recommended.*
+
+#### Building from source (Developer)
+If you want to build from source, you will need [Rust and Cargo](https://rustup.rs/) installed, as well as the Visual C++ Build Tools.
+
+```powershell
+# 1. Clone the repository
+git clone https://github.com/Manash07Bhoi/OmniCLI
+cd OmniCLI
+
+# 2. Build the Rust CLI
+cd omnicli
+cargo build --release
+
+# 3. Add to PATH (Optional, replace with your preferred path)
+# The binary will be located at target\release\omni.exe
+```
+
+#### Troubleshooting Windows Issues
+- **Command Not Found:** Ensure you have restarted your terminal after adding `omni.exe` to your `PATH`.
+- **Windows Defender SmartScreen:** When running the downloaded `.exe` for the first time, Windows might block it. Click "More info" and then "Run anyway".
+- **Visual C++ Build Tools Missing:** If `cargo build` fails, ensure you have installed the "Desktop development with C++" workload via the Visual Studio Installer.
+
+#### Updating and Uninstalling
+- **Update:** Download the latest release from GitHub and replace your existing `omni.exe`.
+- **Uninstall:** Delete `omni.exe` from your system and remove the directory from your `PATH`.
+
+🎉 Congratulations! OmniCLI has been installed successfully and is ready to use.
+
+
+### Windows Web Dashboard (Developer Preview)
+The Web Dashboard provides a UI for file management, search, and viewing command history. Currently, running the dashboard requires Node.js and `pnpm`.
+
+**Prerequisites:** Node.js (v18+) and [pnpm](https://pnpm.io/installation) installed.
+
+```powershell
+# 1. Clone the repository if you haven't already
+git clone https://github.com/Manash07Bhoi/OmniCLI
+cd OmniCLI
+
+# 2. Install dependencies
+pnpm install
+
+# 3. Setup database schema (if required by the project)
+pnpm --filter @workspace/db run push
+
+# 4. Start the dashboard and API server
+pnpm run dev
+```
+
+*Open your web browser and navigate to `http://localhost:3000` to view the dashboard!*
+
+From the dashboard, you can:
+- **Manage Files:** Navigate through your system files using the UI.
+- **Run Commands:** Execute OmniCLI commands directly from the web interface.
+- **Search:** Utilize the full-text FTS5 search across your indexed files.
+- **View History:** See the activity log of recently executed operations.
+
 ### Termux (Android)
 
 ```bash
@@ -336,7 +410,43 @@ Every `omni` command accepts these flags at any position:
 
 See **[docs/USAGE.md](omnicli/docs/USAGE.md)** for the complete practical reference with real examples and expected output.
 
-### Quick examples
+### Windows Quick Examples (PowerShell)
+
+```powershell
+# ── Basics ────────────────────────────────────────────────────────────────────
+omni --version
+omni --help
+
+# ── File ops ──────────────────────────────────────────────────────────────────
+omni file find "*.rs" --modified 7d --type f
+omni file hash firmware.bin --algo sha256 --json
+omni file copy src\ dist\ --recursive --verify
+omni file sync ~\source ~\backup --delete-extraneous --dry-run
+omni file duplicate --scan ~\Downloads --delete-dupes --dry-run
+
+# ── Search ────────────────────────────────────────────────────────────────────
+omni search index ~\projects ~\Documents
+omni search "CVE-2026-1234"
+omni search query "TODO|FIXME" --in code --regex
+
+# ── Archives ──────────────────────────────────────────────────────────────────
+omni archive create release.zip src\ docs\
+omni archive extract release.zip --to $env:TEMP\release
+omni archive list release.zip --json
+omni archive convert project.zip project.tar.gz
+
+# ── Conversion ────────────────────────────────────────────────────────────────
+omni convert run data.csv data.json
+omni convert run config.yaml config.toml
+omni convert run photo.png photo.webp
+
+# ── Config ────────────────────────────────────────────────────────────────────
+omni config show
+omni config path
+```
+
+
+### Unix/Linux Quick examples
 
 ```bash
 # ── File ops ──────────────────────────────────────────────────────────────────
