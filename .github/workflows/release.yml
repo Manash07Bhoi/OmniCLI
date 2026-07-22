@@ -13,7 +13,7 @@ jobs:
     name: Build ${{ matrix.target }}
     runs-on: ${{ matrix.os }}
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
         include:
           # Kali Linux / ParrotOS / Debian x86_64
@@ -128,12 +128,13 @@ jobs:
         shell: bash
         run: |
           cd dist
-          for dir in */; do
-            for file in "$dir"*; do
-              if [ -f "$file" ]; then
-                sha256sum "$file" >> SHA256SUMS.txt
-              fi
-            done
+          # Flatten artifacts to current directory to generate clean relative paths in SHA256SUMS
+          find . -mindepth 2 -type f -exec mv {} . \;
+          find . -type d -empty -delete
+          for file in *; do
+            if [ -f "$file" ]; then
+              sha256sum "$file" >> SHA256SUMS.txt
+            fi
           done
           cat SHA256SUMS.txt
 
