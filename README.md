@@ -16,7 +16,7 @@
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Clippy](https://img.shields.io/badge/clippy-clean-brightgreen?logo=rust)](#)
 [![Security](https://img.shields.io/badge/security-audited-brightgreen?logo=github-actions&logoColor=white)](.github/workflows/security.yml)
-[![Platform](https://img.shields.io/badge/platform-Termux%20%7C%20Kali%20%7C%20ParrotOS%20%7C%20Replit-0d1117?logo=linux&logoColor=white)](#)
+[![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Kali%20%7C%20ParrotOS%20%7C%20Replit-0d1117?logo=linux&logoColor=white)](#)
 
 *File ops · Full-text search · Format conversion · Archive management · Dev toolkit · Live web dashboard*
 
@@ -26,7 +26,7 @@
 
 ## What is OmniCLI?
 
-OmniCLI is a **professional-grade, full-stack command-line toolkit** that replaces a scattered collection of utilities with a single, coherent binary — backed by a live React web dashboard and a typed REST API. Whether you're managing files on Android via Termux, doing security research on Kali Linux, writing automation scripts on ParrotOS, or running the live dashboard on Replit — `omni` speaks one grammar across every platform.
+OmniCLI is a **professional-grade, full-stack command-line toolkit** that replaces a scattered collection of utilities with a single, coherent binary — backed by a live React web dashboard and a typed REST API. Whether you're running on Windows, doing security research on Kali Linux, writing automation scripts on ParrotOS, or running the live dashboard on Replit — `omni` speaks one grammar across every platform.
 
 ```bash
 # Find every Rust file modified in the last 7 days
@@ -216,14 +216,41 @@ Explore OmniCLI's capabilities through our full-stack interface.
   <em>Age X25519 encryption, compression, and syncing operations.</em>
 </p>
 
-### Mobile Experience
+---
 
-#### Responsive Command Center
-<p align="center">
-  <img src="docs/assets/dashboard-mobile.png" alt="Mobile Dashboard View" width="300" />
-  <br>
-  <em>Full-stack power accessible from your phone or Termux environment.</em>
-</p>
+## Releases
+
+### How to Create a Release
+Maintainers can create a new release simply by pushing a version tag to the repository:
+```bash
+git tag v1.0.0
+git push origin v1.0.0
+```
+This automatically triggers the GitHub Actions release workflow, which builds, packages, and publishes the release artifacts.
+
+### Where to Download
+Users can download pre-compiled binaries from the [GitHub Releases](https://github.com/Manash07Bhoi/OmniCLI/releases) page.
+
+### Officially Supported Platforms
+The automated release pipeline currently supports and builds artifacts for:
+- **Windows** (x86_64)
+- **Linux** (x86_64) - Covers Debian, Ubuntu, Kali Linux, ParrotOS, etc.
+- **Linux ARM64** (aarch64)
+
+### Verifying SHA-256 Checksums
+Every release includes a `SHA256SUMS.txt` file containing checksums for all archives. To verify your downloaded archive, run the following command in the directory containing both the archive and the checksum file:
+
+**Linux / macOS:**
+```bash
+sha256sum -c SHA256SUMS.txt --ignore-missing
+```
+
+**Windows (PowerShell):**
+```powershell
+$Expected = (Select-String -Path .\SHA256SUMS.txt -Pattern "omnicli-windows-x86_64.zip").Line.Split(" ")[0]
+$Actual = (Get-FileHash .\omnicli-windows-x86_64.zip -Algorithm SHA256).Hash.ToLower()
+if ($Expected -eq $Actual) { Write-Output "Checksum OK" } else { Write-Output "Checksum MISMATCH" }
+```
 
 ---
 
@@ -319,31 +346,6 @@ From the dashboard, you can:
 - **Run Commands:** Execute OmniCLI commands directly from the web interface.
 - **Search:** Utilize the full-text FTS5 search across your indexed files.
 - **View History:** See the activity log of recently executed operations.
-
-### Termux (Android)
-
-```bash
-# 1. Install Rust, Git, and Node.js
-pkg update && pkg install rust git nodejs
-
-# 2. Clone and build the Rust CLI
-git clone https://github.com/Manash07Bhoi/OmniCLI
-cd OmniCLI
-cd omnicli && cargo build --release
-cp target/release/omni $PREFIX/bin/
-omni --version
-
-# 3. Start the Web Dashboard
-cd ..
-npm install -g pnpm
-pnpm install
-pnpm --filter @workspace/db run push
-
-# Run the dashboard and API in development mode
-# It will start the API on port 8080 and the Dashboard on port 3000
-pnpm run dev
-```
-*Open your mobile browser and navigate to `http://localhost:3000` to view the dashboard!*
 
 ### Kali Linux / ParrotOS / Debian
 
@@ -611,10 +613,9 @@ cargo test -- --nocapture
 | Platform | Notes |
 |----------|-------|
 | **Replit** | All three services start via pnpm workflows; SQLite DB at `~/.local/share/omni/omni.db` |
-| **Termux (Android)** | `isatty()` probe works; colour auto-detected; path expansion handles Termux prefix |
+| **Windows** | Full native support; PowerShell recommended for script examples |
 | **Kali Linux** | `rusqlite` compiled with bundled SQLite — no system lib required |
 | **ParrotOS** | Static SQLite avoids version conflicts |
-| **macOS** | Compiles; `libc::isatty` supported via Unix trait |
 
 ---
 
@@ -651,7 +652,7 @@ MIT — see [LICENSE](LICENSE).
 
 Built with ❤️ in Rust & TypeScript
 
-Termux · Kali Linux · ParrotOS · Replit
+Windows · Kali Linux · ParrotOS · Replit
 
 [Usage Guide](omnicli/docs/USAGE.md) · [Contributing](omnicli/CONTRIBUTING.md) · [API Spec](lib/api-spec/openapi.yaml)
 

@@ -29,30 +29,11 @@ jobs:
             binary: omni
             cross: true
 
-          # Termux Android (ARM64) — primary mobile target
-          - os: ubuntu-latest
-            target: aarch64-linux-android
-            archive: omni-android-aarch64.tar.gz
-            binary: omni
-            cross: true
-
-          # Termux Android (ARMv7) — older devices
-          - os: ubuntu-latest
-            target: armv7-linux-androideabi
-            archive: omni-android-armv7.tar.gz
-            binary: omni
-            cross: true
-
-          # macOS (community support)
-          - os: macos-latest
-            target: x86_64-apple-darwin
-            archive: omni-macos-x86_64.tar.gz
-            binary: omni
-
-          - os: macos-latest
-            target: aarch64-apple-darwin
-            archive: omni-macos-aarch64.tar.gz
-            binary: omni
+          # Windows x86_64
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            archive: omnicli-windows-x86_64.zip
+            binary: omni.exe
 
     steps:
       - uses: actions/checkout@v4
@@ -73,37 +54,36 @@ jobs:
 
       - name: Install cross (for cross-compilation)
         if: matrix.cross
+        shell: bash
         run: cargo install cross --git https://github.com/cross-rs/cross
 
       - name: Install system dependencies (native Linux)
         if: runner.os == 'Linux' && !matrix.cross
+        shell: bash
         run: sudo apt-get update && sudo apt-get install -y build-essential libssl-dev pkg-config
 
       - name: Build (native)
         if: '!matrix.cross'
         working-directory: omnicli
+        shell: bash
         run: cargo build --release --target ${{ matrix.target }}
 
       - name: Build (cross)
         if: matrix.cross
         working-directory: omnicli
+        shell: bash
         run: cross build --release --target ${{ matrix.target }}
 
-      - name: Strip binary (Linux/macOS)
-        if: runner.os != 'Windows'
+      - name: Strip binary (Linux)
+        if: runner.os == 'Linux'
+        shell: bash
         run: |
           BINARY="omnicli/target/${{ matrix.target }}/release/${{ matrix.binary }}"
           if command -v strip &> /dev/null; then strip "$BINARY" || true; fi
 
-      - name: Compute BLAKE3 checksum
-        id: checksum
-        run: |
-          BINARY="omnicli/target/${{ matrix.target }}/release/${{ matrix.binary }}"
-          # Use sha256sum as fallback (b3sum may not be installed)
-          SHA=$(sha256sum "$BINARY" | cut -d' ' -f1)
-          echo "sha256=${SHA}" >> $GITHUB_OUTPUT
-
-      - name: Package archive
+      - name: Package archive (Linux)
+        if: runner.os == 'Linux'
+        shell: bash
         run: |
           BINARY="omnicli/target/${{ matrix.target }}/release/${{ matrix.binary }}"
           mkdir -p dist
@@ -112,6 +92,16 @@ jobs:
           cp README.md dist/
           cd dist
           tar czf "../${{ matrix.archive }}" .
+
+      - name: Package archive (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $Binary = "omnicli/target/${{ matrix.target }}/release/${{ matrix.binary }}"
+          New-Item -ItemType Directory -Force -Path dist
+          Copy-Item $Binary -Destination dist\omni.exe
+          Copy-Item README.md -Destination dist\
+          Compress-Archive -Path dist\* -DestinationPath ${{ matrix.archive }}
 
       - name: Upload archive
         uses: actions/upload-artifact@v4
@@ -135,11 +125,14 @@ jobs:
           path: dist/
 
       - name: Generate checksums
+        shell: bash
         run: |
           cd dist
           for dir in */; do
             for file in "$dir"*; do
-              [ -f "$file" ] && sha256sum "$file" >> SHA256SUMS.txt
+              if [ -f "$file" ]; then
+                sha256sum "$file" >> SHA256SUMS.txt
+              fi
             done
           done
           cat SHA256SUMS.txt
@@ -152,21 +145,18 @@ jobs:
           generate_release_notes: true
           files: |
             dist/**/*.tar.gz
+            dist/**/*.zip
             dist/SHA256SUMS.txt
           body: |
             ## Install
 
-            ### Kali Linux / ParrotOS / Debian
+            ### Windows
+            Download the `.zip` archive, extract `omni.exe`, and add it to your PATH.
+
+            ### Linux (Kali / ParrotOS / Debian / Ubuntu)
             ```bash
             curl -fsSL https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/omni-linux-x86_64.tar.gz | tar xz
             sudo install -m 755 omni /usr/local/bin/omni
-            ```
-
-            ### Termux (Android)
-            ```bash
-            # ARM64 (most modern devices)
-            curl -fsSL https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/omni-android-aarch64.tar.gz | tar xz
-            install -m 755 omni $PREFIX/bin/omni
             ```
 
             ### Build from source
