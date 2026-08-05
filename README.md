@@ -284,79 +284,72 @@ cd omnicli && cargo build --release
 ./target/release/omni --help
 ```
 
-### Windows
+### Windows (PowerShell)
 
-#### System Requirements
+OmniCLI is fully supported on Windows. You can install the CLI standalone, or run the full Web Dashboard suite.
+
+**System Requirements:**
 - Windows 10 or Windows 11
 - PowerShell 5.1 or later
 
-#### Installing using pre-built release (Recommended)
-1. Go to the [GitHub Releases](https://github.com/Manash07Bhoi/OmniCLI/releases) page.
-2. Download the latest `omnicli-windows.zip` (or `.exe` if provided directly).
-3. Extract the `.zip` file.
-4. Move `omni.exe` to a directory of your choice (e.g., `C:\Program Files\OmniCLI`).
-5. Add that directory to your system `PATH` environment variable.
-6. Open a new PowerShell window to verify:
+#### 1. CLI Installation (Automated)
+
+You can download and install the latest release directly via PowerShell:
+
 ```powershell
+# Create an installation directory
+New-Item -ItemType Directory -Force -Path $env:USERPROFILE\OmniCLI
+Set-Location $env:USERPROFILE\OmniCLI
+
+# Download the latest Windows release
+Invoke-WebRequest -Uri "https://github.com/Manash07Bhoi/OmniCLI/releases/latest/download/omnicli-windows-x86_64.zip" -OutFile "omnicli.zip"
+
+# Extract the archive
+Expand-Archive -Path "omnicli.zip" -DestinationPath . -Force
+
+# Add to your User PATH environment variable
+$UserPath = [Environment]::GetEnvironmentVariable("PATH", "User")
+if ($UserPath -notmatch "OmniCLI") {
+    [Environment]::SetEnvironmentVariable("PATH", "$UserPath;$env:USERPROFILE\OmniCLI", "User")
+}
+
+# Verify installation (open a new PowerShell window first if omni is not found)
 omni --version
 ```
-*Note: winget is not currently available. Installation via GitHub Releases is recommended.*
 
-#### Building from source (Developer)
-If you want to build from source, you will need [Rust and Cargo](https://rustup.rs/) installed, as well as the Visual C++ Build Tools.
+#### 2. Web Dashboard Setup & Usage
 
+The Web Dashboard provides a powerful local UI for file management, search, and viewing command history. Running it requires Node.js and `pnpm`.
+
+**Prerequisites:** Ensure you have [Git](https://git-scm.com/download/win) and Node.js installed. If you have `winget`, you can install Node.js quickly:
 ```powershell
-# 1. Clone the repository
-git clone https://github.com/Manash07Bhoi/OmniCLI
-cd OmniCLI
-
-# 2. Build the Rust CLI
-cd omnicli
-cargo build --release
-
-# 3. Add to PATH (Optional, replace with your preferred path)
-# The binary will be located at target\release\omni.exe
+winget install OpenJS.NodeJS
+npm install -g pnpm
 ```
 
-#### Troubleshooting Windows Issues
-- **Command Not Found:** Ensure you have restarted your terminal after adding `omni.exe` to your `PATH`.
-- **Windows Defender SmartScreen:** When running the downloaded `.exe` for the first time, Windows might block it. Click "More info" and then "Run anyway".
-- **Visual C++ Build Tools Missing:** If `cargo build` fails, ensure you have installed the "Desktop development with C++" workload via the Visual Studio Installer.
-
-#### Updating and Uninstalling
-- **Update:** Download the latest release from GitHub and replace your existing `omni.exe`.
-- **Uninstall:** Delete `omni.exe` from your system and remove the directory from your `PATH`.
-
-🎉 Congratulations! OmniCLI has been installed successfully and is ready to use.
-
-
-### Windows Web Dashboard (Developer Preview)
-The Web Dashboard provides a UI for file management, search, and viewing command history. Currently, running the dashboard requires Node.js and `pnpm`.
-
-**Prerequisites:** Node.js (v18+) and [pnpm](https://pnpm.io/installation) installed.
-
+**Clone and Start the Dashboard:**
 ```powershell
-# 1. Clone the repository if you haven't already
+# 1. Clone the repository
 git clone https://github.com/Manash07Bhoi/OmniCLI
 cd OmniCLI
 
 # 2. Install dependencies
 pnpm install
 
-# 3. Setup database schema (if required by the project)
+# 3. Setup the local SQLite database schema (first run only)
 pnpm --filter @workspace/db run push
 
-# 4. Start the dashboard and API server
+# 4. Start the dashboard and REST API
 pnpm run dev
 ```
 
-*Open your web browser and navigate to `http://localhost:3000` to view the dashboard!*
+*Open your web browser and navigate to **`http://localhost:3000`**!*
 
-From the dashboard, you can:
-- **Manage Files:** Navigate through your system files using the UI.
-- **Run Commands:** Execute OmniCLI commands directly from the web interface.
-- **Search:** Utilize the full-text FTS5 search across your indexed files.
-- **View History:** See the activity log of recently executed operations.
+**Using the Web Dashboard:**
+- **Command Center:** The default view at `localhost:3000` shows your system telemetry, total indexed files, and recent activity logs.
+- **Global Search:** Click the "Search" tab on the sidebar. If you have indexed files via the CLI (`omni search index ~\Documents`), you can search their contents instantly here.
+- **Format Converter:** Navigate to the Converter panel. Drag and drop a `data.csv` file from your desktop into the UI to instantly convert it to JSON or YAML.
+- **Dev Toolkit:** Use the built-in UI tools to generate UUIDs, encode Base64 strings, or test Regex without dropping to the terminal.
 
 ### Termux (Android)
 
