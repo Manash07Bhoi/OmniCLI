@@ -20,7 +20,7 @@ pub struct DuplicateGroup {
     pub files: Vec<String>,
 }
 
-/// Result of `omni file duplicate --scan`.
+/// Result of `omnicli file duplicate --scan`.
 #[derive(Debug, Serialize)]
 pub struct DuplicateScanResult {
     pub groups: Vec<DuplicateGroup>,

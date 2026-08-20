@@ -20,7 +20,7 @@ pub struct CopyResult {
     pub verified: bool,
 }
 
-/// Options for `omni file copy` / `omni file move`.
+/// Options for `omnicli file copy` / `omnicli file move`.
 #[derive(Debug, Clone)]
 pub struct CopyOptions {
     pub source: PathBuf,

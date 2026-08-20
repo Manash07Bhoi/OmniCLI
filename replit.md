@@ -36,13 +36,13 @@ cd omnicli && cargo build
 cd omnicli && cargo build --release
 
 # Run the binary
-./omnicli/target/debug/omni --help
-./omnicli/target/release/omni --help
+./omnicli/target/debug/omnicli --help
+./omnicli/target/release/omnicli --help
 
 # Quick smoke-tests
-./omnicli/target/debug/omni file find --path . --type f --long
-./omnicli/target/debug/omni convert list
-./omnicli/target/debug/omni config show
+./omnicli/target/debug/omnicli file find --path . --type f --long
+./omnicli/target/debug/omnicli convert list
+./omnicli/target/debug/omnicli config show
 
 # Run all tests
 cd omnicli && cargo test
@@ -96,7 +96,7 @@ omnicli/
 │   ├── omni-core/              # Shared: hashing, output styling, config, platform
 │   │   ├── src/hash.rs         # hash_file(path, algo) → hex string
 │   │   ├── src/output.rs       # OutputConfig, print_success/error/info/warn
-│   │   ├── src/config.rs       # OmniConfig from ~/.config/omni/omni.toml
+│   │   ├── src/config.rs       # OmniConfig from ~/.config/omnicli/omnicli.toml
 │   │   └── src/platform.rs     # expand_tilde, format_bytes, data_dir
 │   ├── omni-file/              # Phase 1: file operations (11 verbs)
 │   ├── omni-search/            # Phase 1: SQLite FTS5 index + full-text search
@@ -128,7 +128,7 @@ lib/
 - **thiserror per module, anyhow at the boundary:** each crate defines a typed `ModuleError` enum; `dispatch.rs` converts to `anyhow::Error` for display.
 - **BLAKE3 as default hash:** used for all content-hash comparisons (duplicate detection, sync, backup). SHA256 and MD5 are also supported via `--algo` flag.
 - **Codec registry is live-generated:** `convert --list` reflects exactly the implemented converters — the list cannot drift from the code (see `list_supported_pairs()` in omni-convert).
-- **SQLite FTS5 for search:** index lives at `~/.local/share/omni/search.db`, uses Porter stemmer + unicode61 tokenizer. Path search falls back to LIKE for files outside the FTS index.
+- **SQLite FTS5 for search:** index lives at `~/.local/share/omnicli/search.db`, uses Porter stemmer + unicode61 tokenizer. Path search falls back to LIKE for files outside the FTS index.
 - **Dependency rule:** omni-core has zero module dependencies; other crates may depend on omni-core only. omni-file depends on omni-archive (compress delegates to it). The CLI layer (omni-cli) is the only place that imports all modules.
 - **API server PORT:** reads `PORT` from env (set automatically by Replit). Hard-coding a port is forbidden — it causes workflow collisions.
 
@@ -136,14 +136,14 @@ lib/
 
 | Module | Phase | How it's delivered |
 |--------|-------|--------------------|
-| `omni file` | 1 — shipped | Rust CLI binary |
-| `omni search` | 1 — shipped | Rust CLI binary + API route |
-| `omni archive` | 1 — shipped | Rust CLI binary + API route |
-| `omni convert` | 1 — shipped | Rust CLI binary + API route |
-| `omni dev` | 2 — API active | API route + dashboard panel |
-| `omni workspace` | 2 — API active | API route + dashboard panel (SQLite) |
-| `omni backup` | 2 — API stub | API route + dashboard panel |
-| `omni config` | 2 — API stub | API route |
+| `omnicli file` | 1 — shipped | Rust CLI binary |
+| `omnicli search` | 1 — shipped | Rust CLI binary + API route |
+| `omnicli archive` | 1 — shipped | Rust CLI binary + API route |
+| `omnicli convert` | 1 — shipped | Rust CLI binary + API route |
+| `omnicli dev` | 2 — API active | API route + dashboard panel |
+| `omnicli workspace` | 2 — API active | API route + dashboard panel (SQLite) |
+| `omnicli backup` | 2 — API stub | API route + dashboard panel |
+| `omnicli config` | 2 — API stub | API route |
 | `plugin` | 3 — planned | — |
 | `new` | 3 — planned | — |
 | `shell` | 3 — planned | — |
@@ -159,7 +159,7 @@ lib/
 - `cargo build` (not `cargo build --workspace`) from inside `omnicli/` — the workspace root is `omnicli/`, not the repo root
 - `libc` crate is needed in omni-core for the `isatty()` TTY probe
 - `tempfile` must be listed in each crate's `[dependencies]` (not just `[dev-dependencies]`) because tests are run with the crate enabled by default in Cargo workspaces
-- The search index is stored at `~/.local/share/omni/search.db` — run `omni search index <path>` before querying
+- The search index is stored at `~/.local/share/omnicli/search.db` — run `omnicli search index <path>` before querying
 - `Encryptor::with_recipients` in age 0.10 returns `Option<Encryptor>`, not `Result`
 - API server reads `PORT` from env — Replit assigns it; never hard-code a port in the Vite or Express config
 - The dashboard makes requests to `/api/*` (relative, no localhost) — this works both on Replit and locally because Vite proxies `/api` to the API server

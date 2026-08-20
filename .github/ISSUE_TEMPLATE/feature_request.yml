@@ -13,14 +13,14 @@ body:
     attributes:
       label: Which area does this affect?
       options:
-        - "omni file"
-        - "omni search"
-        - "omni archive"
-        - "omni convert"
-        - "omni config"
-        - "omni dev"
-        - "omni backup"
-        - "omni workspace"
+        - "omnicli file"
+        - "omnicli search"
+        - "omnicli archive"
+        - "omnicli convert"
+        - "omnicli config"
+        - "omnicli dev"
+        - "omnicli backup"
+        - "omnicli workspace"
         - "Web Dashboard"
         - "REST API"
         - "Shell completions"
@@ -35,7 +35,7 @@ body:
     attributes:
       label: What problem does this solve?
       description: Describe the pain point or use case this feature addresses.
-      placeholder: "When I run `omni convert run` on a directory, I have to convert files one by one. I'd like to batch-convert an entire folder."
+      placeholder: "When I run `omnicli convert run` on a directory, I have to convert files one by one. I'd like to batch-convert an entire folder."
     validations:
       required: true
 
@@ -45,7 +45,7 @@ body:
       label: Proposed solution
       description: Describe what you'd like to happen. Include example commands or API shapes.
       placeholder: |
-        Add `omni convert batch <input_dir> <output_dir> [--from csv] [--to json]`
+        Add `omnicli convert batch <input_dir> <output_dir> [--from csv] [--to json]`
         that converts all matching files in parallel.
     validations:
       required: true

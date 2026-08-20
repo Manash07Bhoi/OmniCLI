@@ -7,7 +7,7 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
-  BINARY_NAME: omni
+  BINARY_NAME: omnicli
   REPO: ${{ github.repository }}
 
 jobs:
@@ -78,7 +78,7 @@ jobs:
         env:
           CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER: aarch64-linux-gnu-gcc
           CARGO_TARGET_ARMV7_UNKNOWN_LINUX_MUSLEABIHF_LINKER: arm-linux-gnueabihf-gcc
-        run: cargo build --release --bin omni --target ${{ matrix.target }}
+        run: cargo build --release --bin omnicli --target ${{ matrix.target }}
 
       - name: Package archive (Unix)
         if: runner.os != 'Windows'
@@ -86,7 +86,7 @@ jobs:
           TAG="${{ github.ref_name }}"
           ARCHIVE="omni-${{ matrix.target }}.tar.gz"
           cp target/${{ matrix.target }}/release/omni .
-          tar -czf "$ARCHIVE" omni README.md LICENSE
+          tar -czf "$ARCHIVE" omnicli README.md LICENSE
           sha256sum "$ARCHIVE" > "$ARCHIVE.sha256"
           echo "ARCHIVE=$ARCHIVE" >> $GITHUB_ENV
 
@@ -95,8 +95,8 @@ jobs:
         shell: pwsh
         run: |
           $ARCHIVE = "omni-${{ matrix.target }}.zip"
-          Copy-Item "target/${{ matrix.target }}/release/omni.exe" .
-          Compress-Archive -Path omni.exe,README.md,LICENSE -DestinationPath $ARCHIVE
+          Copy-Item "target/${{ matrix.target }}/release/omnicli.exe" .
+          Compress-Archive -Path omnicli.exe,README.md,LICENSE -DestinationPath $ARCHIVE
           $hash = (Get-FileHash $ARCHIVE -Algorithm SHA256).Hash.ToLower()
           "$hash  $ARCHIVE" | Out-File "$ARCHIVE.sha256" -Encoding ascii
           echo "ARCHIVE=$ARCHIVE" | Out-File -FilePath $env:GITHUB_ENV -Append

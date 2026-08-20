@@ -12,7 +12,7 @@ body:
     id: version
     attributes:
       label: OmniCLI version
-      description: Run `omni --version` and paste the output here.
+      description: Run `omnicli --version` and paste the output here.
       placeholder: "omni 0.1.0"
     validations:
       required: true
@@ -40,7 +40,7 @@ body:
     attributes:
       label: What happened?
       description: A clear and concise description of the bug.
-      placeholder: "Running `omni file find ...` returned an empty list even though files exist."
+      placeholder: "Running `omnicli file find ...` returned an empty list even though files exist."
     validations:
       required: true
 
@@ -50,8 +50,8 @@ body:
       label: Steps to reproduce
       description: Exact commands to reproduce the issue.
       placeholder: |
-        1. `omni search index ~/projects`
-        2. `omni search "TODO"`
+        1. `omnicli search index ~/projects`
+        2. `omnicli search "TODO"`
         3. See error
     validations:
       required: true
@@ -70,7 +70,7 @@ body:
       label: Actual behaviour (with `--json` output if applicable)
       placeholder: |
         Paste the error message or unexpected output here.
-        Use `omni <command> --json` for machine-readable output.
+        Use `omnicli <command> --json` for machine-readable output.
     validations:
       required: true
 

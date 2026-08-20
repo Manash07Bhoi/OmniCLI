@@ -6,7 +6,7 @@ use serde::Serialize;
 
 use crate::error::FileError;
 
-/// Result of `omni file hash`.
+/// Result of `omnicli file hash`.
 #[derive(Debug, Serialize)]
 pub struct HashResult {
     pub path: String,

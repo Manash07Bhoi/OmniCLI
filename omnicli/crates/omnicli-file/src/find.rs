@@ -114,7 +114,7 @@ pub fn parse_duration(s: &str) -> Result<Duration, FileError> {
     Ok(Duration::from_secs(secs))
 }
 
-/// Options for `omni file find`.
+/// Options for `omnicli file find`.
 #[derive(Debug, Clone, Default)]
 pub struct FindOptions {
     /// Glob / regex pattern to match against the file name. If `None`, matches all.
@@ -149,7 +149,7 @@ pub struct FileEntry {
     pub cycle_detected: bool,
 }
 
-/// Run `omni file find` and return matched entries.
+/// Run `omnicli file find` and return matched entries.
 ///
 /// When `opts.follow_symlinks` is true, the traversal follows symbolic links but
 /// detects cycles by tracking visited directory inodes. Circular symlinks cause a

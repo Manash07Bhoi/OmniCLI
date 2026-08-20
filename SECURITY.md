@@ -50,7 +50,7 @@ OmniCLI is designed with security in mind at every layer:
 In-scope for security reports:
 - Remote code execution or privilege escalation via any `omni` command
 - Path traversal vulnerabilities in archive extraction or file operations
-- Cryptographic weaknesses in the `omni file encrypt/decrypt` flow
+- Cryptographic weaknesses in the `omnicli file encrypt/decrypt` flow
 - Authentication/authorisation bypass in the REST API server
 - Dependency vulnerabilities with a CVE score ≥ 7.0
 

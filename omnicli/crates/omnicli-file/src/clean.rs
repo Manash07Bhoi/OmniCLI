@@ -9,7 +9,7 @@ use walkdir::WalkDir;
 
 use crate::error::FileError;
 
-/// Options for `omni file clean`.
+/// Options for `omnicli file clean`.
 #[derive(Debug, Clone)]
 pub struct CleanOptions {
     pub path: std::path::PathBuf,
@@ -20,7 +20,7 @@ pub struct CleanOptions {
     pub dry_run: bool,
 }
 
-/// Result of `omni file clean`.
+/// Result of `omnicli file clean`.
 #[derive(Debug, Serialize)]
 pub struct CleanResult {
     pub files_removed: u64,
@@ -29,7 +29,7 @@ pub struct CleanResult {
     pub dry_run: bool,
 }
 
-/// Run `omni file clean` on the given path with the provided options.
+/// Run `omnicli file clean` on the given path with the provided options.
 pub fn clean_path(opts: &CleanOptions) -> Result<CleanResult, FileError> {
     let now = SystemTime::now();
     let mut files_removed = 0u64;
