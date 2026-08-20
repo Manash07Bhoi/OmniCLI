@@ -31,7 +31,7 @@ termux_step_make() {
 }
 
 termux_step_make_install() {
-    install -Dm755 omnicli/target/${CARGO_TARGET_NAME}/release/omni -t $TERMUX_PREFIX/bin/
+    install -Dm755 omnicli/target/${CARGO_TARGET_NAME}/release/omnicli -t $TERMUX_PREFIX/bin/
 }
 ```
 

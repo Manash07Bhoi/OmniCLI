@@ -10,7 +10,7 @@ keywords = ["cli", "file", "search", "convert", "archive"]
 categories = ["command-line-utilities"]
 
 [[bin]]
-name = "omni"
+name = "omnicli"
 path = "src/main.rs"
 
 [dependencies]
