@@ -1,16 +1,16 @@
 [workspace]
 resolver = "2"
 members = [
-    "crates/omni-cli",
-    "crates/omni-core",
-    "crates/omni-file",
-    "crates/omni-search",
-    "crates/omni-archive",
-    "crates/omni-convert",
-    "crates/omni-dev",
-    "crates/omni-workspace",
-    "crates/omni-backup",
-    "crates/omni-config",
+    "crates/omnicli-cli",
+    "crates/omnicli-core",
+    "crates/omnicli-file",
+    "crates/omnicli-search",
+    "crates/omnicli-archive",
+    "crates/omnicli-convert",
+    "crates/omnicli-dev",
+    "crates/omnicli-workspace",
+    "crates/omnicli-backup",
+    "crates/omnicli-config",
 ]
 
 [workspace.dependencies]

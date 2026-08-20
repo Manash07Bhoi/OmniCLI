@@ -30,22 +30,22 @@ OmniCLI is a **professional-grade, full-stack command-line toolkit** that replac
 
 ```bash
 # Find every Rust file modified in the last 7 days
-omni file find "*.rs" --modified 7d
+omnicli file find "*.rs" --modified 7d
 
 # Hash a binary with BLAKE3 and pipe it
-omni file hash firmware.bin --json | jq .digest
+omnicli file hash firmware.bin --json | jq .digest
 
 # Search millions of indexed files for a CVE in under a second
-omni search "CVE-2026-1234"
+omnicli search "CVE-2026-1234"
 
 # Convert an entire CSV dataset to JSON
-omni convert run data.csv data.json
+omnicli convert run data.csv data.json
 
 # Pack a directory into a compressed archive
-omni archive create release.tar.gz ./dist
+omnicli archive create release.tar.gz ./dist
 
 # Encrypt a file with age X25519
-omni file encrypt secrets.toml --recipient age1ql3z7hjy54pw3hjymouwyfx24i98aw2aqx77k5
+omnicli file encrypt secrets.toml --recipient age1ql3z7hjy54pw3hjymouwyfx24i98aw2aqx77k5
 
 # Open the dashboard (Replit / local)
 open http://localhost:$PORT
@@ -69,11 +69,11 @@ open http://localhost:$PORT
 
 | Module | Commands | Highlights |
 |--------|----------|------------|
-| **`omni file`** | find, copy, move, compare, duplicate, clean, hash, encrypt, decrypt, compress, sync | BLAKE3/SHA256/MD5 · age X25519 encryption · verified copy · BLAKE3-powered sync |
-| **`omni search`** | index, query, rebuild | SQLite FTS5 · Porter stemmer · regex · per-type filters · sub-second queries |
-| **`omni archive`** | create, extract, list, convert | zip · tar.gz · tar.xz · tar.bz2 · magic-byte detection · zip-slip protected |
-| **`omni convert`** | run, list | 16 format pairs: CSV↔JSON · YAML↔TOML↔JSON · MD→HTML · PNG/JPG↔WebP · PDF→TXT |
-| **`omni config`** | show, path | Full TOML config with live defaults |
+| **`omnicli file`** | find, copy, move, compare, duplicate, clean, hash, encrypt, decrypt, compress, sync | BLAKE3/SHA256/MD5 · age X25519 encryption · verified copy · BLAKE3-powered sync |
+| **`omnicli search`** | index, query, rebuild | SQLite FTS5 · Porter stemmer · regex · per-type filters · sub-second queries |
+| **`omnicli archive`** | create, extract, list, convert | zip · tar.gz · tar.xz · tar.bz2 · magic-byte detection · zip-slip protected |
+| **`omnicli convert`** | run, list | 16 format pairs: CSV↔JSON · YAML↔TOML↔JSON · MD→HTML · PNG/JPG↔WebP · PDF→TXT |
+| **`omnicli config`** | show, path | Full TOML config with live defaults |
 
 ## Web Dashboard Panels
 
@@ -281,7 +281,13 @@ Build the Rust CLI:
 
 ```bash
 cd omnicli && cargo build --release
-./target/release/omni --help
+./target/release/omnicli --help
+```
+
+### crates.io
+```bash
+cargo install omnicli-app
+omnicli --version
 ```
 
 ### Windows (PowerShell)
@@ -314,7 +320,7 @@ if ($UserPath -notmatch "OmniCLI") {
 }
 
 # Verify installation (open a new PowerShell window first if omni is not found)
-omni --version
+omnicli --version
 ```
 
 #### 2. Web Dashboard Setup & Usage
@@ -347,7 +353,7 @@ pnpm run dev
 
 **Using the Web Dashboard:**
 - **Command Center:** The default view at `localhost:3000` shows your system telemetry, total indexed files, and recent activity logs.
-- **Global Search:** Click the "Search" tab on the sidebar. If you have indexed files via the CLI (`omni search index ~\Documents`), you can search their contents instantly here.
+- **Global Search:** Click the "Search" tab on the sidebar. If you have indexed files via the CLI (`omnicli search index ~\Documents`), you can search their contents instantly here.
 - **Format Converter:** Navigate to the Converter panel. Drag and drop a `data.csv` file from your desktop into the UI to instantly convert it to JSON or YAML.
 - **Dev Toolkit:** Use the built-in UI tools to generate UUIDs, encode Base64 strings, or test Regex without dropping to the terminal.
 
@@ -361,8 +367,8 @@ pkg update && pkg install rust git nodejs
 git clone https://github.com/Manash07Bhoi/OmniCLI
 cd OmniCLI
 cd omnicli && cargo build --release
-cp target/release/omni $PREFIX/bin/
-omni --version
+cp target/release/omnicli $PREFIX/bin/
+omnicli --version
 
 # 3. Start the Web Dashboard
 cd ..
@@ -388,8 +394,8 @@ source $HOME/.cargo/env
 git clone https://github.com/Manash07Bhoi/OmniCLI
 cd OmniCLI
 cd omnicli && cargo build --release
-sudo cp target/release/omni /usr/local/bin/
-omni --version
+sudo cp target/release/omnicli /usr/local/bin/
+omnicli --version
 
 # 3. Start the Web Dashboard
 cd ..
@@ -445,35 +451,35 @@ See **[docs/USAGE.md](omnicli/docs/USAGE.md)** for the complete practical refere
 
 ```powershell
 # ── Basics ────────────────────────────────────────────────────────────────────
-omni --version
-omni --help
+omnicli --version
+omnicli --help
 
 # ── File ops ──────────────────────────────────────────────────────────────────
-omni file find "*.rs" --modified 7d --type f
-omni file hash firmware.bin --algo sha256 --json
-omni file copy src\ dist\ --recursive --verify
-omni file sync ~\source ~\backup --delete-extraneous --dry-run
-omni file duplicate --scan ~\Downloads --delete-dupes --dry-run
+omnicli file find "*.rs" --modified 7d --type f
+omnicli file hash firmware.bin --algo sha256 --json
+omnicli file copy src\ dist\ --recursive --verify
+omnicli file sync ~\source ~\backup --delete-extraneous --dry-run
+omnicli file duplicate --scan ~\Downloads --delete-dupes --dry-run
 
 # ── Search ────────────────────────────────────────────────────────────────────
-omni search index ~\projects ~\Documents
-omni search "CVE-2026-1234"
-omni search query "TODO|FIXME" --in code --regex
+omnicli search index ~\projects ~\Documents
+omnicli search "CVE-2026-1234"
+omnicli search query "TODO|FIXME" --in code --regex
 
 # ── Archives ──────────────────────────────────────────────────────────────────
-omni archive create release.zip src\ docs\
-omni archive extract release.zip --to $env:TEMP\release
-omni archive list release.zip --json
-omni archive convert project.zip project.tar.gz
+omnicli archive create release.zip src\ docs\
+omnicli archive extract release.zip --to $env:TEMP\release
+omnicli archive list release.zip --json
+omnicli archive convert project.zip project.tar.gz
 
 # ── Conversion ────────────────────────────────────────────────────────────────
-omni convert run data.csv data.json
-omni convert run config.yaml config.toml
-omni convert run photo.png photo.webp
+omnicli convert run data.csv data.json
+omnicli convert run config.yaml config.toml
+omnicli convert run photo.png photo.webp
 
 # ── Config ────────────────────────────────────────────────────────────────────
-omni config show
-omni config path
+omnicli config show
+omnicli config path
 ```
 
 
@@ -481,38 +487,38 @@ omni config path
 
 ```bash
 # ── File ops ──────────────────────────────────────────────────────────────────
-omni file find "*.rs" --modified 7d --type f
-omni file hash firmware.bin --algo sha256 --json | jq .digest
-omni file copy src/ dist/ --recursive --verify
-omni file sync ~/source ~/backup --delete-extraneous --dry-run
-omni file duplicate --scan ~/Downloads --delete-dupes --dry-run
+omnicli file find "*.rs" --modified 7d --type f
+omnicli file hash firmware.bin --algo sha256 --json | jq .digest
+omnicli file copy src/ dist/ --recursive --verify
+omnicli file sync ~/source ~/backup --delete-extraneous --dry-run
+omnicli file duplicate --scan ~/Downloads --delete-dupes --dry-run
 
 # ── Search ────────────────────────────────────────────────────────────────────
-omni search index ~/projects ~/Documents
-omni search "CVE-2026-1234"
-omni search query "TODO|FIXME" --in code --regex
+omnicli search index ~/projects ~/Documents
+omnicli search "CVE-2026-1234"
+omnicli search query "TODO|FIXME" --in code --regex
 
 # ── Archives ──────────────────────────────────────────────────────────────────
-omni archive create release.tar.gz src/ docs/
-omni archive extract release.tar.gz --to /tmp/release
-omni archive list release.tar.gz --json | jq '.[].name'
-omni archive convert project.zip project.tar.gz
+omnicli archive create release.tar.gz src/ docs/
+omnicli archive extract release.tar.gz --to /tmp/release
+omnicli archive list release.tar.gz --json | jq '.[].name'
+omnicli archive convert project.zip project.tar.gz
 
 # ── Conversion ────────────────────────────────────────────────────────────────
-omni convert run data.csv data.json
-omni convert run config.yaml config.toml
-omni convert run photo.png photo.webp
-omni convert list
+omnicli convert run data.csv data.json
+omnicli convert run config.yaml config.toml
+omnicli convert run photo.png photo.webp
+omnicli convert list
 
 # ── Encryption ────────────────────────────────────────────────────────────────
 age-keygen -o key.txt
-omni file encrypt report.pdf --recipient age1ql3z7...
-omni file decrypt report.pdf.age --identity AGE-SECRET-KEY-1...
+omnicli file encrypt report.pdf --recipient age1ql3z7...
+omnicli file decrypt report.pdf.age --identity AGE-SECRET-KEY-1...
 
 # ── Config ────────────────────────────────────────────────────────────────────
-omni config show
-omni config show --json | jq .search.index_paths
-omni config path
+omnicli config show
+omnicli config show --json | jq .search.index_paths
+omnicli config path
 ```
 
 ---

@@ -19,21 +19,21 @@ jobs:
           # Kali Linux / ParrotOS / Debian x86_64
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
-            archive: omni-linux-x86_64.tar.gz
-            binary: omni
+            archive: omnicli-linux-x86_64.tar.gz
+            binary: omnicli
 
           # Kali Linux / ParrotOS ARM64 (e.g. Raspberry Pi, Apple Silicon VMs)
           - os: ubuntu-latest
             target: aarch64-unknown-linux-gnu
-            archive: omni-linux-aarch64.tar.gz
-            binary: omni
+            archive: omnicli-linux-aarch64.tar.gz
+            binary: omnicli
             cross: true
 
           # Windows x86_64
           - os: windows-latest
             target: x86_64-pc-windows-msvc
             archive: omnicli-windows-x86_64.zip
-            binary: omni.exe
+            binary: omnicli.exe
 
     steps:
       - uses: actions/checkout@v4
@@ -87,7 +87,7 @@ jobs:
         run: |
           BINARY="omnicli/target/${{ matrix.target }}/release/${{ matrix.binary }}"
           mkdir -p dist
-          cp "$BINARY" dist/omni
+          cp "$BINARY" dist/omnicli
           cp omnicli/scripts/install.sh dist/ 2>/dev/null || true
           cp README.md dist/
           cd dist
@@ -156,7 +156,7 @@ jobs:
 
             ### Linux (Kali / ParrotOS / Debian / Ubuntu)
             ```bash
-            curl -fsSL https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/omni-linux-x86_64.tar.gz | tar xz
+            curl -fsSL https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/omnicli-linux-x86_64.tar.gz | tar xz
             sudo install -m 755 omni /usr/local/bin/omni
             ```
 
