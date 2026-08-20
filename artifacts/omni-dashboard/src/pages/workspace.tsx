@@ -81,7 +81,7 @@ function NotesTab() {
       ) : isError ? (
         <ErrorState compact title="Failed to load notes" message={(error as Error)?.message} onRetry={refetch} />
       ) : !notes?.length ? (
-        <EmptyState icon={<FileText className="w-8 h-8 text-muted-foreground"/>} title="No notes yet" description="Create one above or run: omni workspace note new 'My Note'" />
+        <EmptyState icon={<FileText className="w-8 h-8 text-muted-foreground"/>} title="No notes yet" description="Create one above or run: omnicli workspace note new 'My Note'" />
       ) : (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {notes.map((n) => (
@@ -152,7 +152,7 @@ function TodosTab() {
       ) : isError ? (
         <ErrorState compact title="Failed to load todos" message={(error as Error)?.message} onRetry={refetch} />
       ) : !todos?.length ? (
-        <EmptyState icon={<CheckSquare className="w-8 h-8 text-muted-foreground"/>} title="All clear!" description="Add todos above or run: omni workspace todo add 'Task'" />
+        <EmptyState icon={<CheckSquare className="w-8 h-8 text-muted-foreground"/>} title="All clear!" description="Add todos above or run: omnicli workspace todo add 'Task'" />
       ) : (
         <div className="space-y-1">
           {[...pending, ...done].map((t) => (
@@ -221,7 +221,7 @@ function SnippetsTab() {
       ) : isError ? (
         <ErrorState compact title="Failed to load snippets" message={(error as Error)?.message} onRetry={refetch} />
       ) : !snippets?.length ? (
-        <EmptyState icon={<Code className="w-8 h-8 text-muted-foreground"/>} title="No snippets saved" description="Store reusable code with: omni workspace snippet save 'name' 'body'" />
+        <EmptyState icon={<Code className="w-8 h-8 text-muted-foreground"/>} title="No snippets saved" description="Store reusable code with: omnicli workspace snippet save 'name' 'body'" />
       ) : (
         <div className="grid sm:grid-cols-2 gap-3">
           {snippets.map((s) => (

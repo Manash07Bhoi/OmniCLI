@@ -157,7 +157,7 @@ pub fn print_verbose(cfg: &OutputConfig, msg: &str) {
     }
 }
 
-/// Print the styled module header: `⬢ omni <module> · <context>`
+/// Print the styled module header: `⬢ omnicli <module> · <context>`
 pub fn print_header(cfg: &OutputConfig, module: &str, context: &str) {
     if cfg.quiet || cfg.is_json() {
         return;

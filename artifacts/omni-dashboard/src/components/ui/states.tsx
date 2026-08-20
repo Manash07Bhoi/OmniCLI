@@ -133,7 +133,7 @@ export function SearchEmptyState({ query }: { query: string }) {
       <div>
         <h3 className="font-semibold text-base font-mono">No results for "{query}"</h3>
         <p className="text-sm text-muted-foreground mt-1">
-          Try a different query, or run <code className="text-primary">omni search index .</code> to index files first.
+          Try a different query, or run <code className="text-primary">omnicli search index .</code> to index files first.
         </p>
       </div>
     </div>

@@ -6,7 +6,7 @@ pub enum ConvertError {
     Io(#[from] std::io::Error),
 
     #[error(
-        "Unsupported conversion: {from} → {to}. Run `omni convert --list` to see supported pairs."
+        "Unsupported conversion: {from} → {to}. Run `omnicli convert --list` to see supported pairs."
     )]
     UnsupportedPair { from: String, to: String },
 

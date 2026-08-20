@@ -4,11 +4,11 @@ import { promisify } from "node:util";
 
 const execFileAsync = promisify(execFile);
 
-/** Resolve the omni binary path — prefers release build, falls back to debug. */
+/** Resolve the omnicli binary path — prefers release build, falls back to debug. */
 function omniPath(): string {
   const workspace = process.env["WORKSPACE_ROOT"] ?? path.resolve(__dirname, "..", "..", "..", "..");
-  const release = path.join(workspace, "omnicli", "target", "release", "omni");
-  const debug   = path.join(workspace, "omnicli", "target", "debug", "omni");
+  const release = path.join(workspace, "omnicli", "target", "release", "omnicli");
+  const debug   = path.join(workspace, "omnicli", "target", "debug", "omnicli");
   // Synchronous existence check via require — acceptable once at startup
   try {
     require("node:fs").accessSync(release);
@@ -31,7 +31,7 @@ export interface ExecResult {
 }
 
 /**
- * Run `omni --json <args>` and return the parsed JSON output.
+ * Run `omnicli --json <args>` and return the parsed JSON output.
  * Throws if the binary is not found or exits non-zero and producess no JSON.
  */
 export async function omniJson<T>(args: string[], timeoutMs = 30_000): Promise<T> {
@@ -53,14 +53,14 @@ export async function omniJson<T>(args: string[], timeoutMs = 30_000): Promise<T
           // fall through
         }
       }
-      throw new Error(`omni ${args[0]} failed (exit ${e.code ?? "?"}): ${e.stderr ?? raw}`);
+      throw new Error(`omnicli ${args[0]} failed (exit ${e.code ?? "?"}): ${e.stderr ?? raw}`);
     }
     throw err;
   }
 }
 
 /**
- * Quick check: does the omni binary exist and respond to --version?
+ * Quick check: does the omnicli binary exist and respond to --version?
  */
 export async function omniAvailable(): Promise<boolean> {
   try {
