@@ -9,14 +9,16 @@
  ╚═════╝ ╚═╝     ╚═╝╚═╝  ╚═══╝╚═╝
 ```
 
-**One binary. One grammar. Full-stack power.**
+**One binary. One dashboard. Full-stack power.**
 
 [![Rust](https://img.shields.io/badge/rust-1.88%2B-orange?logo=rust&logoColor=white)](https://www.rust-lang.org/)
+[![TypeScript](https://img.shields.io/badge/typescript-5.x-3178c6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Clippy](https://img.shields.io/badge/clippy-clean-brightgreen?logo=rust)](#)
-[![Platform](https://img.shields.io/badge/platform-Termux%20%7C%20Kali%20%7C%20ParrotOS-0d1117?logo=linux&logoColor=white)](#)
+[![Security](https://img.shields.io/badge/security-audited-brightgreen?logo=github-actions&logoColor=white)](.github/workflows/security.yml)
+[![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Termux%20%7C%20Kali%20%7C%20ParrotOS%20%7C%20Replit-0d1117?logo=linux&logoColor=white)](#)
 
-*File ops · Full-text search · Format conversion · Archive management · Configuration*
+*File ops · Full-text search · Format conversion · Archive management · Dev toolkit · Live web dashboard*
 
 </div>
 
@@ -24,69 +26,411 @@
 
 ## What is OmniCLI?
 
-OmniCLI (`omni`) is a **professional-grade command-line toolkit** that replaces a scattered collection of utilities with a single, coherent binary. Whether you're managing files on Android via Termux, doing security research on Kali Linux, or writing automation scripts on ParrotOS — `omni` speaks one grammar across every platform.
+OmniCLI is a **professional-grade, full-stack command-line toolkit** that replaces a scattered collection of utilities with a single, coherent binary — backed by a live React web dashboard and a typed REST API. Whether you're managing files on Android via Termux, running on Windows, doing security research on Kali Linux, writing automation scripts on ParrotOS, or running the live dashboard on Replit — `omni` speaks one grammar across every platform.
 
 ```bash
-omni file find "*.rs" --modified 7d
-omni file hash firmware.bin --json | jq .digest
-omni search "CVE-2026-1234"
-omni convert run data.csv data.json
-omni archive create release.tar.gz ./dist
-omni file encrypt secrets.toml --recipient age1ql3z7...
+# Find every Rust file modified in the last 7 days
+omnicli file find "*.rs" --modified 7d
+
+# Hash a binary with BLAKE3 and pipe it
+omnicli file hash firmware.bin --json | jq .digest
+
+# Search millions of indexed files for a CVE in under a second
+omnicli search "CVE-2026-1234"
+
+# Convert an entire CSV dataset to JSON
+omnicli convert run data.csv data.json
+
+# Pack a directory into a compressed archive
+omnicli archive create release.tar.gz ./dist
+
+# Encrypt a file with age X25519
+omnicli file encrypt secrets.toml --recipient age1ql3z7hjy54pw3hjymouwyfx24i98aw2aqx77k5
+
+# Open the dashboard (Replit / local)
+open http://localhost:$PORT
 ```
 
 ---
 
-## Modules
+## Project Components
+
+| Component | Technology | Purpose |
+|-----------|------------|---------|
+| **Rust CLI** (`omni`) | Rust 1.88 · clap 4 · SQLite FTS5 | Core binary — all commands, all modules |
+| **REST API** | Node.js · Express · TypeScript · Zod | Bridges CLI modules with the web layer |
+| **Web Dashboard** | React 19 · Vite · Tailwind CSS 4 | Live telemetry, search, converter, dev toolkit |
+| **Shared DB** | Drizzle ORM · SQLite | Notes, todos, snippets, activity log, backups |
+| **OpenAPI Spec** | Orval · Zod · React Query | End-to-end typed client/server contract |
+
+---
+
+## CLI Modules
 
 | Module | Commands | Highlights |
 |--------|----------|------------|
-| **`omni file`** | find, copy, move, compare, duplicate, clean, hash, encrypt, decrypt, compress, sync | BLAKE3/SHA256/MD5 · age X25519 encryption · verified copy · BLAKE3-powered sync |
-| **`omni search`** | index, query, rebuild | SQLite FTS5 · Porter stemmer · regex · per-type filters · sub-second queries |
-| **`omni archive`** | create, extract, list, convert | zip · tar.gz · tar.xz · tar.bz2 · magic-byte detection · zip-slip protected |
-| **`omni convert`** | run, list | 16 format pairs: CSV↔JSON · YAML↔TOML↔JSON · MD→HTML · PNG/JPG↔WebP · PDF→TXT |
-| **`omni config`** | show, path | Full TOML config with live defaults |
+| **`omnicli file`** | find, copy, move, compare, duplicate, clean, hash, encrypt, decrypt, compress, sync | BLAKE3/SHA256/MD5 · age X25519 encryption · verified copy · BLAKE3-powered sync |
+| **`omnicli search`** | index, query, rebuild | SQLite FTS5 · Porter stemmer · regex · per-type filters · sub-second queries |
+| **`omnicli archive`** | create, extract, list, convert | zip · tar.gz · tar.xz · tar.bz2 · magic-byte detection · zip-slip protected |
+| **`omnicli convert`** | run, list | 16 format pairs: CSV↔JSON · YAML↔TOML↔JSON · MD→HTML · PNG/JPG↔WebP · PDF→TXT |
+| **`omnicli config`** | show, path | Full TOML config with live defaults |
+
+## Web Dashboard Panels
+
+| Panel | What it does |
+|-------|-------------|
+| **Command Center** | Real-time system telemetry — file counts, storage, module status, activity log |
+| **Global Search** | Full-text search across indexed files via the REST API |
+| **File Finder** | Browse the filesystem and inspect file metadata |
+| **Archive Inspector** | List and inspect archive contents without extracting |
+| **Format Converter** | Convert files between 16 format pairs via drag-and-drop |
+| **Dev Toolkit** | Hash, Base64, UUID generation, regex tester, JSON formatter, JWT decoder |
+| **Workspace** | Notes, todos, and snippets — persisted in SQLite |
+| **Backup Ops** | Incremental backup tracking with BLAKE3 deduplication |
+
+---
+
+## Design Principles
+
+| Principle | What it means |
+|-----------|---------------|
+| **Zero mock data** | Every function returns data from a real operation. Unimplemented paths return an explicit `Err` — never a fake `Ok`. |
+| **Typed errors everywhere** | Each crate owns a `CrateError` enum via `thiserror`. `anyhow` lives only at the dispatch boundary. |
+| **BLAKE3 by default** | All content-hash operations use BLAKE3. SHA256 and MD5 available via `--algo`. |
+| **Zip-slip protected** | Archive extraction validates all entry paths against `..` traversal and absolute-path injection. |
+| **`--json` on every command** | Every command emits machine-readable JSON — no screen-scraping required. |
+| **`--dry-run` on destructive ops** | `clean`, `sync --delete-extraneous`, and `duplicate --delete-dupes` all support `--dry-run`. |
+| **`NO_COLOR` respected** | Colour output honours the [no-color.org](https://no-color.org) standard and the `--no-color` flag. |
+
+---
+
+
+
+
+
+## Screenshots
+
+Explore OmniCLI's capabilities through our full-stack interface.
+
+### Web Dashboard
+
+#### Light Theme Dashboard
+<p align="center">
+  <img src="docs/assets/dashboard.png" alt="OmniCLI Command Center Dashboard Light Theme" width="800" />
+  <br>
+  <em>Real-time system telemetry, file counts, storage stats, and module status in Light Mode.</em>
+</p>
+
+#### Command Center
+<p align="center">
+  <img src="docs/assets/dashboard-dark.png" alt="OmniCLI Command Center Dashboard" width="800" />
+  <br>
+  <em>Real-time system telemetry, file counts, storage stats, and module status in Dark Mode.</em>
+</p>
+
+#### Format Converter
+<p align="center">
+  <img src="docs/assets/convert-dark.png" alt="Format Converter View" width="800" />
+  <br>
+  <em>Convert files between 16 formats via an intuitive drag-and-drop interface.</em>
+</p>
+
+### Core Features
+
+#### File Operations
+<p align="center">
+  <img src="docs/assets/files-dark.png" alt="File Finder Operations" width="800" />
+  <br>
+  <em>Browse the filesystem and inspect metadata effortlessly.</em>
+</p>
+
+#### Search & Find
+<p align="center">
+  <img src="docs/assets/search-dark.png" alt="Global Full-text Search" width="800" />
+  <br>
+  <em>Sub-second full-text queries across your indexed files using SQLite FTS5.</em>
+</p>
+
+#### Duplicate Finder
+<p align="center">
+  <img src="docs/assets/duplicate-dark.png" alt="Duplicate Finder Operations" width="800" />
+  <br>
+  <em>Find and manage duplicate files quickly within the File Operations suite.</em>
+</p>
+
+#### Hash Generator
+<p align="center">
+  <img src="docs/assets/hash-dark.png" alt="Hash Generator" width="800" />
+  <br>
+  <em>Generate cryptographically secure hashes directly from the web dashboard.</em>
+</p>
+
+#### Compression & Encryption
+<p align="center">
+  <img src="docs/assets/compression-encryption-dark.png" alt="Compression and Encryption" width="800" />
+  <br>
+  <em>Manage file compression and secure them with encryption via the dashboard.</em>
+</p>
+
+#### Sync & Backup
+<p align="center">
+  <img src="docs/assets/backup-dark.png" alt="Backup Operations" width="800" />
+  <br>
+  <em>Track incremental backups using BLAKE3 deduplication.</em>
+</p>
+
+#### Dev Toolkit
+<p align="center">
+  <img src="docs/assets/dev-dark.png" alt="Developer Toolkit" width="800" />
+  <br>
+  <em>Hash, Encode, UUID generation, regex testing, and JSON formatting.</em>
+</p>
+
+### Application Management
+
+#### Settings & Workspace
+<p align="center">
+  <img src="docs/assets/settings-dark.png" alt="Application Settings" width="800" />
+  <br>
+  <em>Configure workspace features, notes, and manage application state.</em>
+</p>
+
+#### Help & About (Archive Inspector)
+<p align="center">
+  <img src="docs/assets/about-dark.png" alt="Help and About" width="800" />
+  <br>
+  <em>Explore archive details and view in-depth information about your files.</em>
+</p>
+
+### CLI Experience
+
+#### Terminal Commands
+<p align="center">
+  <img src="docs/assets/cli-examples.png" alt="OmniCLI Terminal Output Examples" width="800" />
+  <br>
+  <em>Blazing fast file finding, hashing, and archive management.</em>
+</p>
+<p align="center">
+  <img src="docs/assets/cli-examples-2.png" alt="Advanced Terminal Output Examples" width="800" />
+  <br>
+  <em>Age X25519 encryption, compression, and syncing operations.</em>
+</p>
+
+### Mobile Experience
+
+#### Responsive Command Center
+<p align="center">
+  <img src="docs/assets/dashboard-mobile.png" alt="Mobile Dashboard View" width="300" />
+  <br>
+  <em>Full-stack power accessible from your phone or Termux environment.</em>
+</p>
+
+---
+
+## Releases
+
+### How to Create a Release
+Maintainers can create a new release simply by pushing a version tag to the repository:
+```bash
+git tag v1.0.0
+git push origin v1.0.0
+```
+This automatically triggers the GitHub Actions release workflow, which builds, packages, and publishes the release artifacts.
+
+### Where to Download
+Users can download pre-compiled binaries from the [GitHub Releases](https://github.com/Manash07Bhoi/OmniCLI/releases) page.
+
+### Officially Supported CI Platforms
+The automated release pipeline currently supports and builds artifacts for:
+- **Windows** (x86_64)
+- **Linux** (x86_64) - Covers Debian, Ubuntu, Kali Linux, ParrotOS, etc.
+- **Linux ARM64** (aarch64)
+
+*(Note: Termux/Android releases are handled separately but remain fully supported.)*
+
+### Verifying SHA-256 Checksums
+Every release includes a `SHA256SUMS.txt` file containing checksums for all archives. To verify your downloaded archive, run the following command in the directory containing both the archive and the checksum file:
+
+**Linux / macOS / Termux:**
+```bash
+sha256sum -c SHA256SUMS.txt --ignore-missing
+```
+
+**Windows (PowerShell):**
+```powershell
+$Expected = (Select-String -Path .\SHA256SUMS.txt -Pattern "omnicli-windows-x86_64.zip").Line.Split(" ")[0]
+$Actual = (Get-FileHash .\omnicli-windows-x86_64.zip -Algorithm SHA256).Hash.ToLower()
+if ($Expected -eq $Actual) { Write-Output "Checksum OK" } else { Write-Output "Checksum MISMATCH" }
+```
 
 ---
 
 ## Installation
 
+### Replit (zero setup)
+
+All three services start automatically. After cloning:
+
+```bash
+pnpm install
+pnpm --filter @workspace/db run push   # create SQLite tables (first run only)
+# workflows start automatically — API on :8080, dashboard on the preview URL
+```
+
+Build the Rust CLI:
+
+```bash
+cd omnicli && cargo build --release
+./target/release/omnicli --help
+```
+
+### crates.io
+```bash
+cargo install omnicli-app
+omnicli --version
+```
+
+### Windows (PowerShell)
+
+OmniCLI is fully supported on Windows. You can install the CLI standalone, or run the full Web Dashboard suite.
+
+**System Requirements:**
+- Windows 10 or Windows 11
+- PowerShell 5.1 or later
+
+#### 1. CLI Installation (Automated)
+
+You can download and install the latest release directly via PowerShell:
+
+```powershell
+# Create an installation directory
+New-Item -ItemType Directory -Force -Path $env:USERPROFILE\OmniCLI
+Set-Location $env:USERPROFILE\OmniCLI
+
+# Download the latest Windows release
+Invoke-WebRequest -Uri "https://github.com/Manash07Bhoi/OmniCLI/releases/latest/download/omnicli-windows-x86_64.zip" -OutFile "omnicli.zip"
+
+# Extract the archive
+Expand-Archive -Path "omnicli.zip" -DestinationPath . -Force
+
+# Add to your User PATH environment variable
+$UserPath = [Environment]::GetEnvironmentVariable("PATH", "User")
+if ($UserPath -notmatch "OmniCLI") {
+    [Environment]::SetEnvironmentVariable("PATH", "$UserPath;$env:USERPROFILE\OmniCLI", "User")
+}
+
+# Verify installation (open a new PowerShell window first if omni is not found)
+omnicli --version
+```
+
+#### 2. Web Dashboard Setup & Usage
+
+The Web Dashboard provides a powerful local UI for file management, search, and viewing command history. Running it requires Node.js and `pnpm`.
+
+**Prerequisites:** Ensure you have [Git](https://git-scm.com/download/win) and Node.js installed. If you have `winget`, you can install Node.js quickly:
+```powershell
+winget install OpenJS.NodeJS
+npm install -g pnpm
+```
+
+**Clone and Start the Dashboard:**
+```powershell
+# 1. Clone the repository
+git clone https://github.com/Manash07Bhoi/OmniCLI
+cd OmniCLI
+
+# 2. Install dependencies
+pnpm install
+
+# 3. Setup the local SQLite database schema (first run only)
+pnpm --filter @workspace/db run push
+
+# 4. Start the dashboard and REST API
+pnpm run dev
+```
+
+*Open your web browser and navigate to **`http://localhost:3000`**!*
+
+**Using the Web Dashboard:**
+- **Command Center:** The default view at `localhost:3000` shows your system telemetry, total indexed files, and recent activity logs.
+- **Global Search:** Click the "Search" tab on the sidebar. If you have indexed files via the CLI (`omnicli search index ~\Documents`), you can search their contents instantly here.
+- **Format Converter:** Navigate to the Converter panel. Drag and drop a `data.csv` file from your desktop into the UI to instantly convert it to JSON or YAML.
+- **Dev Toolkit:** Use the built-in UI tools to generate UUIDs, encode Base64 strings, or test Regex without dropping to the terminal.
+
 ### Termux (Android)
 
 ```bash
-pkg update && pkg install rust git
+# 1. Install Rust, Git, and Node.js
+pkg update && pkg install rust git nodejs
+
+# 2. Clone and build the Rust CLI
 git clone https://github.com/Manash07Bhoi/OmniCLI
-cd OmniCLI/omnicli && cargo build --release
-cp target/release/omni $PREFIX/bin/
-omni --version
+cd OmniCLI
+cd omnicli && cargo build --release
+cp target/release/omnicli $PREFIX/bin/
+omnicli --version
+
+# 3. Start the Web Dashboard
+cd ..
+npm install -g pnpm
+pnpm install
+pnpm --filter @workspace/db run push
+
+# Run the dashboard and API in development mode
+# It will start the API on port 8080 and the Dashboard on port 3000
+pnpm run dev
 ```
+*Open your mobile browser and navigate to `http://localhost:3000` to view the dashboard!*
 
 ### Kali Linux / ParrotOS / Debian
 
 ```bash
-sudo apt install build-essential libssl-dev pkg-config
+# 1. Install dependencies
+sudo apt install build-essential libssl-dev pkg-config nodejs npm
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 source $HOME/.cargo/env
 
+# 2. Clone and build the Rust CLI
 git clone https://github.com/Manash07Bhoi/OmniCLI
-cd OmniCLI/omnicli && cargo build --release
-sudo cp target/release/omni /usr/local/bin/
-omni --version
+cd OmniCLI
+cd omnicli && cargo build --release
+sudo cp target/release/omnicli /usr/local/bin/
+omnicli --version
+
+# 3. Start the Web Dashboard
+cd ..
+sudo npm install -g pnpm
+pnpm install
+pnpm --filter @workspace/db run push
+
+# Run the dashboard and API in development mode
+pnpm run dev
 ```
+*Open a web browser and navigate to `http://localhost:3000` to view the dashboard!*
 
 ### Build from source
 
 ```bash
 cd omnicli
 
-cargo build --release        # optimised binary (~12 MB, bundled SQLite)
-cargo test                   # run all tests
-cargo clippy -- -D warnings  # must stay clean
+# Debug build (fast compile, full symbols)
+cargo build
+
+# Optimised release binary (~12 MB, statically linked SQLite)
+cargo build --release
+
+# Run all tests
+cargo test
+
+# Lint (must stay clean)
+cargo clippy -- -D warnings
 ```
 
 ---
 
 ## Global Flags
+
+Every `omni` command accepts these flags at any position:
 
 | Flag | Short | Description |
 |------|-------|-------------|
@@ -99,31 +443,134 @@ cargo clippy -- -D warnings  # must stay clean
 
 ---
 
-## Full Usage Guide
+## Command Reference
 
-See **[docs/USAGE.md](docs/USAGE.md)** for the complete command reference with real examples and expected output for every module.
+See **[docs/USAGE.md](omnicli/docs/USAGE.md)** for the complete practical reference with real examples and expected output.
+
+### Windows Quick Examples (PowerShell)
+
+```powershell
+# ── Basics ────────────────────────────────────────────────────────────────────
+omnicli --version
+omnicli --help
+
+# ── File ops ──────────────────────────────────────────────────────────────────
+omnicli file find "*.rs" --modified 7d --type f
+omnicli file hash firmware.bin --algo sha256 --json
+omnicli file copy src\ dist\ --recursive --verify
+omnicli file sync ~\source ~\backup --delete-extraneous --dry-run
+omnicli file duplicate --scan ~\Downloads --delete-dupes --dry-run
+
+# ── Search ────────────────────────────────────────────────────────────────────
+omnicli search index ~\projects ~\Documents
+omnicli search "CVE-2026-1234"
+omnicli search query "TODO|FIXME" --in code --regex
+
+# ── Archives ──────────────────────────────────────────────────────────────────
+omnicli archive create release.zip src\ docs\
+omnicli archive extract release.zip --to $env:TEMP\release
+omnicli archive list release.zip --json
+omnicli archive convert project.zip project.tar.gz
+
+# ── Conversion ────────────────────────────────────────────────────────────────
+omnicli convert run data.csv data.json
+omnicli convert run config.yaml config.toml
+omnicli convert run photo.png photo.webp
+
+# ── Config ────────────────────────────────────────────────────────────────────
+omnicli config show
+omnicli config path
+```
+
+
+### Unix/Linux Quick examples
+
+```bash
+# ── File ops ──────────────────────────────────────────────────────────────────
+omnicli file find "*.rs" --modified 7d --type f
+omnicli file hash firmware.bin --algo sha256 --json | jq .digest
+omnicli file copy src/ dist/ --recursive --verify
+omnicli file sync ~/source ~/backup --delete-extraneous --dry-run
+omnicli file duplicate --scan ~/Downloads --delete-dupes --dry-run
+
+# ── Search ────────────────────────────────────────────────────────────────────
+omnicli search index ~/projects ~/Documents
+omnicli search "CVE-2026-1234"
+omnicli search query "TODO|FIXME" --in code --regex
+
+# ── Archives ──────────────────────────────────────────────────────────────────
+omnicli archive create release.tar.gz src/ docs/
+omnicli archive extract release.tar.gz --to /tmp/release
+omnicli archive list release.tar.gz --json | jq '.[].name'
+omnicli archive convert project.zip project.tar.gz
+
+# ── Conversion ────────────────────────────────────────────────────────────────
+omnicli convert run data.csv data.json
+omnicli convert run config.yaml config.toml
+omnicli convert run photo.png photo.webp
+omnicli convert list
+
+# ── Encryption ────────────────────────────────────────────────────────────────
+age-keygen -o key.txt
+omnicli file encrypt report.pdf --recipient age1ql3z7...
+omnicli file decrypt report.pdf.age --identity AGE-SECRET-KEY-1...
+
+# ── Config ────────────────────────────────────────────────────────────────────
+omnicli config show
+omnicli config show --json | jq .search.index_paths
+omnicli config path
+```
+
+---
+
+## API Server
+
+Runs on `$PORT` (default 8080). All routes are under `/api`:
+
+| Route | Method | Description |
+|-------|--------|-------------|
+| `/api/healthz` | GET | Health check — `{"status":"ok"}` |
+| `/api/dashboard/stats` | GET | File counts, storage, module status |
+| `/api/dashboard/activity` | GET | Recent operation log |
+| `/api/dashboard/module-status` | GET | Live status of all active modules |
+| `/api/files/*` | GET | File finder and metadata |
+| `/api/search/query` | GET | Full-text search via SQLite FTS5 |
+| `/api/convert/run` | POST | Run a format conversion |
+| `/api/archive/list` | GET | List archive contents |
+| `/api/workspace/*` | GET/POST | Notes, todos, snippets |
+| `/api/backup/*` | GET/POST | Backup jobs |
+| `/api/dev/*` | GET | Hash, UUID, Base64 dev toolkit |
+
+The API contract is defined in [`lib/api-spec/openapi.yaml`](lib/api-spec/openapi.yaml) and enforced end-to-end via Zod schemas (generated by Orval).
 
 ---
 
 ## Architecture
 
 ```
-omnicli/
-├── Cargo.toml                  ← Workspace root — all shared dependency versions
-└── crates/
-    ├── omni-cli/               ← Binary entry-point: clap parse → dispatch
-    │   ├── src/cli.rs          ← Full CLI definition (all modules, all verbs)
-    │   └── src/dispatch.rs     ← Routes every command to the right module
-    ├── omni-core/              ← Shared: hashing, output styling, config, platform
-    │   ├── src/hash.rs         ← hash_file(path, algo) → hex string
-    │   ├── src/output.rs       ← OutputConfig, print_success/error/info/warn
-    │   ├── src/config.rs       ← OmniConfig loaded from ~/.config/omni/omni.toml
-    │   └── src/platform.rs     ← expand_tilde, format_bytes, data_dir
-    ├── omni-file/              ← File operations (11 verbs)
-    ├── omni-search/            ← SQLite FTS5 index + full-text search
-    ├── omni-archive/           ← zip/tar/* — zip-slip protected
-    ├── omni-convert/           ← 16 format conversion codecs
-    └── omni-config/            ← Config format handling
+OmniCLI/
+├── omnicli/                            ← Rust workspace
+│   ├── Cargo.toml                      ← Shared dependency versions (workspace deps)
+│   └── crates/
+│       ├── omni-cli/                   ← Binary: clap parse → dispatch
+│       ├── omni-core/                  ← Shared: hashing, output, config, platform
+│       ├── omni-file/                  ← File operations (11 verbs)
+│       ├── omni-search/                ← SQLite FTS5 index + query
+│       ├── omni-archive/               ← zip/tar/* — zip-slip protected
+│       ├── omni-convert/               ← 16 format codecs
+│       └── omni-config/                ← Config loading (TOML)
+│
+├── artifacts/
+│   ├── api-server/                     ← Express + TypeScript REST API
+│   │   └── src/routes/                 ← health, dashboard, files, search, …
+│   ├── omni-dashboard/                 ← React 19 + Vite + Tailwind CSS 4
+│   └── mockup-sandbox/                 ← Vite component preview server
+│
+└── lib/
+    ├── api-spec/                       ← OpenAPI 3.1 specification
+    ├── api-client-react/               ← Generated React Query hooks (Orval)
+    ├── api-zod/                        ← Generated Zod schemas
+    └── db/                             ← Drizzle ORM + SQLite schema
 ```
 
 **Dependency rules (enforced by crate graph):**
@@ -154,15 +601,18 @@ main.rs          →  exit(1) + stderr         (never silently swallows)
 |---------|-----------|
 | **Zip-slip** | Archive extraction rejects `..` path components and absolute entry paths |
 | **Encryption** | age X25519 asymmetric encryption via the audited [`age`](https://crates.io/crates/age) crate |
-| **Key exposure** | Identity keys via `--identity` are visible in `ps` — use shell substitution in production |
+| **Key exposure** | Identity keys in `--identity` are visible in `ps` — use shell substitution for production |
 | **BLAKE3 integrity** | `--verify` on copy re-hashes the destination to confirm byte-identical transfer |
-| **Dependency auditing** | Weekly `cargo audit` + `cargo deny` via GitHub Actions |
+| **Dependency auditing** | Weekly `cargo audit` + `cargo deny` + `pnpm audit` via GitHub Actions |
+| **License gate** | `cargo deny` blocks GPL/AGPL/LGPL and the `openssl` crate (rustls only) |
 
 ---
 
 ## Testing
 
 ```bash
+cd omnicli
+
 # All tests across all crates
 cargo test
 
@@ -185,11 +635,11 @@ cargo test -- --nocapture
 
 ## Performance
 
-- **BLAKE3** is ~3× faster than SHA-256 on modern hardware (AVX2-accelerated)
+- **BLAKE3** is ~3× faster than SHA-256 on modern hardware (AVX2-accelerated via the `blake3` crate)
 - **FTS5 queries** return results in under 10 ms on a 100k-file index
 - **Archive creation** streams through the encoder — no full in-memory buffer
-- **Sync** only copies changed files (BLAKE3 comparison), making reruns cheap
-- **Duplicate scan** uses a two-pass strategy: size-group first, hash only collisions
+- **Sync** only copies changed files (BLAKE3 content comparison), making reruns cheap
+- **Duplicate scan** uses a two-pass strategy: size-group first, hash only size-collision candidates
 
 ---
 
@@ -197,6 +647,8 @@ cargo test -- --nocapture
 
 | Platform | Notes |
 |----------|-------|
+| **Replit** | All three services start via pnpm workflows; SQLite DB at `~/.local/share/omni/omni.db` |
+| **Windows** | Full native support; PowerShell recommended for script examples |
 | **Termux (Android)** | `isatty()` probe works; colour auto-detected; path expansion handles Termux prefix |
 | **Kali Linux** | `rusqlite` compiled with bundled SQLite — no system lib required |
 | **ParrotOS** | Static SQLite avoids version conflicts |
@@ -206,16 +658,24 @@ cargo test -- --nocapture
 
 ## Contributing
 
-Read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a PR.
+Read [CONTRIBUTING.md](omnicli/CONTRIBUTING.md) before opening a PR.
 
 **Every PR must pass:**
 
 ```bash
+cd omnicli
 cargo clippy -- -D warnings   # zero diagnostics
 cargo test                     # all tests green
 cargo build --release          # release build succeeds
 cargo fmt --check              # formatting clean
 ```
+
+**Architecture rules:**
+1. No function may return mock/hardcoded data — use `Err(...)` for unimplemented paths
+2. No `unwrap()` / `expect()` in library code — propagate errors with `?`
+3. Every new command must have `--json` output and a unit test
+4. Clippy must stay clean (`-D warnings`)
+5. Circular dependencies between crates are forbidden
 
 ---
 
@@ -227,8 +687,10 @@ MIT — see [LICENSE](LICENSE).
 
 <div align="center">
 
-Built with ❤️ in Rust · Targets Termux, Kali, and ParrotOS
+Built with ❤️ in Rust & TypeScript
 
-[Usage Guide](docs/USAGE.md) · [Contributing](CONTRIBUTING.md) · [Full Docs](../README.md)
+Windows · Termux · Kali Linux · ParrotOS · Replit
+
+[Usage Guide](omnicli/docs/USAGE.md) · [Contributing](omnicli/CONTRIBUTING.md) · [API Spec](lib/api-spec/openapi.yaml)
 
 </div>
