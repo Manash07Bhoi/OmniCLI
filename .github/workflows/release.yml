@@ -88,7 +88,7 @@ jobs:
           BINARY="omnicli/target/${{ matrix.target }}/release/${{ matrix.binary }}"
           mkdir -p dist
           cp "$BINARY" dist/omnicli
-          cp scripts/install.sh dist/ 2>/dev/null || true
+          cp omnicli/scripts/install.sh dist/ 2>/dev/null || true
           cp README.md dist/
           cd dist
           tar czf "../${{ matrix.archive }}" .

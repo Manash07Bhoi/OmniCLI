@@ -9,8 +9,8 @@ repository = "https://github.com/Manash07Bhoi/OmniCLI"
 
 
 [dependencies]
-omnicli-core = { path = "../omnicli-core" }
-omnicli-archive = { path = "../omnicli-archive" }
+omnicli-core = { path = "../omnicli-core", version = "0.1.0" }
+omnicli-archive = { path = "../omnicli-archive", version = "0.1.0" }
 
 anyhow = { workspace = true }
 thiserror = { workspace = true }
