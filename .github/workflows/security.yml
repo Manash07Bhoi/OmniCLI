@@ -111,9 +111,9 @@ jobs:
       - name: Smoke test
         working-directory: omnicli
         run: |
-          ./target/release/omni --version
-          ./target/release/omni file find --path . --type f --count
-          ./target/release/omni convert list
-          ./target/release/omni config show
-          ./target/release/omni dev uuid --count 3
-          ./target/release/omni dev hash "hello" --algo sha256
+          ./target/release/omnicli --version
+          ./target/release/omnicli file find --path . --type f --count
+          ./target/release/omnicli convert list
+          ./target/release/omnicli config show
+          ./target/release/omnicli dev uuid --count 3
+          ./target/release/omnicli dev hash "hello" --algo sha256
