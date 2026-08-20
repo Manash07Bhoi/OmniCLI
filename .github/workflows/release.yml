@@ -19,21 +19,21 @@ jobs:
           # Kali Linux / ParrotOS / Debian x86_64
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
-            archive: omni-linux-x86_64.tar.gz
-            binary: omni
+            archive: omnicli-linux-x86_64.tar.gz
+            binary: omnicli
 
           # Kali Linux / ParrotOS ARM64 (e.g. Raspberry Pi, Apple Silicon VMs)
           - os: ubuntu-latest
             target: aarch64-unknown-linux-gnu
-            archive: omni-linux-aarch64.tar.gz
-            binary: omni
+            archive: omnicli-linux-aarch64.tar.gz
+            binary: omnicli
             cross: true
 
           # Windows x86_64
           - os: windows-latest
             target: x86_64-pc-windows-msvc
             archive: omnicli-windows-x86_64.zip
-            binary: omni.exe
+            binary: omnicli.exe
 
     steps:
       - uses: actions/checkout@v4
@@ -87,7 +87,7 @@ jobs:
         run: |
           BINARY="omnicli/target/${{ matrix.target }}/release/${{ matrix.binary }}"
           mkdir -p dist
-          cp "$BINARY" dist/omni
+          cp "$BINARY" dist/omnicli
           cp omnicli/scripts/install.sh dist/ 2>/dev/null || true
           cp README.md dist/
           cd dist
@@ -99,7 +99,7 @@ jobs:
         run: |
           $Binary = "omnicli/target/${{ matrix.target }}/release/${{ matrix.binary }}"
           New-Item -ItemType Directory -Force -Path dist
-          Copy-Item $Binary -Destination dist\omni.exe
+          Copy-Item $Binary -Destination dist\omnicli.exe
           Copy-Item README.md -Destination dist\
           Compress-Archive -Path dist\* -DestinationPath ${{ matrix.archive }}
 
@@ -152,24 +152,24 @@ jobs:
             ## Install
 
             ### Windows
-            Download the `.zip` archive, extract `omni.exe`, and add it to your PATH.
+            Download the `.zip` archive, extract `omnicli.exe`, and add it to your PATH.
 
             ### Linux (Kali / ParrotOS / Debian / Ubuntu)
             ```bash
-            curl -fsSL https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/omni-linux-x86_64.tar.gz | tar xz
-            sudo install -m 755 omni /usr/local/bin/omni
+            curl -fsSL https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/omnicli-linux-x86_64.tar.gz | tar xz
+            sudo install -m 755 omnicli /usr/local/bin/omnicli
             ```
 
             ### Build from source
             ```bash
             git clone https://github.com/${{ github.repository }}
             cd omnicli && cargo build --release
-            sudo cp target/release/omni /usr/local/bin/
+            sudo cp target/release/omnicli /usr/local/bin/
             ```
 
             ## Verify
             ```bash
-            omni --version
-            omni file find --path . --count
-            omni convert list
+            omnicli --version
+            omnicli file find --path . --count
+            omnicli convert list
             ```

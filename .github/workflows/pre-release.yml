@@ -56,13 +56,13 @@ jobs:
       - name: Smoke tests
         working-directory: omnicli
         run: |
-          ./target/release/omni --version
-          ./target/release/omni --help
-          ./target/release/omni file find --path . --count
-          ./target/release/omni convert list
-          ./target/release/omni config show
-          ./target/release/omni dev uuid --count 1
-          ./target/release/omni dev hash "pre-release-check" --algo blake3
+          ./target/release/omnicli --version
+          ./target/release/omnicli --help
+          ./target/release/omnicli file find --path . --count
+          ./target/release/omnicli convert list
+          ./target/release/omnicli config show
+          ./target/release/omnicli dev uuid --count 1
+          ./target/release/omnicli dev hash "pre-release-check" --algo blake3
           echo "All smoke tests passed ✓"
 
   # ── Full TypeScript gate ──────────────────────────────────────────────────

@@ -1,0 +1,23 @@
+[package]
+name = "omnicli-config"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+description = "Core library component of the OmniCLI full-stack toolkit."
+repository = "https://github.com/Manash07Bhoi/OmniCLI"
+
+
+
+[dependencies]
+omnicli-core = { path = "../omnicli-core", version = "0.1.0" }
+
+anyhow     = { workspace = true }
+thiserror  = { workspace = true }
+serde      = { workspace = true }
+serde_json = { workspace = true }
+serde_yaml = { workspace = true }
+toml       = { workspace = true }
+quick-xml  = { version = "0.41", features = ["serialize"] }
+
+[dev-dependencies]
+tempfile = { workspace = true }

@@ -66,10 +66,10 @@ jobs:
       - name: Smoke test binary
         working-directory: omnicli
         run: |
-          ./target/release/omni --version
-          ./target/release/omni file find --path . --type f --count
-          ./target/release/omni convert list
-          ./target/release/omni config show
+          ./target/release/omnicli --version
+          ./target/release/omnicli file find --path . --type f --count
+          ./target/release/omnicli convert list
+          ./target/release/omnicli config show
 
   msrv:
     name: Minimum Supported Rust Version
