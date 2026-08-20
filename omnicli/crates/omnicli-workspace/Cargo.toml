@@ -1,0 +1,22 @@
+[package]
+name = "omnicli-workspace"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+description = "Core library component of the OmniCLI full-stack toolkit."
+repository = "https://github.com/Manash07Bhoi/OmniCLI"
+
+
+
+[dependencies]
+omnicli-core = { path = "../omnicli-core" }
+
+anyhow    = { workspace = true }
+thiserror = { workspace = true }
+serde     = { workspace = true }
+serde_json = { workspace = true }
+rusqlite  = { workspace = true }
+chrono    = { workspace = true }
+
+[dev-dependencies]
+tempfile = { workspace = true }
