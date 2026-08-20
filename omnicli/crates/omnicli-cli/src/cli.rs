@@ -4,7 +4,7 @@ use std::path::PathBuf;
 /// OmniCLI — one binary, one grammar, twelve modules.
 #[derive(Debug, Parser)]
 #[command(
-    name = "omni",
+    name = "omnicli",
     version,
     author,
     about = "One CLI for file ops, search, conversion, backup, archiving, and workspace management.",
