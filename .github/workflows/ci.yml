@@ -52,23 +52,23 @@ jobs:
         shell: bash
         run: |
           if [[ "$RUNNER_OS" == "Windows" ]]; then
-            ./omnicli/target/release/omni.exe --version
+            ./omnicli/target/release/omnicli.exe --version
           else
-            ./omnicli/target/release/omni --version
+            ./omnicli/target/release/omnicli --version
           fi
 
       - name: Smoke test — commands
         if: runner.os != 'Windows'
         working-directory: omnicli
         run: |
-          ./target/release/omni file find "*.toml" --count
-          ./target/release/omni dev uuid --count 2
-          ./target/release/omni dev hash "hello-omnicli" --algo blake3
-          ./target/release/omni dev hash "hello-omnicli" --algo sha256
-          ./target/release/omni convert list
-          ./target/release/omni completions bash | head -5
-          ./target/release/omni completions zsh  | head -5
-          ./target/release/omni completions fish | head -5
+          ./target/release/omnicli file find "*.toml" --count
+          ./target/release/omnicli dev uuid --count 2
+          ./target/release/omnicli dev hash "hello-omnicli" --algo blake3
+          ./target/release/omnicli dev hash "hello-omnicli" --algo sha256
+          ./target/release/omnicli convert list
+          ./target/release/omnicli completions bash | head -5
+          ./target/release/omnicli completions zsh  | head -5
+          ./target/release/omnicli completions fish | head -5
 
   # ── TypeScript ────────────────────────────────────────────────────────────────
   typescript:
