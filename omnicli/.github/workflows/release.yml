@@ -129,7 +129,7 @@ jobs:
       - name: Flatten artifacts and generate checksums
         run: |
           cd dist
-          find . -mindepth 2 -type f -exec mv {} . \; || true
+          find . -mindepth 2 -type f -exec mv -n {} . \; || true
           find . -type d -empty -delete || true
           for file in *; do
             if [ -f "$file" ]; then
