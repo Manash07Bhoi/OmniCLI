@@ -125,7 +125,17 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: dist
-          merge-multiple: true
+
+      - name: Flatten artifacts and generate checksums
+        run: |
+          cd dist
+          find . -mindepth 2 -type f -exec mv {} . \; || true
+          find . -type d -empty -delete || true
+          for file in *; do
+            if [ -f "$file" ]; then
+              sha256sum "$file" >> SHA256SUMS.txt
+            fi
+          done
 
       - name: Generate release notes
         id: notes
