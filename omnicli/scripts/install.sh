@@ -18,9 +18,9 @@ else
   RED=''; GREEN=''; CYAN=''; BOLD=''; RESET=''
 fi
 
-info()  { printf '%b%s%b\n' "${CYAN}"  "[omni] $*" "${RESET}"; }
-ok()    { printf '%b%s%b\n' "${GREEN}" "[omni] $*" "${RESET}"; }
-die()   { printf '%b%s%b\n' "${RED}"   "[omni] ERROR: $*" "${RESET}" >&2; exit 1; }
+info()  { printf '%b%s%b\n' "${CYAN}"  "[omnicli] $*" "${RESET}"; }
+ok()    { printf '%b%s%b\n' "${GREEN}" "[omnicli] $*" "${RESET}"; }
+die()   { printf '%b%s%b\n' "${RED}"   "[omnicli] ERROR: $*" "${RESET}" >&2; exit 1; }
 
 # ── Detect OS and architecture ────────────────────────────────────────────────
 detect_target() {
