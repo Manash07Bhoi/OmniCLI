@@ -258,8 +258,8 @@ sha256sum -c SHA256SUMS.txt --ignore-missing
 
 **Windows (PowerShell):**
 ```powershell
-$Expected = (Select-String -Path .\SHA256SUMS.txt -Pattern "omnicli-windows-x86_64.zip").Line.Split(" ")[0]
-$Actual = (Get-FileHash .\omnicli-windows-x86_64.zip -Algorithm SHA256).Hash.ToLower()
+$Expected = (Select-String -Path .\SHA256SUMS.txt -Pattern "omnicli-x86_64-pc-windows-msvc.zip").Line.Split(" ")[0]
+$Actual = (Get-FileHash .\omnicli-x86_64-pc-windows-msvc.zip -Algorithm SHA256).Hash.ToLower()
 if ($Expected -eq $Actual) { Write-Output "Checksum OK" } else { Write-Output "Checksum MISMATCH" }
 ```
 
@@ -308,7 +308,7 @@ New-Item -ItemType Directory -Force -Path $env:USERPROFILE\OmniCLI
 Set-Location $env:USERPROFILE\OmniCLI
 
 # Download the latest Windows release
-Invoke-WebRequest -Uri "https://github.com/Manash07Bhoi/OmniCLI/releases/latest/download/omnicli-windows-x86_64.zip" -OutFile "omnicli.zip"
+Invoke-WebRequest -Uri "https://github.com/Manash07Bhoi/OmniCLI/releases/latest/download/omnicli-x86_64-pc-windows-msvc.zip" -OutFile "omnicli.zip"
 
 # Extract the archive
 Expand-Archive -Path "omnicli.zip" -DestinationPath . -Force

@@ -1,6 +1,6 @@
 [package]
 name = "omnicli-dev"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 license = "MIT"
 description = "Core library component of the OmniCLI full-stack toolkit."
@@ -9,7 +9,7 @@ repository = "https://github.com/Manash07Bhoi/OmniCLI"
 
 
 [dependencies]
-omnicli-core = { path = "../omnicli-core", version = "0.1.0" }
+omnicli-core = { path = "../omnicli-core", version = "0.1.1" }
 
 anyhow    = { workspace = true }
 thiserror = { workspace = true }

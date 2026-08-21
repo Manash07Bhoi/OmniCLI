@@ -117,3 +117,9 @@ This project uses [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) forma
 
 [Unreleased]: https://github.com/Manash07Bhoi/OmniCLI/compare/v0.1.0...HEAD
 [0.1.0]: https://github.com/Manash07Bhoi/OmniCLI/releases/tag/v0.1.0
+
+## [0.1.1] - 2026-08-21
+### Fixed
+- Addressed stale `.github/workflows/` configurations breaking `v0.1.0` GitHub releases.
+- Synchronized canonical artifact naming format to `omnicli-<target_triple>.<ext>` across scripts, CI, and docs.
+- Fully unblocked TUR Termux publishing pipeline with canonical archives.

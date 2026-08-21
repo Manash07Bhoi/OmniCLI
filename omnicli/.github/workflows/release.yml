@@ -75,6 +75,7 @@ jobs:
           key: ${{ runner.os }}-${{ matrix.target }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Build release binary
+        working-directory: omnicli
         env:
           CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER: aarch64-linux-gnu-gcc
           CARGO_TARGET_ARMV7_UNKNOWN_LINUX_MUSLEABIHF_LINKER: arm-linux-gnueabihf-gcc
@@ -82,9 +83,10 @@ jobs:
 
       - name: Package archive (Unix)
         if: runner.os != 'Windows'
+        working-directory: omnicli
         run: |
           TAG="${{ github.ref_name }}"
-          ARCHIVE="omni-${{ matrix.target }}.tar.gz"
+          ARCHIVE="omnicli-${{ matrix.target }}.tar.gz"
           cp target/${{ matrix.target }}/release/omnicli .
           tar -czf "$ARCHIVE" omnicli README.md LICENSE
           sha256sum "$ARCHIVE" > "$ARCHIVE.sha256"
@@ -92,9 +94,10 @@ jobs:
 
       - name: Package archive (Windows)
         if: runner.os == 'Windows'
+        working-directory: omnicli
         shell: pwsh
         run: |
-          $ARCHIVE = "omni-${{ matrix.target }}.zip"
+          $ARCHIVE = "omnicli-${{ matrix.target }}.zip"
           Copy-Item "target/${{ matrix.target }}/release/omnicli.exe" .
           Compress-Archive -Path omnicli.exe,README.md,LICENSE -DestinationPath $ARCHIVE
           $hash = (Get-FileHash $ARCHIVE -Algorithm SHA256).Hash.ToLower()
@@ -104,9 +107,9 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: omni-${{ matrix.target }}
+          name: omnicli-${{ matrix.target }}
           path: |
-            omni-${{ matrix.target }}.*
+            omnicli/omnicli-${{ matrix.target }}.*
 
   release:
     name: Create GitHub Release
@@ -135,23 +138,23 @@ jobs:
 
           **One-line installer (Linux / macOS / Termux):**
           ```bash
-          curl -fsSL https://raw.githubusercontent.com/${{ github.repository }}/main/scripts/install.sh | sh
+          curl -fsSL https://raw.githubusercontent.com/${{ github.repository }}/main/omnicli/scripts/install.sh | sh
           ```
 
           **Manual download:** Pick the binary for your platform from the assets below, verify the checksum, and place it in your `$PATH`.
 
           | Platform | File |
           |----------|------|
-          | Linux x86_64 (Kali, ParrotOS, Ubuntu) | `omni-x86_64-unknown-linux-musl.tar.gz` |
-          | Linux ARM64 (Termux modern Android) | `omni-aarch64-unknown-linux-musl.tar.gz` |
-          | Linux ARMv7 (Termux 32-bit Android) | `omni-armv7-unknown-linux-musleabihf.tar.gz` |
-          | macOS x86_64 | `omni-x86_64-apple-darwin.tar.gz` |
-          | macOS ARM64 (Apple Silicon) | `omni-aarch64-apple-darwin.tar.gz` |
-          | Windows x86_64 | `omni-x86_64-pc-windows-msvc.zip` |
+          | Linux x86_64 (Kali, ParrotOS, Ubuntu) | `omnicli-x86_64-unknown-linux-musl.tar.gz` |
+          | Linux ARM64 (Termux modern Android) | `omnicli-aarch64-unknown-linux-musl.tar.gz` |
+          | Linux ARMv7 (Termux 32-bit Android) | `omnicli-armv7-unknown-linux-musleabihf.tar.gz` |
+          | macOS x86_64 | `omnicli-x86_64-apple-darwin.tar.gz` |
+          | macOS ARM64 (Apple Silicon) | `omnicli-aarch64-apple-darwin.tar.gz` |
+          | Windows x86_64 | `omnicli-x86_64-pc-windows-msvc.zip` |
 
           ### Verify checksum
           ```bash
-          sha256sum -c omni-<platform>.tar.gz.sha256
+          sha256sum -c omnicli-<platform>.tar.gz.sha256
           ```
           EOF
 
