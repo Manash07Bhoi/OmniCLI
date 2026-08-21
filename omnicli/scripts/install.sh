@@ -8,7 +8,7 @@ set -e
 
 REPO="https://github.com/YOU/omnicli"
 VERSION="${OMNI_VERSION:-latest}"
-BINARY_NAME="omni"
+BINARY_NAME="omnicli"
 
 # ── Colours (skip when NO_COLOR is set or not a TTY) ──────────────────────────
 if [ -t 1 ] && [ -z "${NO_COLOR:-}" ]; then
@@ -30,8 +30,8 @@ detect_target() {
   # Termux (Android)
   if [ -n "${TERMUX_VERSION:-}" ] || [ -d "/data/data/com.termux" ]; then
     case "${ARCH}" in
-      aarch64|arm64) echo "android-aarch64" ;;
-      armv7*|armv8l) echo "android-armv7"   ;;
+      aarch64|arm64) echo "aarch64-unknown-linux-musl" ;;
+      armv7*|armv8l) echo "armv7-unknown-linux-musleabihf"   ;;
       *) die "Unsupported Termux architecture: ${ARCH}" ;;
     esac
     return
@@ -40,15 +40,15 @@ detect_target() {
   case "${OS}" in
     Linux)
       case "${ARCH}" in
-        x86_64|amd64)       echo "linux-x86_64"   ;;
-        aarch64|arm64)      echo "linux-aarch64"   ;;
-        armv7*|armv6*)      echo "linux-armv7"     ;;
+        x86_64|amd64)       echo "x86_64-unknown-linux-musl"   ;;
+        aarch64|arm64)      echo "aarch64-unknown-linux-musl"   ;;
+        armv7*|armv6*)      echo "armv7-unknown-linux-musleabihf"     ;;
         *) die "Unsupported Linux architecture: ${ARCH}" ;;
       esac ;;
     Darwin)
       case "${ARCH}" in
-        x86_64) echo "macos-x86_64"  ;;
-        arm64)  echo "macos-aarch64" ;;
+        x86_64) echo "x86_64-apple-darwin"  ;;
+        arm64)  echo "aarch64-apple-darwin" ;;
         *) die "Unsupported macOS architecture: ${ARCH}" ;;
       esac ;;
     *) die "Unsupported OS: ${OS}" ;;
@@ -122,7 +122,7 @@ main() {
   [ -z "${TAG}" ] && die "Could not determine release version. Set OMNI_VERSION=vX.Y.Z to pin a version."
   info "Installing version: ${TAG}"
 
-  ARCHIVE_NAME="omni-${TARGET}.tar.gz"
+  ARCHIVE_NAME="omnicli-${TARGET}.tar.gz"
   DOWNLOAD_URL="${REPO}/releases/download/${TAG}/${ARCHIVE_NAME}"
 
   TMP="$(mktemp -d)"
@@ -139,10 +139,10 @@ main() {
 
   info "Installing to ${INSTALL_DIR}/${BINARY_NAME}…"
   if [ "$(id -u)" -eq 0 ] || [ -w "${INSTALL_DIR}" ]; then
-    install -m 755 "${TMP}/omni" "${INSTALL_DIR}/${BINARY_NAME}"
+    install -m 755 "${TMP}/omnicli" "${INSTALL_DIR}/${BINARY_NAME}"
   else
     # Try sudo for system paths
-    sudo install -m 755 "${TMP}/omni" "${INSTALL_DIR}/${BINARY_NAME}"
+    sudo install -m 755 "${TMP}/omnicli" "${INSTALL_DIR}/${BINARY_NAME}"
   fi
 
   # ── Verify ────────────────────────────────────────────────────────────────
