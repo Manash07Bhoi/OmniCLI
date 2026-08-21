@@ -7,7 +7,7 @@ use walkdir::WalkDir;
 
 use crate::error::FileError;
 
-/// Options for `omni file sync`.
+/// Options for `omnicli file sync`.
 #[derive(Debug, Clone)]
 pub struct SyncOptions {
     pub source: PathBuf,

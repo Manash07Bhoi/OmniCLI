@@ -6,7 +6,7 @@ use std::{
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 
-/// Full `~/.config/omni/omni.toml` schema.
+/// Full `~/.config/omnicli/omnicli.toml` schema.
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct OmniConfig {
     #[serde(default)]
@@ -187,7 +187,7 @@ fn default_backup_dest() -> String {
     "~/omni-backups".into()
 }
 fn default_workspace_db() -> String {
-    "~/.local/share/omni/workspace.db".into()
+    "~/.local/share/omnicli/workspace.db".into()
 }
 fn default_sandbox() -> String {
     "wasm".into()
@@ -213,12 +213,12 @@ fn c_muted() -> String {
 
 // ── Loader ────────────────────────────────────────────────────────────────────
 
-/// Return the default config file path: `~/.config/omni/omni.toml`.
+/// Return the default config file path: `~/.config/omnicli/omnicli.toml`.
 pub fn default_config_path() -> PathBuf {
     dirs::config_dir()
         .unwrap_or_else(|| PathBuf::from(".config"))
         .join("omni")
-        .join("omni.toml")
+        .join("omnicli.toml")
 }
 
 /// Load config from `path` (or the default path).  Missing file returns defaults.
@@ -257,7 +257,7 @@ mod tests {
 
     #[test]
     fn test_load_config_missing_file() {
-        let cfg = load_config(Some(Path::new("/nonexistent/omni.toml"))).unwrap();
+        let cfg = load_config(Some(Path::new("/nonexistent/omnicli.toml"))).unwrap();
         // Missing file → defaults
         assert_eq!(cfg.core.output, "pretty");
     }

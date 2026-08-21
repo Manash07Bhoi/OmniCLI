@@ -27,13 +27,13 @@ pub fn data_dir() -> PathBuf {
         .join("omni")
 }
 
-/// Return the default config file path: `~/.config/omni/omni.toml` (Linux/macOS)
-/// or `%APPDATA%\omni\omni.toml` (Windows).
+/// Return the default config file path: `~/.config/omnicli/omnicli.toml` (Linux/macOS)
+/// or `%APPDATA%\omni\omnicli.toml` (Windows).
 pub fn config_file_path() -> PathBuf {
     dirs::config_dir()
         .unwrap_or_else(|| PathBuf::from(".config"))
         .join("omni")
-        .join("omni.toml")
+        .join("omnicli.toml")
 }
 
 /// Ensure a directory exists, creating it (and parents) if needed.
