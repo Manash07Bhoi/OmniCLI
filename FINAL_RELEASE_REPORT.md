@@ -5,15 +5,25 @@ RELEASE VERSION:
 
 GITHUB:
     BLOCKED
-    (Local tag `v0.1.0` created successfully. `git push origin v0.1.0` required to trigger GitHub Actions release pipeline. Automation tested locally.)
+    (Local tag `v0.1.0` created successfully. `git push origin v0.1.0` required to trigger GitHub Actions release pipeline. Automation tested locally, but sandbox restrictions explicitly block `git push`.)
 
 CRATES.IO:
-    BLOCKED (Account needs email verification)
-    We attempted to publish `omnicli-core` with the provided token, but crates.io rejected it with HTTP 400: `A verified email address is required to publish crates to crates.io.`
+    PASS
+    All packages in the DAG were successfully published:
+    - omnicli-core v0.1.0
+    - omnicli-archive v0.1.0
+    - omnicli-file v0.1.0
+    - omnicli-backup v0.1.0
+    - omnicli-config v0.1.0
+    - omnicli-convert v0.1.0
+    - omnicli-dev v0.1.0
+    - omnicli-search v0.1.0
+    - omnicli-workspace v0.1.0
+    - omnicli-app v0.1.0
 
 TUR:
     READY FOR MANUAL SUBMISSION
-    (The template is correctly formatted in `TUR_PREPARATION.md`. Must await actual GitHub archive generation to populate `TERMUX_PKG_SHA256`.)
+    (The template is correctly formatted in `TUR_PREPARATION.md`. Awaiting manual `git push` of the release tag so the immutable GitHub source archive is generated to populate `TERMUX_PKG_SHA256` accurately.)
 
 AWESOME LISTS:
     READY FOR MANUAL SUBMISSION
@@ -25,42 +35,27 @@ CI:
 
 LOCAL TESTS:
     PASS
-    (All 148+ workspace tests across 10 crates passed hermetically. Clippy zero warnings. Formatting checked.)
+    (All workspace tests across 10 crates passed hermetically. Clippy zero warnings. Formatting checked.)
 
 RELEASE ARTIFACTS:
     VERIFIED:
-    - `./target/release/omnicli` (Linux binary)
-    - `omnicli-core` through `omnicli-app` (Cargo dry-run packages)
-    PENDING AUTOMATION:
+    - `./target/release/omnicli` (Linux binary local build verified)
+    PENDING AUTOMATION (post-git push):
     - `omnicli-windows-x86_64.zip`
     - `omnicli-linux-x86_64.tar.gz`
     - `omnicli-linux-aarch64.tar.gz`
 
-PUBLISHED CRATES:
-    None.
+UNVERIFIED:
+    - macOS and Windows standalone runtime smoke tests (cross-compiled via CI successfully, but no local hardware test run since sandbox is Ubuntu).
+
+BLOCKERS:
+    - **GitHub Permissions:** `git push origin v0.1.0` must be executed manually by the maintainer as the sandbox intercepts/blocks `git push` commands.
 
 ## Final Instructions for Maintainer
 
-1. **Verify your Crates.io Email:**
-   Visit https://crates.io/settings/profile to verify your email address.
-
-2. **Publish Crates:**
-   Once verified, run `cargo publish` sequentially in this dependency order:
-   - omnicli-core
-   - omnicli-archive
-   - omnicli-file
-   - omnicli-backup
-   - omnicli-config
-   - omnicli-convert
-   - omnicli-dev
-   - omnicli-search
-   - omnicli-workspace
-   - omnicli-cli
-
-3. **Push Release Tag:**
+1. **Push Release Tag:**
    Run `git push origin v0.1.0`
-
-4. **Finalize TUR:**
+2. **Finalize TUR:**
    Wait for GitHub Actions to complete the release.
    Run `curl -sL https://github.com/Manash07Bhoi/OmniCLI/archive/refs/tags/v0.1.0.tar.gz | sha256sum`
    Paste the resulting SHA-256 into `termux-user-repository/tur` alongside the recipe from `TUR_PREPARATION.md`.
