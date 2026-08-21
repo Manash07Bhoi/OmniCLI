@@ -1,6 +1,6 @@
 # OmniCLI v0.1.1 Release Candidate Report
 
-This report outlines the verified state of the OmniCLI `v0.1.1` release candidate, constructed after reconciling the `v0.1.0` CI failures.
+This report outlines the verified state of the OmniCLI `v0.1.1` release candidate.
 
 ## 1. Version
 `0.1.1`
@@ -10,27 +10,25 @@ This report outlines the verified state of the OmniCLI `v0.1.1` release candidat
 
 ## 3. Tag
 VERIFIED locally (`v0.1.1`).
-NOT VERIFIED remotely (Blocked by environment safety restrictions preventing `git push`).
+NOT VERIFIED remotely (Awaiting manual user push).
 
 ## 4. GitHub Release
-NOT VERIFIED (Blocked; workflow cannot execute until tag is pushed).
+NOT VERIFIED (Awaiting GitHub Actions trigger upon manual push).
 
 ## 5. GitHub Actions run
-NOT VERIFIED (Blocked).
+NOT VERIFIED.
 
 ## 6. All artifacts
-NOT VERIFIED (None exist externally yet).
+NOT VERIFIED.
 
 ## 7. SHA-256 checksums
-NOT VERIFIED (No artifacts to hash).
+NOT VERIFIED.
 
 ## 8. crates.io packages
-UNVERIFIED (v0.1.1 not published to avoid sandbox mutating production registries).
-*(Note: v0.1.0 crates remain fully VERIFIED and functional).*
+NOT VERIFIED (`v0.1.1` not published; pending release verification).
 
 ## 9. cargo installation
 FAILED for `v0.1.1` (Package not published).
-PASS for `v0.1.0`.
 
 ## 10. Linux testing
 TESTED locally (Workspace tests, formatting, and build are completely GREEN).
@@ -45,7 +43,7 @@ UNVERIFIED (Requires GitHub Actions run).
 NEEDS REAL-WORLD TESTING.
 
 ## 14. TUR status
-READY_FOR_MANUAL_SUBMISSION (Awaiting true remote source archive).
+BLOCKED (Awaiting true remote source archive).
 
 ## 15. Awesome List PR status
 READY_FOR_MANUAL_SUBMISSION.
@@ -54,7 +52,7 @@ READY_FOR_MANUAL_SUBMISSION.
 VERIFIED (`cargo audit` reports 0 vulnerabilities).
 
 ## 17. Known limitations
-The entire release pipeline validation is blocked locally because the sandbox safely prevents executing `git push` or `cargo publish`. Thus, the artifacts and packages do not exist.
+The entire release pipeline validation is blocked locally because the sandbox safely prevents executing `git push` or `cargo publish`. Thus, the artifacts and packages do not exist yet.
 
 ## 18. Remaining actions
 1. Manually `git push origin HEAD` and `git push origin v0.1.1`.
@@ -66,4 +64,4 @@ The entire release pipeline validation is blocked locally because the sandbox sa
 ## RELEASE HEALTH:
 **YELLOW**
 
-*(The codebase, CI configurations, and tests are unequivocally clean and repaired. However, due to sandbox restrictions, the actual external validation (GitHub Actions, crates.io) could not be triggered. It is ready for manual release finalization.)*
+*(The codebase, CI configurations, and tests are unequivocally clean and repaired. However, due to sandbox restrictions, the actual external validation (GitHub Actions, crates.io) could not be triggered. It is ready for manual user release finalization.)*
