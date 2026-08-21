@@ -2,7 +2,7 @@
       - name: Flatten artifacts and generate checksums
         run: |
           cd dist
-          find . -mindepth 2 -type f -exec mv {} . \; || true
+          find . -mindepth 2 -type f -exec mv -n {} . \; || true
           find . -type d -empty -delete || true
           for file in *; do
             if [ -f "$file" ]; then
@@ -13,10 +13,10 @@
       - name: Flatten artifacts and generate checksums
         run: |
           cd dist
-          find . -mindepth 2 -type f -exec mv -n {} . \; || true
-          find . -type d -empty -delete || true
+          find . -mindepth 2 -type f -exec cp -n {} . \; || true
+          find . -mindepth 1 -type d -exec rm -rf {} + || true
           for file in *; do
-            if [ -f "$file" ]; then
+            if [ -f "$file" ] && [ "$file" != "SHA256SUMS.txt" ]; then
               sha256sum "$file" >> SHA256SUMS.txt
             fi
           done
