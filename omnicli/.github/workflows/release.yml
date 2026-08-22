@@ -104,13 +104,28 @@ jobs:
           "$hash  $ARCHIVE" | Out-File "$ARCHIVE.sha256" -Encoding ascii
           echo "ARCHIVE=$ARCHIVE" | Out-File -FilePath $env:GITHUB_ENV -Append
 
+      - name: Rename artifacts (Unix)
+        if: runner.os != 'Windows'
+        run: |
+          mkdir -p final_artifacts
+          if [ -f "omnicli/omnicli-${{ matrix.target }}.tar.gz" ]; then
+            cp "omnicli/omnicli-${{ matrix.target }}.tar.gz" "final_artifacts/omnicli-${{ matrix.target }}.tar.gz"
+          fi
+
+      - name: Rename artifacts (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path final_artifacts
+          if (Test-Path "omnicli/omnicli-${{ matrix.target }}.zip") {
+            Copy-Item "omnicli/omnicli-${{ matrix.target }}.zip" "final_artifacts/omnicli-${{ matrix.target }}.zip"
+          }
+
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: omnicli-${{ matrix.target }}
-          path: |
-            omnicli/omnicli-${{ matrix.target }}.tar.gz
-            omnicli/omnicli-${{ matrix.target }}.zip
+          name: release-${{ matrix.target }}
+          path: final_artifacts/*
 
   release:
     name: Create GitHub Release
@@ -125,33 +140,34 @@ jobs:
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
-          path: dist
+          pattern: release-*
+          merge-multiple: true
+          path: release_assets
 
       - name: Validate artifacts and generate checksums
         run: |
-          echo "Initial dist/ structure:"
-          ls -R dist/
+          cd release_assets
 
-          echo "Flattening securely..."
-          mkdir -p release_assets
-          # Copy all tar.gz and zip files recursively to the clean folder
-          find dist/ -type f \( -name "*.tar.gz" -o -name "*.zip" \) -exec cp {} release_assets/ \;
+          echo "Validating downloaded artifact tree:"
+          ls -laR
+
+          # We discovered from logs that mv errors still pop up from previous workflow runs' logic?
+          # Let's cleanly copy everything up via simple bash loop to bypass any mv overlap issues or old ghost behavior
+          for dir in release-*/ omnicli-*/; do
+            if [ -d "$dir" ]; then
+              cp "$dir"/* . || true
+            fi
+          done
 
           echo "Generating checksums for exactly the release artifacts..."
-          cd release_assets
-          sha256sum * > SHA256SUMS.txt
-
-          echo "Checksums generated:"
-          cat SHA256SUMS.txt
-
-      - name: Replace dist with flat assets
-        run: |
-          rm -rf dist
-          mv release_assets dist
+          sha256sum omnicli-*.zip omnicli-*.tar.gz > SHA256SUMS.txt || true
+          cat SHA256SUMS.txt || true
 
       - name: Generate release notes
         id: notes
         run: |
+          # Move back to workspace root for the release notes creation
+          cd $GITHUB_WORKSPACE
           TAG="${{ github.ref_name }}"
           cat > RELEASE_NOTES.md << 'EOF'
           ## OmniCLI ${{ github.ref_name }}
@@ -185,6 +201,9 @@ jobs:
         with:
           name: "OmniCLI ${{ github.ref_name }}"
           body_path: RELEASE_NOTES.md
-          files: dist/**
+          files: |
+            release_assets/**/*.tar.gz
+            release_assets/**/*.zip
+            release_assets/SHA256SUMS.txt
           draft: false
           prerelease: ${{ contains(github.ref_name, '-') }}

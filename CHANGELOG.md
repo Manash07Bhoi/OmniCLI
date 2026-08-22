@@ -122,4 +122,4 @@ This project uses [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) forma
 ### Fixed
 - Addressed stale `.github/workflows/` configurations breaking `v0.1.0` GitHub releases.
 - Synchronized canonical artifact naming format to `omnicli-<target_triple>.<ext>` across scripts, CI, and docs.
-- Prepared the TUR Termux publishing pipeline with canonical archives.
+- Fully unblocked TUR Termux publishing pipeline with canonical archives.
