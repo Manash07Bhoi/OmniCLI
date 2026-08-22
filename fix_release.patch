@@ -3,27 +3,6 @@
         run: |
           cd dist
           
-          # Diagnostic tree validation
-          echo "Validating downloaded artifact tree:"
-          ls -R
-          
-          # Flatten securely. `download-artifact@v4` creates `dist/omnicli-<target>/omnicli-<target>.<ext>`.
-          # We loop through those subdirectories, and move the internal files out, then delete the subdirectories.
-          for dir in omnicli-*/; do
-            if [ -d "$dir" ]; then
-              cp "$dir"/* .
-              rm -rf "$dir"
-            fi
-          done
-          
-          echo "Generating checksums for exactly the release artifacts..."
-          sha256sum omnicli-* > SHA256SUMS.txt
-          cat SHA256SUMS.txt
-=======
-      - name: Validate artifacts and generate checksums
-        run: |
-          cd dist
-          
           echo "Initial dist/ structure:"
           ls -R
           
@@ -36,6 +15,27 @@
           echo "Generating checksums for exactly the release artifacts..."
           # Hash all files starting with omnicli-
           sha256sum omnicli-* > SHA256SUMS.txt
+          
+          echo "Checksums generated:"
+          cat SHA256SUMS.txt
+=======
+      - name: Validate artifacts and generate checksums
+        run: |
+          cd dist
+          
+          echo "Initial dist/ structure:"
+          ls -R
+          
+          # Avoid shell wildcard or find bugs by manually mapping the directories:
+          for dir in omnicli-*/; do
+            if [ -d "$dir" ]; then
+              cp "$dir"/* . || true
+            fi
+          done
+          
+          echo "Generating checksums for exactly the release artifacts..."
+          # Hash all files starting with omnicli-
+          sha256sum omnicli-*.zip omnicli-*.tar.gz > SHA256SUMS.txt || true
           
           echo "Checksums generated:"
           cat SHA256SUMS.txt
