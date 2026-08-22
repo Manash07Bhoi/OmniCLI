@@ -1,66 +1,30 @@
 <<<<<<< SEARCH
-      - name: Download all artifacts
-        uses: actions/download-artifact@v4
-        with:
-          pattern: release-*
-          merge-multiple: true
-          path: release_assets
-
-      - name: Validate artifacts and generate checksums
+      - name: Rename artifacts
         run: |
-          cd release_assets
-          
-          echo "Validating downloaded artifact tree:"
-          ls -R
-          
-          # Ensure no subdirectories exist. Fail action if they do.
-          DIR_COUNT=$(find . -mindepth 1 -type d | wc -l)
-          if [ "$DIR_COUNT" -gt 0 ]; then
-            echo "Error: Unexpected subdirectories found in release_assets/."
-            test 0 -eq 1
+          # Copy to exactly the canonical name to a flat staging dir to enforce 
+          # download-artifact@v4 pulling exactly what we expect without any subdirectories
+          mkdir -p final_artifacts
+          if [ -f "omnicli/omnicli-${{ matrix.target }}.tar.gz" ]; then
+            cp "omnicli/omnicli-${{ matrix.target }}.tar.gz" "final_artifacts/omnicli-${{ matrix.target }}.tar.gz"
           fi
-          
-          # Ensure we have expected files
-          FILE_COUNT=$(find . -maxdepth 1 -type f -name 'omnicli-*' | wc -l)
-          if [ "$FILE_COUNT" -lt 1 ]; then
-            echo "Error: No omnicli release artifacts found in release_assets/."
-            test 0 -eq 1
+          if [ -f "omnicli/omnicli-${{ matrix.target }}.zip" ]; then
+            cp "omnicli/omnicli-${{ matrix.target }}.zip" "final_artifacts/omnicli-${{ matrix.target }}.zip"
           fi
-          
-          # Ensure no empty files
-          EMPTY_COUNT=$(find . -maxdepth 1 -type f -name 'omnicli-*' -empty | wc -l)
-          if [ "$EMPTY_COUNT" -gt 0 ]; then
-            echo "Error: Empty artifact found in release_assets/."
-            test 0 -eq 1
-          fi
-          
-          echo "Generating checksums for exactly the release artifacts..."
-          find . -maxdepth 1 -type f -name 'omnicli-*' -exec sha256sum {} + > SHA256SUMS.txt
-          
-          # Strip leading './'
-          sed -i 's| \./| |g' SHA256SUMS.txt
-          
-          cat SHA256SUMS.txt
-
-      - name: Generate release notes
 =======
-      - name: Download all artifacts
-        uses: actions/download-artifact@v4
-        with:
-          pattern: release-*
-          merge-multiple: true
-          path: release_assets
-
-      - name: Validate artifacts and generate checksums
+      - name: Rename artifacts (Unix)
+        if: runner.os != 'Windows'
         run: |
-          cd release_assets
+          mkdir -p final_artifacts
+          if [ -f "omnicli/omnicli-${{ matrix.target }}.tar.gz" ]; then
+            cp "omnicli/omnicli-${{ matrix.target }}.tar.gz" "final_artifacts/omnicli-${{ matrix.target }}.tar.gz"
+          fi
           
-          echo "Validating downloaded artifact tree:"
-          ls -R
-          
-          echo "Generating checksums for exactly the release artifacts..."
-          sha256sum omnicli-* > SHA256SUMS.txt
-          cat SHA256SUMS.txt
-
-      - name: Generate release notes
+      - name: Rename artifacts (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path final_artifacts
+          if (Test-Path "omnicli/omnicli-${{ matrix.target }}.zip") {
+            Copy-Item "omnicli/omnicli-${{ matrix.target }}.zip" "final_artifacts/omnicli-${{ matrix.target }}.zip"
+          }
 >>>>>>> REPLACE

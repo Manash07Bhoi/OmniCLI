@@ -104,14 +104,28 @@ jobs:
           "$hash  $ARCHIVE" | Out-File "$ARCHIVE.sha256" -Encoding ascii
           echo "ARCHIVE=$ARCHIVE" | Out-File -FilePath $env:GITHUB_ENV -Append
 
+      - name: Rename artifacts (Unix)
+        if: runner.os != 'Windows'
+        run: |
+          mkdir -p final_artifacts
+          if [ -f "omnicli/omnicli-${{ matrix.target }}.tar.gz" ]; then
+            cp "omnicli/omnicli-${{ matrix.target }}.tar.gz" "final_artifacts/omnicli-${{ matrix.target }}.tar.gz"
+          fi
+          
+      - name: Rename artifacts (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path final_artifacts
+          if (Test-Path "omnicli/omnicli-${{ matrix.target }}.zip") {
+            Copy-Item "omnicli/omnicli-${{ matrix.target }}.zip" "final_artifacts/omnicli-${{ matrix.target }}.zip"
+          }
+
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: release-${{ matrix.target }}
-          path: |
-            omnicli/omnicli-${{ matrix.target }}.tar.gz
-            omnicli/omnicli-${{ matrix.target }}.zip
-            omnicli/omnicli-${{ matrix.target }}.zip
+          path: final_artifacts/*
 
   release:
     name: Create GitHub Release
