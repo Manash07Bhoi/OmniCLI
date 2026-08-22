@@ -112,6 +112,7 @@ jobs:
             cp "omnicli/omnicli-${{ matrix.target }}.tar.gz" "final_artifacts/omnicli-${{ matrix.target }}.tar.gz"
           fi
 
+
       - name: Rename artifacts (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
@@ -151,17 +152,8 @@ jobs:
           echo "Validating downloaded artifact tree:"
           ls -laR
 
-          # We discovered from logs that mv errors still pop up from previous workflow runs' logic?
-          # Let's cleanly copy everything up via simple bash loop to bypass any mv overlap issues or old ghost behavior
-          for dir in release-*/ omnicli-*/; do
-            if [ -d "$dir" ]; then
-              cp "$dir"/* . || true
-            fi
-          done
-
-          echo "Generating checksums for exactly the release artifacts..."
-          sha256sum omnicli-*.zip omnicli-*.tar.gz > SHA256SUMS.txt || true
-          cat SHA256SUMS.txt || true
+          sha256sum omnicli-*.zip omnicli-*.tar.gz > SHA256SUMS.txt
+          cat SHA256SUMS.txt
 
       - name: Generate release notes
         id: notes
