@@ -3,17 +3,14 @@
         uses: actions/download-artifact@v4
         with:
           path: dist
+          merge-multiple: true
 
-      - name: Flatten artifacts and generate checksums
+      - name: Generate checksums
         run: |
           cd dist
-          find . -mindepth 2 -type f -exec cp -n {} . \; || true
-          find . -mindepth 1 -type d -exec rm -rf {} + || true
-          for file in *; do
-            if [ -f "$file" ] && [ "$file" != "SHA256SUMS.txt" ]; then
-              sha256sum "$file" >> SHA256SUMS.txt
-            fi
-          done
+          find . -type f ! -name "SHA256SUMS.txt" -print0 | xargs -0 sha256sum > SHA256SUMS.txt
+          sed -i 's| \./| |g' SHA256SUMS.txt
+          cat SHA256SUMS.txt || true
 =======
       - name: Download all artifacts
         uses: actions/download-artifact@v4
@@ -21,12 +18,40 @@
           path: dist
           merge-multiple: true
 
-      - name: Generate checksums
+      - name: Validate artifacts and generate checksums
         run: |
           cd dist
-          for file in *; do
-            if [ -f "$file" ] && [ "$file" != "SHA256SUMS.txt" ]; then
-              sha256sum "$file" >> SHA256SUMS.txt
-            fi
-          done
+          
+          # Diagnostic tree validation
+          echo "Validating downloaded artifact tree:"
+          ls -R
+          
+          # Ensure no subdirectories exist. Fail action if they do.
+          DIR_COUNT=$(find . -mindepth 1 -type d | wc -l)
+          if [ "$DIR_COUNT" -gt 0 ]; then
+            echo "Error: Unexpected subdirectories found in dist/."
+            test 0 -eq 1
+          fi
+          
+          # Ensure we have expected files
+          FILE_COUNT=$(find . -maxdepth 1 -type f -name 'omnicli-*' | wc -l)
+          if [ "$FILE_COUNT" -lt 1 ]; then
+            echo "Error: No omnicli release artifacts found in dist/."
+            test 0 -eq 1
+          fi
+          
+          # Ensure no empty files
+          EMPTY_COUNT=$(find . -maxdepth 1 -type f -name 'omnicli-*' -empty | wc -l)
+          if [ "$EMPTY_COUNT" -gt 0 ]; then
+            echo "Error: Empty artifact found in dist/."
+            test 0 -eq 1
+          fi
+          
+          echo "Generating checksums for exactly the release artifacts..."
+          find . -maxdepth 1 -type f -name 'omnicli-*' -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS.txt
+          
+          # Strip leading './'
+          sed -i 's| \./| |g' SHA256SUMS.txt
+          
+          cat SHA256SUMS.txt
 >>>>>>> REPLACE
