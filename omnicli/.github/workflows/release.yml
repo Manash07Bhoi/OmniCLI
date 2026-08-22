@@ -152,8 +152,11 @@ jobs:
           ls -laR
           
           echo "Generating checksums for exactly the release artifacts..."
-          # Secure checksum generation directly on expected release assets
-          sha256sum omnicli-* > SHA256SUMS.txt || true
+          # Use find to locate files (handling subdirectories if they still appear somehow)
+          find . -type f -name 'omnicli-*' -exec sha256sum {} + > SHA256SUMS.txt
+          
+          # Clean paths for releases UI
+          sed -i 's|.*/omnicli-|omnicli-|' SHA256SUMS.txt || true
           cat SHA256SUMS.txt || true
 
       - name: Generate release notes
@@ -194,6 +197,9 @@ jobs:
         with:
           name: "OmniCLI ${{ github.ref_name }}"
           body_path: RELEASE_NOTES.md
-          files: dist/**
+          files: |
+            release_assets/**/*.tar.gz
+            release_assets/**/*.zip
+            release_assets/SHA256SUMS.txt
           draft: false
           prerelease: ${{ contains(github.ref_name, '-') }}
