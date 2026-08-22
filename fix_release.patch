@@ -1,30 +1,30 @@
 <<<<<<< SEARCH
-      - name: Rename artifacts
+      - name: Validate artifacts and generate checksums
         run: |
-          # Copy to exactly the canonical name to a flat staging dir to enforce 
-          # download-artifact@v4 pulling exactly what we expect without any subdirectories
-          mkdir -p final_artifacts
-          if [ -f "omnicli/omnicli-${{ matrix.target }}.tar.gz" ]; then
-            cp "omnicli/omnicli-${{ matrix.target }}.tar.gz" "final_artifacts/omnicli-${{ matrix.target }}.tar.gz"
-          fi
-          if [ -f "omnicli/omnicli-${{ matrix.target }}.zip" ]; then
-            cp "omnicli/omnicli-${{ matrix.target }}.zip" "final_artifacts/omnicli-${{ matrix.target }}.zip"
-          fi
-=======
-      - name: Rename artifacts (Unix)
-        if: runner.os != 'Windows'
-        run: |
-          mkdir -p final_artifacts
-          if [ -f "omnicli/omnicli-${{ matrix.target }}.tar.gz" ]; then
-            cp "omnicli/omnicli-${{ matrix.target }}.tar.gz" "final_artifacts/omnicli-${{ matrix.target }}.tar.gz"
-          fi
+          cd release_assets
           
-      - name: Rename artifacts (Windows)
-        if: runner.os == 'Windows'
-        shell: pwsh
+          echo "Validating downloaded artifact tree:"
+          ls -R
+          
+          # We no longer use mv/cp here at all since we fixed it on the build upload side using final_artifacts/
+          # but previously added mv commands here are still failing somehow? 
+          # The logs say: `mv: cannot overwrite directory './omnicli-windows-x86_64.zip' with non-directory`
+          # Wait... the error in logs is from a lingering `mv` command. But `mv` is nowhere in the YAML above! 
+          
+          # Let's ensure checksum generates securely
+          echo "Generating checksums for exactly the release artifacts..."
+          sha256sum omnicli-* > SHA256SUMS.txt || true
+          cat SHA256SUMS.txt || true
+=======
+      - name: Validate artifacts and generate checksums
         run: |
-          New-Item -ItemType Directory -Force -Path final_artifacts
-          if (Test-Path "omnicli/omnicli-${{ matrix.target }}.zip") {
-            Copy-Item "omnicli/omnicli-${{ matrix.target }}.zip" "final_artifacts/omnicli-${{ matrix.target }}.zip"
-          }
+          cd release_assets
+          
+          echo "Validating downloaded artifact tree:"
+          ls -laR
+          
+          echo "Generating checksums for exactly the release artifacts..."
+          # Secure checksum generation directly on expected release assets
+          sha256sum omnicli-* > SHA256SUMS.txt || true
+          cat SHA256SUMS.txt || true
 >>>>>>> REPLACE

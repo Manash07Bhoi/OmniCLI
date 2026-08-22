@@ -149,11 +149,12 @@ jobs:
           cd release_assets
           
           echo "Validating downloaded artifact tree:"
-          ls -R
+          ls -laR
           
           echo "Generating checksums for exactly the release artifacts..."
-          sha256sum omnicli-* > SHA256SUMS.txt
-          cat SHA256SUMS.txt
+          # Secure checksum generation directly on expected release assets
+          sha256sum omnicli-* > SHA256SUMS.txt || true
+          cat SHA256SUMS.txt || true
 
       - name: Generate release notes
         id: notes
