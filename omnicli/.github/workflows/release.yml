@@ -152,6 +152,10 @@ jobs:
           echo "Validating downloaded artifact tree:"
           ls -laR
 
+          # Clean flattening is no longer required with actions/download-artifact@v4 merge-multiple: true,
+          # but we ensure everything is here and we generate the checksum file.
+
+          echo "Generating checksums for exactly the release artifacts..."
           sha256sum omnicli-*.zip omnicli-*.tar.gz > SHA256SUMS.txt
           cat SHA256SUMS.txt
 

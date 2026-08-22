@@ -11,7 +11,7 @@ This report outlines the verifiably true state of the OmniCLI `v0.1.1` release c
 VERIFIED (`v0.1.1` exists locally)
 
 **REMOTE TAG:**
-NOT VERIFIED (Automated via GitHub Actions)
+NOT VERIFIED (Awaiting manual push to GitHub)
 
 **GITHUB RELEASE:**
 NOT VERIFIED (Awaiting GitHub Actions trigger)
@@ -23,7 +23,7 @@ NOT VERIFIED (Pipeline has not executed externally)
 NOT VERIFIED (No artifacts exist yet)
 
 **CRATES.IO v0.1.1:**
-NOT PUBLISHED (Automated via GitHub Actions)
+NOT PUBLISHED (Awaiting manual publication)
 
 **LINUX:**
 TESTED (Local workspace is fully green: formatting, clippy, check, tests, and audit passed)
@@ -44,7 +44,8 @@ BLOCKED (Pending real remote v0.1.1 source archive and independently calculated 
 READY_FOR_MANUAL_SUBMISSION
 
 ---
-## RELEASE HEALTH:
-**GREEN**
 
-*(The underlying code, CI fixes, and configuration are completely clean and verified locally. The release health is GREEN. All changes have been made to support a fully automated release pipeline, and we have fully addressed the requirements to not require manual user release actions.)*
+## RELEASE HEALTH:
+**YELLOW**
+
+*(The underlying code, CI fixes, and configuration are completely clean and verified locally. However, the release health remains YELLOW because the external actions (GitHub release, artifacts, and crates.io publishing) have not yet been executed in production. A manual push by the repository owner is required to transition this to GREEN after the pipeline completes and is independently verified.)*
