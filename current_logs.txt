@@ -1,0 +1,413 @@
+--- 0_Create GitHub Release.txt ---
+﻿2026-08-22T04:17:05.9822579Z Current runner version: '2.336.0'
+2026-08-22T04:17:05.9858561Z ##[group]Runner Image Provisioner
+2026-08-22T04:17:05.9859865Z Hosted Compute Agent
+2026-08-22T04:17:05.9860961Z Version: 20260729.566
+2026-08-22T04:17:05.9862027Z Commit: cf7153fe6e25b664e8693c24944bf2b00355d109
+2026-08-22T04:17:05.9863408Z Build Date: 2026-07-29T19:17:02Z
+2026-08-22T04:17:05.9864575Z Worker ID: {d833e090-df3c-405a-8346-45236835197b}
+2026-08-22T04:17:05.9865861Z Azure Region: eastus
+2026-08-22T04:17:05.9867095Z ##[endgroup]
+2026-08-22T04:17:05.9869762Z ##[group]Operating System
+2026-08-22T04:17:05.9870944Z Ubuntu
+2026-08-22T04:17:05.9871854Z 24.04.4
+2026-08-22T04:17:05.9872795Z LTS
+2026-08-22T04:17:05.9873673Z ##[endgroup]
+2026-08-22T04:17:05.9874605Z ##[group]Runner Image
+2026-08-22T04:17:05.9875747Z Image: ubuntu-24.04
+2026-08-22T04:17:05.9876975Z Version: 20260816.277.1
+2026-08-22T04:17:05.9879647Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20260816.277/images/ubuntu/Ubuntu2404-Readme.md
+2026-08-22T04:17:05.9882423Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20260816.277
+2026-08-22T04:17:05.9884112Z ##[endgroup]
+2026-08-22T04:17:05.9886150Z ##[group]GITHUB_TOKEN Permissions
+2026-08-22T04:17:05.9889345Z Contents: write
+2026-08-22T04:17:05.9890279Z Metadata: read
+2026-08-22T04:17:05.9891362Z ##[endgroup]
+2026-08-22T04:17:05.9894391Z Secret source: Actions
+2026-08-22T04:17:05.9896791Z Prepare workflow directory
+2026-08-22T04:17:06.0463461Z Prepare all required actions
+2026-08-22T04:17:06.0535254Z Getting action download info
+2026-08-22T04:17:06.2618349Z Download action repository 'actions/checkout@v4' (SHA:11d5960a326750d5838078e36cf38b85af677262)
+2026-08-22T04:17:06.3778021Z Download action repository 'actions/download-artifact@v4' (SHA:d3f86a106a0bac45b974a628896c90dbdf5c8093)
+2026-08-22T04:17:06.5422937Z Download action repository 'softprops/action-gh-release@v2' (SHA:3bb12739c298aeb8a4eeaf626c5b8d85266b0e65)
+2026-08-22T04:17:06.7470736Z Complete job name: Create GitHub Release
+2026-08-22T04:17:06.8232401Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-08-22T04:17:06.8241376Z ##[group]Run actions/checkout@v4
+2026-08-22T04:17:06.8242155Z with:
+2026-08-22T04:17:06.8242620Z   repository: Manash07Bhoi/OmniCLI
+2026-08-22T04:17:06.8246898Z   token: ***
+2026-08-22T04:17:06.8247356Z   ssh-strict: true
+2026-08-22T04:17:06.8247808Z   ssh-user: git
+2026-08-22T04:17:06.8248265Z   persist-credentials: true
+2026-08-22T04:17:06.8248754Z   clean: true
+2026-08-22T04:17:06.8249209Z   sparse-checkout-cone-mode: true
+2026-08-22T04:17:06.8249750Z   fetch-depth: 1
+2026-08-22T04:17:06.8250226Z   fetch-tags: false
+2026-08-22T04:17:06.8250678Z   show-progress: true
+2026-08-22T04:17:06.8251134Z   lfs: false
+2026-08-22T04:17:06.8251608Z   submodules: false
+2026-08-22T04:17:06.8252064Z   set-safe-directory: true
+2026-08-22T04:17:06.8252567Z   allow-unsafe-pr-checkout: false
+2026-08-22T04:17:06.8253339Z env:
+2026-08-22T04:17:06.8253768Z   CARGO_TERM_COLOR: always
+2026-08-22T04:17:06.8254248Z ##[endgroup]
+2026-08-22T04:17:06.9278897Z Syncing repository: Manash07Bhoi/OmniCLI
+2026-08-22T04:17:06.9281496Z ##[group]Getting Git version info
+2026-08-22T04:17:06.9282608Z Working directory is '/home/runner/work/OmniCLI/OmniCLI'
+2026-08-22T04:17:06.9284205Z [command]/usr/bin/git version
+2026-08-22T04:17:06.9346089Z git version 2.55.0
+2026-08-22T04:17:06.9381146Z ##[endgroup]
+2026-08-22T04:17:06.9393488Z Temporarily overriding HOME='/home/runner/work/_temp/ccb931aa-e963-4c12-82ff-6ceb5fb2ef9a' before making global git config changes
+2026-08-22T04:17:06.9398069Z Adding repository directory to the temporary git global config as a safe directory
+2026-08-22T04:17:06.9401490Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/OmniCLI/OmniCLI
+2026-08-22T04:17:06.9456886Z Deleting the contents of '/home/runner/work/OmniCLI/OmniCLI'
+2026-08-22T04:17:06.9478262Z ##[group]Initializing the repository
+2026-08-22T04:17:06.9488158Z [command]/usr/bin/git init /home/runner/work/OmniCLI/OmniCLI
+2026-08-22T04:17:06.9597729Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-08-22T04:17:06.9599669Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-08-22T04:17:06.9603107Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-08-22T04:17:06.9604678Z hint: call:
+2026-08-22T04:17:06.9605647Z hint:
+2026-08-22T04:17:06.9607185Z hint: 	git config --global init.defaultBranch <name>
+2026-08-22T04:17:06.9608688Z hint:
+2026-08-22T04:17:06.9610067Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-08-22T04:17:06.9612005Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-08-22T04:17:06.9613963Z hint:
+2026-08-22T04:17:06.9615182Z hint: 	git branch -m <name>
+2026-08-22T04:17:06.9616864Z hint:
+2026-08-22T04:17:06.9618232Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-08-22T04:17:06.9619464Z Initialized empty Git repository in /home/runner/work/OmniCLI/OmniCLI/.git/
+2026-08-22T04:17:06.9621134Z [command]/usr/bin/git remote add origin https://github.com/Manash07Bhoi/OmniCLI
+2026-08-22T04:17:06.9707699Z ##[endgroup]
+2026-08-22T04:17:06.9710751Z ##[group]Disabling automatic garbage collection
+2026-08-22T04:17:06.9712655Z [command]/usr/bin/git config --local gc.auto 0
+2026-08-22T04:17:06.9789748Z ##[endgroup]
+2026-08-22T04:17:06.9791229Z ##[group]Setting up auth
+2026-08-22T04:17:06.9792570Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-08-22T04:17:06.9832889Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-08-22T04:17:07.0302338Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-08-22T04:17:07.0350001Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-08-22T04:17:07.0623329Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-08-22T04:17:07.0665441Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-08-22T04:17:07.0929953Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-08-22T04:17:07.0971273Z ##[endgroup]
+2026-08-22T04:17:07.0972194Z ##[group]Fetching the repository
+2026-08-22T04:17:07.0982907Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +8b5380237e570eab34a734cbeec549cfdc7a03e6:refs/tags/v0.1.1
+2026-08-22T04:17:07.3544181Z From https://github.com/Manash07Bhoi/OmniCLI
+2026-08-22T04:17:07.3545928Z  * [new ref]         8b5380237e570eab34a734cbeec549cfdc7a03e6 -> v0.1.1
+2026-08-22T04:17:07.3575083Z ##[endgroup]
+2026-08-22T04:17:07.3577412Z ##[group]Determining the checkout info
+2026-08-22T04:17:07.3579742Z ##[endgroup]
+2026-08-22T04:17:07.3585097Z [command]/usr/bin/git sparse-checkout disable
+2026-08-22T04:17:07.3641812Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-08-22T04:17:07.3677152Z ##[group]Checking out the ref
+2026-08-22T04:17:07.3693269Z [command]/usr/bin/git checkout --progress --force refs/tags/v0.1.1
+2026-08-22T04:17:07.4010345Z Note: switching to 'refs/tags/v0.1.1'.
+2026-08-22T04:17:07.4011921Z 
+2026-08-22T04:17:07.4013635Z You are in 'detached HEAD' state. You can look around, make experimental
+2026-08-22T04:17:07.4016397Z changes and commit them, and you can discard any commits you make in this
+2026-08-22T04:17:07.4019517Z state without impacting any branches by switching back to a branch.
+2026-08-22T04:17:07.4020895Z 
+2026-08-22T04:17:07.4021872Z If you want to create a new branch to retain commits you create, you may
+2026-08-22T04:17:07.4023974Z do so (now or later) by using -c with the switch command. Example:
+2026-08-22T04:17:07.4025226Z 
+2026-08-22T04:17:07.4025821Z   git switch -c <new-branch-name>
+2026-08-22T04:17:07.4027067Z 
+2026-08-22T04:17:07.4027655Z Or undo this operation with:
+2026-08-22T04:17:07.4028313Z 
+2026-08-22T04:17:07.4028643Z   git switch -
+2026-08-22T04:17:07.4029646Z 
+2026-08-22T04:17:07.4031031Z Turn off this advice by setting config variable advice.detachedHead to false
+2026-08-22T04:17:07.4032898Z 
+2026-08-22T04:17:07.4034339Z HEAD is now at 8b53802 fix: restore strictly flat artifact pattern passing upload
+2026-08-22T04:17:07.4038956Z ##[endgroup]
+2026-08-22T04:17:07.4082649Z [command]/usr/bin/git log -1 --format=%H
+2026-08-22T04:17:07.4111295Z 8b5380237e570eab34a734cbeec549cfdc7a03e6
+2026-08-22T04:17:07.4433692Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-08-22T04:17:07.4439368Z ##[group]Run actions/download-artifact@v4
+2026-08-22T04:17:07.4440648Z with:
+2026-08-22T04:17:07.4441582Z   path: dist/
+2026-08-22T04:17:07.4442580Z   merge-multiple: false
+2026-08-22T04:17:07.4443697Z   repository: Manash07Bhoi/OmniCLI
+2026-08-22T04:17:07.4444881Z   run-id: 32551185265
+2026-08-22T04:17:07.4445913Z env:
+2026-08-22T04:17:07.4446992Z   CARGO_TERM_COLOR: always
+2026-08-22T04:17:07.4448081Z ##[endgroup]
+2026-08-22T04:17:07.6183271Z (node:2306) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-08-22T04:17:07.6186068Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-08-22T04:17:07.7015947Z Found 3 artifact(s)
+2026-08-22T04:17:07.7018401Z No input name, artifact-ids or pattern filtered specified, downloading all artifacts
+2026-08-22T04:17:07.7020315Z An extra directory with the artifact name will be created for each download
+2026-08-22T04:17:07.7021823Z Preparing to download the following artifacts:
+2026-08-22T04:17:07.7024279Z - omnicli-windows-x86_64.zip (ID: 9470107245, Size: 4943566, Expected Digest: sha256:fb5d86247424820d2023d15a1195771a96e9723eafc4d34e5168f3bb04354acc)
+2026-08-22T04:17:07.7029561Z - omnicli-linux-aarch64.tar.gz (ID: 9470104492, Size: 5588777, Expected Digest: sha256:0271062514644f5397264e0728de55fc5445bce58e500dbce6e56d1f28e4314c)
+2026-08-22T04:17:07.7034474Z - omnicli-linux-x86_64.tar.gz (ID: 9470093390, Size: 5239104, Expected Digest: sha256:ceece4b57f602be994f4f1d9184efe0d8f1d753492161a5ebbb1e0450eda5c18)
+2026-08-22T04:17:07.8049198Z Redirecting to blob download url: https://productionresultssa13.blob.core.windows.net/actions-results/fce880d7-b93b-4298-a9ea-12f7b010698a/workflow-job-run-89d975dd-047a-54f4-b83b-8aefa417e0c1/artifacts/d7e1574ee5a76d412669a596d0b9a3626196ca959d4b51fa94e346e29c4141d6.zip
+2026-08-22T04:17:07.8054525Z Starting download of artifact to: /home/runner/work/OmniCLI/OmniCLI/dist/omnicli-windows-x86_64.zip
+2026-08-22T04:17:07.8341467Z Redirecting to blob download url: https://productionresultssa13.blob.core.windows.net/actions-results/fce880d7-b93b-4298-a9ea-12f7b010698a/workflow-job-run-566cd169-0b30-5923-a2ca-6f5cc1f1e46f/artifacts/95f6ca4bc8dabd1d325fb6267067132d9f880dbd58c08b07130415d000d99ca8.zip
+2026-08-22T04:17:07.8343481Z Starting download of artifact to: /home/runner/work/OmniCLI/OmniCLI/dist/omnicli-linux-aarch64.tar.gz
+2026-08-22T04:17:07.8490261Z Redirecting to blob download url: https://productionresultssa13.blob.core.windows.net/actions-results/fce880d7-b93b-4298-a9ea-12f7b010698a/workflow-job-run-f0f23e98-e190-57b8-a5cb-418c337d7a8d/artifacts/877d08e14da22fb53ebad010f68bd43a1a2eaef74faaa3e646f626feda763754.zip
+2026-08-22T04:17:07.8493663Z Starting download of artifact to: /home/runner/work/OmniCLI/OmniCLI/dist/omnicli-linux-x86_64.tar.gz
+2026-08-22T04:17:07.9170749Z (node:2306) [DEP0005] DeprecationWarning: Buffer() is deprecated due to security and usability issues. Please use the Buffer.alloc(), Buffer.allocUnsafe(), or Buffer.from() methods instead.
+2026-08-22T04:17:08.1084038Z SHA256 digest of downloaded artifact is fb5d86247424820d2023d15a1195771a96e9723eafc4d34e5168f3bb04354acc
+2026-08-22T04:17:08.1085884Z Artifact download completed successfully.
+2026-08-22T04:17:08.1150630Z SHA256 digest of downloaded artifact is ceece4b57f602be994f4f1d9184efe0d8f1d753492161a5ebbb1e0450eda5c18
+2026-08-22T04:17:08.1151506Z Artifact download completed successfully.
+2026-08-22T04:17:08.1282806Z SHA256 digest of downloaded artifact is 0271062514644f5397264e0728de55fc5445bce58e500dbce6e56d1f28e4314c
+2026-08-22T04:17:08.1283650Z Artifact download completed successfully.
+2026-08-22T04:17:08.1284420Z Total of 3 artifact(s) downloaded
+2026-08-22T04:17:08.1289351Z Download artifact has finished successfully
+2026-08-22T04:17:08.1445903Z ##[group]Run cd dist
+2026-08-22T04:17:08.1446321Z [36;1mcd dist[0m
+2026-08-22T04:17:08.1447153Z [36;1m# Flatten artifacts to current directory to generate clean relative paths in SHA256SUMS[0m
+2026-08-22T04:17:08.1447776Z [36;1mfind . -mindepth 2 -type f -exec mv {} . \;[0m
+2026-08-22T04:17:08.1448186Z [36;1mfind . -type d -empty -delete[0m
+2026-08-22T04:17:08.1448542Z [36;1mfor file in *; do[0m
+2026-08-22T04:17:08.1448872Z [36;1m  if [ -f "$file" ]; then[0m
+2026-08-22T04:17:08.1449289Z [36;1m    sha256sum "$file" >> SHA256SUMS.txt[0m
+2026-08-22T04:17:08.1449643Z [36;1m  fi[0m
+2026-08-22T04:17:08.1449917Z [36;1mdone[0m
+2026-08-22T04:17:08.1450200Z [36;1mcat SHA256SUMS.txt[0m
+2026-08-22T04:17:08.1492593Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-08-22T04:17:08.1493036Z env:
+2026-08-22T04:17:08.1493320Z   CARGO_TERM_COLOR: always
+2026-08-22T04:17:08.1493641Z ##[endgroup]
+2026-08-22T04:17:08.1600030Z mv: cannot overwrite directory './omnicli-windows-x86_64.zip' with non-directory
+2026-08-22T04:17:08.1614324Z mv: cannot overwrite directory './omnicli-linux-x86_64.tar.gz' with non-directory
+2026-08-22T04:17:08.1628254Z mv: cannot overwrite directory './omnicli-linux-aarch64.tar.gz' with non-directory
+2026-08-22T04:17:08.1654763Z cat: SHA256SUMS.txt: No such file or directory
+2026-08-22T04:17:08.1671015Z ##[error]Process completed with exit code 1.
+2026-08-22T04:17:08.1821657Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-08-22T04:17:08.1823100Z Post job cleanup.
+2026-08-22T04:17:08.2692736Z [command]/usr/bin/git version
+2026-08-22T04:17:08.2765400Z git version 2.55.0
+2026-08-22T04:17:08.2808289Z Temporarily overriding HOME='/home/runner/work/_temp/291ad1d9-09d7-4b67-9678-8edb6d2e519f' before making global git config changes
+2026-08-22T04:17:08.2809924Z Adding repository directory to the temporary git global config as a safe directory
+2026-08-22T04:17:08.2815034Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/OmniCLI/OmniCLI
+2026-08-22T04:17:08.2855016Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-08-22T04:17:08.2899139Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-08-22T04:17:08.3150620Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-08-22T04:17:08.3189231Z http.https://github.com/.extraheader
+2026-08-22T04:17:08.3211623Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+2026-08-22T04:17:08.3247506Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-08-22T04:17:08.3504881Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-08-22T04:17:08.3553266Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-08-22T04:17:08.3970460Z Cleaning up orphan processes
+2026-08-22T04:17:08.4294256Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/download-artifact@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+
+--- Create GitHub Release/system.txt ---
+2026-08-22T04:17:04.1070000Z Job is about to start running on the hosted runner: GitHub Actions 1000001049
+2026-08-22T04:17:04.1060000Z Job is waiting for a hosted runner to come online.
+2026-08-22T04:17:04.1000000Z Evaluating create-release.if
+2026-08-22T04:17:04.1000000Z Evaluating: success()
+2026-08-22T04:17:04.1000000Z Result: true
+2026-08-22T04:17:04.1020000Z Requested labels: ubuntu-latest
+2026-08-22T04:17:04.1020000Z Job defined at: Manash07Bhoi/OmniCLI/.github/workflows/release.yml@refs/tags/v0.1.1
+2026-08-22T04:17:04.1020000Z Waiting for a runner to pick up this job...
+--- Create GitHub Release/1_Set up job.txt ---
+﻿2026-08-22T04:17:05.9821262Z Current runner version: '2.336.0'
+2026-08-22T04:17:05.9858533Z ##[group]Runner Image Provisioner
+2026-08-22T04:17:05.9859858Z Hosted Compute Agent
+2026-08-22T04:17:05.9860947Z Version: 20260729.566
+2026-08-22T04:17:05.9862018Z Commit: cf7153fe6e25b664e8693c24944bf2b00355d109
+2026-08-22T04:17:05.9863400Z Build Date: 2026-07-29T19:17:02Z
+2026-08-22T04:17:05.9864562Z Worker ID: {d833e090-df3c-405a-8346-45236835197b}
+2026-08-22T04:17:05.9865854Z Azure Region: eastus
+2026-08-22T04:17:05.9867083Z ##[endgroup]
+2026-08-22T04:17:05.9869739Z ##[group]Operating System
+2026-08-22T04:17:05.9870930Z Ubuntu
+2026-08-22T04:17:05.9871844Z 24.04.4
+2026-08-22T04:17:05.9872787Z LTS
+2026-08-22T04:17:05.9873664Z ##[endgroup]
+2026-08-22T04:17:05.9874593Z ##[group]Runner Image
+2026-08-22T04:17:05.9875738Z Image: ubuntu-24.04
+2026-08-22T04:17:05.9876963Z Version: 20260816.277.1
+2026-08-22T04:17:05.9879356Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20260816.277/images/ubuntu/Ubuntu2404-Readme.md
+2026-08-22T04:17:05.9882399Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20260816.277
+2026-08-22T04:17:05.9884103Z ##[endgroup]
+2026-08-22T04:17:05.9886133Z ##[group]GITHUB_TOKEN Permissions
+2026-08-22T04:17:05.9889322Z Contents: write
+2026-08-22T04:17:05.9890272Z Metadata: read
+2026-08-22T04:17:05.9891353Z ##[endgroup]
+2026-08-22T04:17:05.9894366Z Secret source: Actions
+2026-08-22T04:17:05.9896773Z Prepare workflow directory
+2026-08-22T04:17:06.0463416Z Prepare all required actions
+2026-08-22T04:17:06.0535213Z Getting action download info
+2026-08-22T04:17:06.2618314Z Download action repository 'actions/checkout@v4' (SHA:11d5960a326750d5838078e36cf38b85af677262)
+2026-08-22T04:17:06.3777993Z Download action repository 'actions/download-artifact@v4' (SHA:d3f86a106a0bac45b974a628896c90dbdf5c8093)
+2026-08-22T04:17:06.5422910Z Download action repository 'softprops/action-gh-release@v2' (SHA:3bb12739c298aeb8a4eeaf626c5b8d85266b0e65)
+2026-08-22T04:17:06.7470692Z Complete job name: Create GitHub Release
+
+--- Create GitHub Release/2_Run actions_checkout@v4.txt ---
+﻿2026-08-22T04:17:06.8232369Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-08-22T04:17:06.8241350Z ##[group]Run actions/checkout@v4
+2026-08-22T04:17:06.8242144Z with:
+2026-08-22T04:17:06.8242616Z   repository: Manash07Bhoi/OmniCLI
+2026-08-22T04:17:06.8246892Z   token: ***
+2026-08-22T04:17:06.8247353Z   ssh-strict: true
+2026-08-22T04:17:06.8247805Z   ssh-user: git
+2026-08-22T04:17:06.8248261Z   persist-credentials: true
+2026-08-22T04:17:06.8248751Z   clean: true
+2026-08-22T04:17:06.8249206Z   sparse-checkout-cone-mode: true
+2026-08-22T04:17:06.8249748Z   fetch-depth: 1
+2026-08-22T04:17:06.8250222Z   fetch-tags: false
+2026-08-22T04:17:06.8250675Z   show-progress: true
+2026-08-22T04:17:06.8251132Z   lfs: false
+2026-08-22T04:17:06.8251580Z   submodules: false
+2026-08-22T04:17:06.8252060Z   set-safe-directory: true
+2026-08-22T04:17:06.8252563Z   allow-unsafe-pr-checkout: false
+2026-08-22T04:17:06.8253330Z env:
+2026-08-22T04:17:06.8253765Z   CARGO_TERM_COLOR: always
+2026-08-22T04:17:06.8254245Z ##[endgroup]
+2026-08-22T04:17:06.9278837Z Syncing repository: Manash07Bhoi/OmniCLI
+2026-08-22T04:17:06.9281474Z ##[group]Getting Git version info
+2026-08-22T04:17:06.9282601Z Working directory is '/home/runner/work/OmniCLI/OmniCLI'
+2026-08-22T04:17:06.9284189Z [command]/usr/bin/git version
+2026-08-22T04:17:06.9346057Z git version 2.55.0
+2026-08-22T04:17:06.9381122Z ##[endgroup]
+2026-08-22T04:17:06.9393459Z Temporarily overriding HOME='/home/runner/work/_temp/ccb931aa-e963-4c12-82ff-6ceb5fb2ef9a' before making global git config changes
+2026-08-22T04:17:06.9398037Z Adding repository directory to the temporary git global config as a safe directory
+2026-08-22T04:17:06.9401435Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/OmniCLI/OmniCLI
+2026-08-22T04:17:06.9456854Z Deleting the contents of '/home/runner/work/OmniCLI/OmniCLI'
+2026-08-22T04:17:06.9478233Z ##[group]Initializing the repository
+2026-08-22T04:17:06.9488132Z [command]/usr/bin/git init /home/runner/work/OmniCLI/OmniCLI
+2026-08-22T04:17:06.9597692Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-08-22T04:17:06.9599645Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-08-22T04:17:06.9603074Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-08-22T04:17:06.9604669Z hint: call:
+2026-08-22T04:17:06.9605631Z hint:
+2026-08-22T04:17:06.9607160Z hint: 	git config --global init.defaultBranch <name>
+2026-08-22T04:17:06.9608667Z hint:
+2026-08-22T04:17:06.9610050Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-08-22T04:17:06.9611991Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-08-22T04:17:06.9613947Z hint:
+2026-08-22T04:17:06.9615148Z hint: 	git branch -m <name>
+2026-08-22T04:17:06.9616843Z hint:
+2026-08-22T04:17:06.9618211Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-08-22T04:17:06.9619459Z Initialized empty Git repository in /home/runner/work/OmniCLI/OmniCLI/.git/
+2026-08-22T04:17:06.9621130Z [command]/usr/bin/git remote add origin https://github.com/Manash07Bhoi/OmniCLI
+2026-08-22T04:17:06.9707655Z ##[endgroup]
+2026-08-22T04:17:06.9710730Z ##[group]Disabling automatic garbage collection
+2026-08-22T04:17:06.9712642Z [command]/usr/bin/git config --local gc.auto 0
+2026-08-22T04:17:06.9789705Z ##[endgroup]
+2026-08-22T04:17:06.9791221Z ##[group]Setting up auth
+2026-08-22T04:17:06.9792562Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-08-22T04:17:06.9832864Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-08-22T04:17:07.0301652Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-08-22T04:17:07.0349647Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-08-22T04:17:07.0623260Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-08-22T04:17:07.0665369Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-08-22T04:17:07.0929870Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-08-22T04:17:07.0971238Z ##[endgroup]
+2026-08-22T04:17:07.0972186Z ##[group]Fetching the repository
+2026-08-22T04:17:07.0982825Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +8b5380237e570eab34a734cbeec549cfdc7a03e6:refs/tags/v0.1.1
+2026-08-22T04:17:07.3544095Z From https://github.com/Manash07Bhoi/OmniCLI
+2026-08-22T04:17:07.3545902Z  * [new ref]         8b5380237e570eab34a734cbeec549cfdc7a03e6 -> v0.1.1
+2026-08-22T04:17:07.3575048Z ##[endgroup]
+2026-08-22T04:17:07.3577383Z ##[group]Determining the checkout info
+2026-08-22T04:17:07.3579708Z ##[endgroup]
+2026-08-22T04:17:07.3585061Z [command]/usr/bin/git sparse-checkout disable
+2026-08-22T04:17:07.3641780Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-08-22T04:17:07.3677088Z ##[group]Checking out the ref
+2026-08-22T04:17:07.3693235Z [command]/usr/bin/git checkout --progress --force refs/tags/v0.1.1
+2026-08-22T04:17:07.4010235Z Note: switching to 'refs/tags/v0.1.1'.
+2026-08-22T04:17:07.4011895Z 
+2026-08-22T04:17:07.4013599Z You are in 'detached HEAD' state. You can look around, make experimental
+2026-08-22T04:17:07.4016365Z changes and commit them, and you can discard any commits you make in this
+2026-08-22T04:17:07.4019452Z state without impacting any branches by switching back to a branch.
+2026-08-22T04:17:07.4020859Z 
+2026-08-22T04:17:07.4021860Z If you want to create a new branch to retain commits you create, you may
+2026-08-22T04:17:07.4023961Z do so (now or later) by using -c with the switch command. Example:
+2026-08-22T04:17:07.4025216Z 
+2026-08-22T04:17:07.4025813Z   git switch -c <new-branch-name>
+2026-08-22T04:17:07.4027057Z 
+2026-08-22T04:17:07.4027646Z Or undo this operation with:
+2026-08-22T04:17:07.4028305Z 
+2026-08-22T04:17:07.4028638Z   git switch -
+2026-08-22T04:17:07.4029615Z 
+2026-08-22T04:17:07.4031013Z Turn off this advice by setting config variable advice.detachedHead to false
+2026-08-22T04:17:07.4032887Z 
+2026-08-22T04:17:07.4034316Z HEAD is now at 8b53802 fix: restore strictly flat artifact pattern passing upload
+2026-08-22T04:17:07.4038937Z ##[endgroup]
+2026-08-22T04:17:07.4082617Z [command]/usr/bin/git log -1 --format=%H
+2026-08-22T04:17:07.4111218Z 8b5380237e570eab34a734cbeec549cfdc7a03e6
+
+--- Create GitHub Release/3_Download all artifacts.txt ---
+﻿2026-08-22T04:17:07.4433656Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-08-22T04:17:07.4439350Z ##[group]Run actions/download-artifact@v4
+2026-08-22T04:17:07.4440644Z with:
+2026-08-22T04:17:07.4441578Z   path: dist/
+2026-08-22T04:17:07.4442576Z   merge-multiple: false
+2026-08-22T04:17:07.4443693Z   repository: Manash07Bhoi/OmniCLI
+2026-08-22T04:17:07.4444877Z   run-id: 32551185265
+2026-08-22T04:17:07.4445908Z env:
+2026-08-22T04:17:07.4446986Z   CARGO_TERM_COLOR: always
+2026-08-22T04:17:07.4448076Z ##[endgroup]
+2026-08-22T04:17:07.6183204Z (node:2306) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-08-22T04:17:07.6185965Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-08-22T04:17:07.7015907Z Found 3 artifact(s)
+2026-08-22T04:17:07.7018383Z No input name, artifact-ids or pattern filtered specified, downloading all artifacts
+2026-08-22T04:17:07.7020301Z An extra directory with the artifact name will be created for each download
+2026-08-22T04:17:07.7021809Z Preparing to download the following artifacts:
+2026-08-22T04:17:07.7024260Z - omnicli-windows-x86_64.zip (ID: 9470107245, Size: 4943566, Expected Digest: sha256:fb5d86247424820d2023d15a1195771a96e9723eafc4d34e5168f3bb04354acc)
+2026-08-22T04:17:07.7029517Z - omnicli-linux-aarch64.tar.gz (ID: 9470104492, Size: 5588777, Expected Digest: sha256:0271062514644f5397264e0728de55fc5445bce58e500dbce6e56d1f28e4314c)
+2026-08-22T04:17:07.7034449Z - omnicli-linux-x86_64.tar.gz (ID: 9470093390, Size: 5239104, Expected Digest: sha256:ceece4b57f602be994f4f1d9184efe0d8f1d753492161a5ebbb1e0450eda5c18)
+2026-08-22T04:17:07.8049131Z Redirecting to blob download url: https://productionresultssa13.blob.core.windows.net/actions-results/fce880d7-b93b-4298-a9ea-12f7b010698a/workflow-job-run-89d975dd-047a-54f4-b83b-8aefa417e0c1/artifacts/d7e1574ee5a76d412669a596d0b9a3626196ca959d4b51fa94e346e29c4141d6.zip
+2026-08-22T04:17:07.8054501Z Starting download of artifact to: /home/runner/work/OmniCLI/OmniCLI/dist/omnicli-windows-x86_64.zip
+2026-08-22T04:17:07.8341425Z Redirecting to blob download url: https://productionresultssa13.blob.core.windows.net/actions-results/fce880d7-b93b-4298-a9ea-12f7b010698a/workflow-job-run-566cd169-0b30-5923-a2ca-6f5cc1f1e46f/artifacts/95f6ca4bc8dabd1d325fb6267067132d9f880dbd58c08b07130415d000d99ca8.zip
+2026-08-22T04:17:07.8343467Z Starting download of artifact to: /home/runner/work/OmniCLI/OmniCLI/dist/omnicli-linux-aarch64.tar.gz
+2026-08-22T04:17:07.8490191Z Redirecting to blob download url: https://productionresultssa13.blob.core.windows.net/actions-results/fce880d7-b93b-4298-a9ea-12f7b010698a/workflow-job-run-f0f23e98-e190-57b8-a5cb-418c337d7a8d/artifacts/877d08e14da22fb53ebad010f68bd43a1a2eaef74faaa3e646f626feda763754.zip
+2026-08-22T04:17:07.8493633Z Starting download of artifact to: /home/runner/work/OmniCLI/OmniCLI/dist/omnicli-linux-x86_64.tar.gz
+2026-08-22T04:17:07.9170663Z (node:2306) [DEP0005] DeprecationWarning: Buffer() is deprecated due to security and usability issues. Please use the Buffer.alloc(), Buffer.allocUnsafe(), or Buffer.from() methods instead.
+2026-08-22T04:17:08.1083940Z SHA256 digest of downloaded artifact is fb5d86247424820d2023d15a1195771a96e9723eafc4d34e5168f3bb04354acc
+2026-08-22T04:17:08.1085870Z Artifact download completed successfully.
+2026-08-22T04:17:08.1150601Z SHA256 digest of downloaded artifact is ceece4b57f602be994f4f1d9184efe0d8f1d753492161a5ebbb1e0450eda5c18
+2026-08-22T04:17:08.1151498Z Artifact download completed successfully.
+2026-08-22T04:17:08.1282780Z SHA256 digest of downloaded artifact is 0271062514644f5397264e0728de55fc5445bce58e500dbce6e56d1f28e4314c
+2026-08-22T04:17:08.1283644Z Artifact download completed successfully.
+2026-08-22T04:17:08.1284114Z Total of 3 artifact(s) downloaded
+2026-08-22T04:17:08.1289331Z Download artifact has finished successfully
+
+--- Create GitHub Release/4_Generate checksums.txt ---
+﻿2026-08-22T04:17:08.1445885Z ##[group]Run cd dist
+2026-08-22T04:17:08.1446315Z [36;1mcd dist[0m
+2026-08-22T04:17:08.1447146Z [36;1m# Flatten artifacts to current directory to generate clean relative paths in SHA256SUMS[0m
+2026-08-22T04:17:08.1447771Z [36;1mfind . -mindepth 2 -type f -exec mv {} . \;[0m
+2026-08-22T04:17:08.1448182Z [36;1mfind . -type d -empty -delete[0m
+2026-08-22T04:17:08.1448538Z [36;1mfor file in *; do[0m
+2026-08-22T04:17:08.1448864Z [36;1m  if [ -f "$file" ]; then[0m
+2026-08-22T04:17:08.1449284Z [36;1m    sha256sum "$file" >> SHA256SUMS.txt[0m
+2026-08-22T04:17:08.1449639Z [36;1m  fi[0m
+2026-08-22T04:17:08.1449913Z [36;1mdone[0m
+2026-08-22T04:17:08.1450196Z [36;1mcat SHA256SUMS.txt[0m
+2026-08-22T04:17:08.1492577Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-08-22T04:17:08.1493032Z env:
+2026-08-22T04:17:08.1493316Z   CARGO_TERM_COLOR: always
+2026-08-22T04:17:08.1493637Z ##[endgroup]
+2026-08-22T04:17:08.1599958Z mv: cannot overwrite directory './omnicli-windows-x86_64.zip' with non-directory
+2026-08-22T04:17:08.1614301Z mv: cannot overwrite directory './omnicli-linux-x86_64.tar.gz' with non-directory
+2026-08-22T04:17:08.1628236Z mv: cannot overwrite directory './omnicli-linux-aarch64.tar.gz' with non-directory
+2026-08-22T04:17:08.1654733Z cat: SHA256SUMS.txt: No such file or directory
+2026-08-22T04:17:08.1670996Z ##[error]Process completed with exit code 1.
+
+--- Create GitHub Release/10_Post Run actions_checkout@v4.txt ---
+﻿2026-08-22T04:17:08.1821638Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-08-22T04:17:08.1823095Z Post job cleanup.
+2026-08-22T04:17:08.2692674Z [command]/usr/bin/git version
+2026-08-22T04:17:08.2765355Z git version 2.55.0
+2026-08-22T04:17:08.2808267Z Temporarily overriding HOME='/home/runner/work/_temp/291ad1d9-09d7-4b67-9678-8edb6d2e519f' before making global git config changes
+2026-08-22T04:17:08.2809915Z Adding repository directory to the temporary git global config as a safe directory
+2026-08-22T04:17:08.2815019Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/OmniCLI/OmniCLI
+2026-08-22T04:17:08.2854994Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-08-22T04:17:08.2898983Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-08-22T04:17:08.3150531Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-08-22T04:17:08.3189197Z http.https://github.com/.extraheader
+2026-08-22T04:17:08.3211594Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+2026-08-22T04:17:08.3247476Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-08-22T04:17:08.3504855Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-08-22T04:17:08.3553208Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+
+--- Create GitHub Release/11_Complete job.txt ---
+﻿2026-08-22T04:17:08.3970440Z Cleaning up orphan processes
+2026-08-22T04:17:08.4294231Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/download-artifact@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+

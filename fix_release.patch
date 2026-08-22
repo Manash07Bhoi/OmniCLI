@@ -1,16 +1,101 @@
 <<<<<<< SEARCH
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
         with:
-          name: omnicli-${{ matrix.target }}
-          path: |
-            omnicli/omnicli-${{ matrix.target }}.*
+          pattern: release-*
+          merge-multiple: true
+          path: release_assets
+
+      - name: Validate artifacts and generate checksums
+        run: |
+          cd release_assets
+          
+          echo "Validating downloaded artifact tree:"
+          ls -R
+          
+          # Ensure no subdirectories exist. Fail action if they do.
+          DIR_COUNT=$(find . -mindepth 1 -type d | wc -l)
+          if [ "$DIR_COUNT" -gt 0 ]; then
+            echo "Error: Unexpected subdirectories found in release_assets/."
+            test 0 -eq 1
+          fi
+          
+          # Ensure we have expected files
+          FILE_COUNT=$(find . -maxdepth 1 -type f -name 'omnicli-*' | wc -l)
+          if [ "$FILE_COUNT" -lt 1 ]; then
+            echo "Error: No omnicli release artifacts found in release_assets/."
+            test 0 -eq 1
+          fi
+          
+          # Ensure no empty files
+          EMPTY_COUNT=$(find . -maxdepth 1 -type f -name 'omnicli-*' -empty | wc -l)
+          if [ "$EMPTY_COUNT" -gt 0 ]; then
+            echo "Error: Empty artifact found in release_assets/."
+            test 0 -eq 1
+          fi
+          
+          echo "Generating checksums for exactly the release artifacts..."
+          find . -maxdepth 1 -type f -name 'omnicli-*' -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS.txt
+          
+          # Strip leading './'
+          sed -i 's| \./| |g' SHA256SUMS.txt
+          
+          cat SHA256SUMS.txt
+
+      - name: Generate release notes
+        id: notes
+        run: |
+          TAG="${{ github.ref_name }}"
+          cat > RELEASE_NOTES.md << 'EOF'
 =======
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
         with:
-          name: release-${{ matrix.target }}
-          path: |
-            omnicli/omnicli-${{ matrix.target }}.tar.gz
-            omnicli/omnicli-${{ matrix.target }}.zip
+          pattern: release-*
+          merge-multiple: true
+          path: release_assets
+
+      - name: Validate artifacts and generate checksums
+        run: |
+          cd release_assets
+          
+          echo "Validating downloaded artifact tree:"
+          ls -R
+          
+          # Ensure no subdirectories exist. Fail action if they do.
+          DIR_COUNT=$(find . -mindepth 1 -type d | wc -l)
+          if [ "$DIR_COUNT" -gt 0 ]; then
+            echo "Error: Unexpected subdirectories found in release_assets/."
+            test 0 -eq 1
+          fi
+          
+          # Ensure we have expected files
+          FILE_COUNT=$(find . -maxdepth 1 -type f -name 'omnicli-*' | wc -l)
+          if [ "$FILE_COUNT" -lt 1 ]; then
+            echo "Error: No omnicli release artifacts found in release_assets/."
+            test 0 -eq 1
+          fi
+          
+          # Ensure no empty files
+          EMPTY_COUNT=$(find . -maxdepth 1 -type f -name 'omnicli-*' -empty | wc -l)
+          if [ "$EMPTY_COUNT" -gt 0 ]; then
+            echo "Error: Empty artifact found in release_assets/."
+            test 0 -eq 1
+          fi
+          
+          echo "Generating checksums for exactly the release artifacts..."
+          find . -maxdepth 1 -type f -name 'omnicli-*' -exec sha256sum {} + > SHA256SUMS.txt
+          
+          # Strip leading './'
+          sed -i 's| \./| |g' SHA256SUMS.txt
+          
+          cat SHA256SUMS.txt
+
+      - name: Generate release notes
+        id: notes
+        run: |
+          # Move back to workspace root for the release notes creation
+          cd $GITHUB_WORKSPACE
+          TAG="${{ github.ref_name }}"
+          cat > RELEASE_NOTES.md << 'EOF'
 >>>>>>> REPLACE

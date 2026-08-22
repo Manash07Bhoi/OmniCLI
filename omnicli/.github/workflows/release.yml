@@ -159,7 +159,7 @@ jobs:
           fi
           
           echo "Generating checksums for exactly the release artifacts..."
-          find . -maxdepth 1 -type f -name 'omnicli-*' -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS.txt
+          find . -maxdepth 1 -type f -name 'omnicli-*' -exec sha256sum {} + > SHA256SUMS.txt
           
           # Strip leading './'
           sed -i 's| \./| |g' SHA256SUMS.txt
@@ -169,6 +169,8 @@ jobs:
       - name: Generate release notes
         id: notes
         run: |
+          # Move back to workspace root for the release notes creation
+          cd $GITHUB_WORKSPACE
           TAG="${{ github.ref_name }}"
           cat > RELEASE_NOTES.md << 'EOF'
           ## OmniCLI ${{ github.ref_name }}
