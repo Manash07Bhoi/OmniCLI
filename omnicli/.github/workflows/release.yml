@@ -131,21 +131,20 @@ jobs:
         run: |
           cd dist
           
-          # Diagnostic tree validation
-          echo "Validating downloaded artifact tree:"
+          echo "Initial dist/ structure:"
           ls -R
           
-          # Flatten securely. `download-artifact@v4` creates `dist/omnicli-<target>/omnicli-<target>.<ext>`.
-          # We loop through those subdirectories, and move the internal files out, then delete the subdirectories.
-          for dir in omnicli-*/; do
-            if [ -d "$dir" ]; then
-              cp "$dir"/* .
-              rm -rf "$dir"
-            fi
-          done
+          # Safe flattening:
+          # Find all regular files in any subdirectory (mindepth 2)
+          # Use -execdir cp to safely copy them to the current working directory (.)
+          # The -n flag prevents overwriting if a collision somehow happens
+          find . -mindepth 2 -type f -execdir cp -n {} "$PWD" \;
           
           echo "Generating checksums for exactly the release artifacts..."
+          # Hash all files starting with omnicli-
           sha256sum omnicli-* > SHA256SUMS.txt
+          
+          echo "Checksums generated:"
           cat SHA256SUMS.txt
 
       - name: Generate release notes
