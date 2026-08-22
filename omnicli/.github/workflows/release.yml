@@ -135,10 +135,11 @@ jobs:
           echo "Validating downloaded artifact tree:"
           ls -R
           
-          # Flatten securely by moving all files to the root of dist using an explicit bash loop
+          # Flatten securely by moving all files to the root of dist
+          # using cp instead of mv to avoid directory overwrite errors from same-named folders
           find . -mindepth 2 -type f -name 'omnicli-*' | while read -r file; do
              filename=$(basename "$file")
-             mv "$file" "$filename"
+             cp "$file" "$filename"
           done
           
           echo "Generating checksums for exactly the release artifacts..."
