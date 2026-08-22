@@ -111,6 +111,7 @@ jobs:
           path: |
             omnicli/omnicli-${{ matrix.target }}.tar.gz
             omnicli/omnicli-${{ matrix.target }}.zip
+            omnicli/omnicli-${{ matrix.target }}.zip
 
   release:
     name: Create GitHub Release
