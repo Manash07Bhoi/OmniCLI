@@ -125,7 +125,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: release-${{ matrix.target }}
-          path: final_artifacts/*
+          path: final_artifacts/
 
   release:
     name: Create GitHub Release
@@ -151,12 +151,14 @@ jobs:
           echo "Validating downloaded artifact tree:"
           ls -laR
           
-          echo "Generating checksums for exactly the release artifacts..."
-          # Use find to locate files (handling subdirectories if they still appear somehow)
-          find . -type f -name 'omnicli-*' -exec sha256sum {} + > SHA256SUMS.txt
+          # Remove any potential empty directories
+          find . -type d -empty -delete || true
           
-          # Clean paths for releases UI
-          sed -i 's|.*/omnicli-|omnicli-|' SHA256SUMS.txt || true
+          # Flatten artifacts to root if they are nested 
+          find . -mindepth 2 -type f -name 'omnicli-*' -exec mv {} . \; || true
+          
+          echo "Generating checksums for exactly the release artifacts..."
+          sha256sum omnicli-* > SHA256SUMS.txt || true
           cat SHA256SUMS.txt || true
 
       - name: Generate release notes
