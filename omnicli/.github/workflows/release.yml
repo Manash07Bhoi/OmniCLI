@@ -109,7 +109,8 @@ jobs:
         with:
           name: omnicli-${{ matrix.target }}
           path: |
-            omnicli/omnicli-${{ matrix.target }}.*
+            omnicli/omnicli-${{ matrix.target }}.tar.gz
+            omnicli/omnicli-${{ matrix.target }}.zip
 
   release:
     name: Create GitHub Release
@@ -125,7 +126,28 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: dist
-          merge-multiple: true
+
+      - name: Validate artifacts and generate checksums
+        run: |
+          echo "Initial dist/ structure:"
+          ls -R dist/
+
+          echo "Flattening securely..."
+          mkdir -p release_assets
+          # Copy all tar.gz and zip files recursively to the clean folder
+          find dist/ -type f \( -name "*.tar.gz" -o -name "*.zip" \) -exec cp {} release_assets/ \;
+
+          echo "Generating checksums for exactly the release artifacts..."
+          cd release_assets
+          sha256sum * > SHA256SUMS.txt
+
+          echo "Checksums generated:"
+          cat SHA256SUMS.txt
+
+      - name: Replace dist with flat assets
+        run: |
+          rm -rf dist
+          mv release_assets dist
 
       - name: Generate release notes
         id: notes

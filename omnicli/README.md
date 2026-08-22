@@ -26,7 +26,7 @@
 
 ## What is OmniCLI?
 
-OmniCLI is a **professional-grade, full-stack command-line toolkit** that replaces a scattered collection of utilities with a single, coherent binary — backed by a live React web dashboard and a typed REST API. Whether you're managing files on Android via Termux, running on Windows, doing security research on Kali Linux, writing automation scripts on ParrotOS, or running the live dashboard on Replit — `omni` speaks one grammar across every platform.
+OmniCLI is a **professional-grade, full-stack command-line toolkit** that replaces a scattered collection of utilities with a single, coherent binary — backed by a live React web dashboard and a typed REST API. Whether you're managing files on Android via Termux, running on Windows, doing security research on Kali Linux, writing automation scripts on ParrotOS, or running the live dashboard on Replit — `omnicli` speaks one grammar across every platform.
 
 ```bash
 # Find every Rust file modified in the last 7 days
@@ -319,7 +319,7 @@ if ($UserPath -notmatch "OmniCLI") {
     [Environment]::SetEnvironmentVariable("PATH", "$UserPath;$env:USERPROFILE\OmniCLI", "User")
 }
 
-# Verify installation (open a new PowerShell window first if omni is not found)
+# Verify installation (open a new PowerShell window first if omnicli is not found)
 omnicli --version
 ```
 
@@ -430,7 +430,7 @@ cargo clippy -- -D warnings
 
 ## Global Flags
 
-Every `omni` command accepts these flags at any position:
+Every `omnicli` command accepts these flags at any position:
 
 | Flag | Short | Description |
 |------|-------|-------------|
@@ -552,13 +552,13 @@ OmniCLI/
 ├── omnicli/                            ← Rust workspace
 │   ├── Cargo.toml                      ← Shared dependency versions (workspace deps)
 │   └── crates/
-│       ├── omni-cli/                   ← Binary: clap parse → dispatch
-│       ├── omni-core/                  ← Shared: hashing, output, config, platform
-│       ├── omni-file/                  ← File operations (11 verbs)
-│       ├── omni-search/                ← SQLite FTS5 index + query
-│       ├── omni-archive/               ← zip/tar/* — zip-slip protected
-│       ├── omni-convert/               ← 16 format codecs
-│       └── omni-config/                ← Config loading (TOML)
+│       ├── omnicli-cli/                   ← Binary: clap parse → dispatch
+│       ├── omnicli-core/                  ← Shared: hashing, output, config, platform
+│       ├── omnicli-file/                  ← File operations (11 verbs)
+│       ├── omnicli-search/                ← SQLite FTS5 index + query
+│       ├── omnicli-archive/               ← zip/tar/* — zip-slip protected
+│       ├── omnicli-convert/               ← 16 format codecs
+│       └── omnicli-config/                ← Config loading (TOML)
 │
 ├── artifacts/
 │   ├── api-server/                     ← Express + TypeScript REST API
@@ -574,10 +574,10 @@ OmniCLI/
 ```
 
 **Dependency rules (enforced by crate graph):**
-- `omni-core` has zero module dependencies
-- All other crates may depend on `omni-core` only
-- `omni-file` may depend on `omni-archive` (compress delegates to it)
-- `omni-cli` is the only crate that imports all modules
+- `omnicli-core` has zero module dependencies
+- All other crates may depend on `omnicli-core` only
+- `omnicli-file` may depend on `omnicli-archive` (compress delegates to it)
+- `omnicli-cli` is the only crate that imports all modules
 
 ---
 
@@ -617,10 +617,10 @@ cd omnicli
 cargo test
 
 # Specific crate
-cargo test -p omni-file
-cargo test -p omni-archive
-cargo test -p omni-search
-cargo test -p omni-convert
+cargo test -p omnicli-file
+cargo test -p omnicli-archive
+cargo test -p omnicli-search
+cargo test -p omnicli-convert
 
 # With stdout
 cargo test -- --nocapture

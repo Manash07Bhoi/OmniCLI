@@ -37,10 +37,10 @@ termux_step_make_install() {
 
 ## Procedure to Finalize
 
-1. Ensure the Git tag (e.g., `v0.1.0`) has been pushed to GitHub.
+1. Ensure the Git tag (e.g., `v0.1.1`) has been pushed to GitHub.
 2. Download the source archive:
    ```bash
-   curl -sL https://github.com/Manash07Bhoi/OmniCLI/archive/refs/tags/v0.1.0.tar.gz -o omnicli.tar.gz
+   curl -sL https://github.com/Manash07Bhoi/OmniCLI/archive/refs/tags/v0.1.1.tar.gz -o omnicli.tar.gz
    ```
 3. Calculate the true SHA-256 checksum:
    ```bash
