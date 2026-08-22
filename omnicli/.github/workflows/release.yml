@@ -129,24 +129,25 @@ jobs:
 
       - name: Validate artifacts and generate checksums
         run: |
-          cd dist
-          
           echo "Initial dist/ structure:"
-          ls -R
+          ls -R dist/
           
-          # Avoid shell wildcard or find bugs by manually mapping the directories:
-          for dir in omnicli-*/; do
-            if [ -d "$dir" ]; then
-              cp "$dir"/* . || true
-            fi
-          done
+          echo "Flattening securely..."
+          mkdir -p release_assets
+          # Copy all tar.gz and zip files recursively to the clean folder
+          find dist/ -type f \( -name "*.tar.gz" -o -name "*.zip" \) -exec cp {} release_assets/ \;
           
           echo "Generating checksums for exactly the release artifacts..."
-          # Hash all files starting with omnicli-
-          sha256sum omnicli-*.zip omnicli-*.tar.gz > SHA256SUMS.txt || true
+          cd release_assets
+          sha256sum * > SHA256SUMS.txt
           
           echo "Checksums generated:"
           cat SHA256SUMS.txt
+
+      - name: Replace dist with flat assets
+        run: |
+          rm -rf dist
+          mv release_assets dist
 
       - name: Generate release notes
         id: notes

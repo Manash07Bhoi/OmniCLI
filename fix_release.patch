@@ -6,26 +6,6 @@
           echo "Initial dist/ structure:"
           ls -R
           
-          # Safe flattening:
-          # Find all regular files in any subdirectory (mindepth 2)
-          # Use -execdir cp to safely copy them to the current working directory (.)
-          # The -n flag prevents overwriting if a collision somehow happens
-          find . -mindepth 2 -type f -execdir cp -n {} "$PWD" \;
-          
-          echo "Generating checksums for exactly the release artifacts..."
-          # Hash all files starting with omnicli-
-          sha256sum omnicli-* > SHA256SUMS.txt
-          
-          echo "Checksums generated:"
-          cat SHA256SUMS.txt
-=======
-      - name: Validate artifacts and generate checksums
-        run: |
-          cd dist
-          
-          echo "Initial dist/ structure:"
-          ls -R
-          
           # Avoid shell wildcard or find bugs by manually mapping the directories:
           for dir in omnicli-*/; do
             if [ -d "$dir" ]; then
@@ -39,4 +19,26 @@
           
           echo "Checksums generated:"
           cat SHA256SUMS.txt
+=======
+      - name: Validate artifacts and generate checksums
+        run: |
+          echo "Initial dist/ structure:"
+          ls -R dist/
+          
+          echo "Flattening securely..."
+          mkdir -p release_assets
+          # Copy all tar.gz and zip files recursively to the clean folder
+          find dist/ -type f \( -name "*.tar.gz" -o -name "*.zip" \) -exec cp {} release_assets/ \;
+          
+          echo "Generating checksums for exactly the release artifacts..."
+          cd release_assets
+          sha256sum * > SHA256SUMS.txt
+          
+          echo "Checksums generated:"
+          cat SHA256SUMS.txt
+
+      - name: Replace dist with flat assets
+        run: |
+          rm -rf dist
+          mv release_assets dist
 >>>>>>> REPLACE
