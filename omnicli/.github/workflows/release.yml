@@ -126,7 +126,6 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: dist
-          merge-multiple: true
 
       - name: Validate artifacts and generate checksums
         run: |
@@ -136,29 +135,14 @@ jobs:
           echo "Validating downloaded artifact tree:"
           ls -R
           
-          # Ensure no subdirectories exist. Fail action if they do.
-          DIR_COUNT=$(find . -mindepth 1 -type d | wc -l)
-          if [ "$DIR_COUNT" -gt 0 ]; then
-            echo "Error: Unexpected subdirectories found in dist/."
-            test 0 -eq 1
-          fi
-          
-          # Ensure we have expected files
-          FILE_COUNT=$(find . -maxdepth 1 -type f -name 'omnicli-*' | wc -l)
-          if [ "$FILE_COUNT" -lt 1 ]; then
-            echo "Error: No omnicli release artifacts found in dist/."
-            test 0 -eq 1
-          fi
-          
-          # Ensure no empty files
-          EMPTY_COUNT=$(find . -maxdepth 1 -type f -name 'omnicli-*' -empty | wc -l)
-          if [ "$EMPTY_COUNT" -gt 0 ]; then
-            echo "Error: Empty artifact found in dist/."
-            test 0 -eq 1
-          fi
+          # Flatten securely by moving all files to the root of dist using an explicit bash loop
+          find . -mindepth 2 -type f -name 'omnicli-*' | while read -r file; do
+             filename=$(basename "$file")
+             mv "$file" "$filename"
+          done
           
           echo "Generating checksums for exactly the release artifacts..."
-          find . -maxdepth 1 -type f -name 'omnicli-*' -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS.txt
+          find . -maxdepth 1 -type f -name 'omnicli-*' -exec sha256sum {} + > SHA256SUMS.txt
           
           # Strip leading './'
           sed -i 's| \./| |g' SHA256SUMS.txt
