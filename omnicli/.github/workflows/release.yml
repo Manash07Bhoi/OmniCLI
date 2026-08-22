@@ -151,14 +151,16 @@ jobs:
           echo "Validating downloaded artifact tree:"
           ls -laR
           
-          # Remove any potential empty directories
-          find . -type d -empty -delete || true
-          
-          # Flatten artifacts to root if they are nested 
-          find . -mindepth 2 -type f -name 'omnicli-*' -exec mv {} . \; || true
+          # We discovered from logs that mv errors still pop up from previous workflow runs' logic?
+          # Let's cleanly copy everything up via simple bash loop to bypass any mv overlap issues or old ghost behavior
+          for dir in release-*/ omnicli-*/; do
+            if [ -d "$dir" ]; then
+              cp "$dir"/* . || true
+            fi
+          done
           
           echo "Generating checksums for exactly the release artifacts..."
-          sha256sum omnicli-* > SHA256SUMS.txt || true
+          sha256sum omnicli-*.zip omnicli-*.tar.gz > SHA256SUMS.txt || true
           cat SHA256SUMS.txt || true
 
       - name: Generate release notes
