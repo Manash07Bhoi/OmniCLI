@@ -31,3 +31,17 @@ Add OmniCLI to Utilities
 ```markdown
 - [OmniCLI](https://github.com/Manash07Bhoi/OmniCLI) - Professional-grade, full-stack CLI for file ops, full-text search, and format conversion.
 ```
+
+---
+
+**Current Status:**
+
+
+## Status Update (External PR Execution)
+
+**awesome-rust**: NOT ELIGIBLE — DO NOT SUBMIT
+*Reason:* The `awesome-rust` repository's `CONTRIBUTING.md` explicitly requires new submissions to have `stars > 50` or `downloads > 2000`. OmniCLI currently has 0 stars and is newly published, failing this objective metric.
+
+
+**awesome-cli-apps**: NOT ELIGIBLE — DO NOT SUBMIT
+*Reason:* The `awesome-cli-apps` repository's `contributing.md` explicitly requires apps to be "more than 3 months old" and have "more than 20 stars". OmniCLI does not yet meet either condition.

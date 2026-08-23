@@ -123,14 +123,13 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: dist/
+          pattern: '*'
+          merge-multiple: true
 
       - name: Generate checksums
         shell: bash
         run: |
           cd dist
-          # Flatten artifacts to current directory to generate clean relative paths in SHA256SUMS
-          find . -mindepth 2 -type f -exec mv {} . \;
-          find . -type d -empty -delete
           for file in *; do
             if [ -f "$file" ]; then
               sha256sum "$file" >> SHA256SUMS.txt

@@ -26,7 +26,7 @@
 
 ## What is OmniCLI?
 
-OmniCLI is a **professional-grade, full-stack command-line toolkit** that replaces a scattered collection of utilities with a single, coherent binary — backed by a live React web dashboard and a typed REST API. Whether you're managing files on Android via Termux, running on Windows, doing security research on Kali Linux, writing automation scripts on ParrotOS, or running the live dashboard on Replit — `omni` speaks one grammar across every platform.
+OmniCLI is a **professional-grade, full-stack command-line toolkit** that replaces a scattered collection of utilities with a single, coherent binary — backed by a live React web dashboard and a typed REST API. Whether you're managing files on Android via Termux, running on Windows, doing security research on Kali Linux, writing automation scripts on ParrotOS, or running the live dashboard on Replit — `omnicli` speaks one grammar across every platform.
 
 ```bash
 # Find every Rust file modified in the last 7 days
@@ -258,8 +258,8 @@ sha256sum -c SHA256SUMS.txt --ignore-missing
 
 **Windows (PowerShell):**
 ```powershell
-$Expected = (Select-String -Path .\SHA256SUMS.txt -Pattern "omnicli-windows-x86_64.zip").Line.Split(" ")[0]
-$Actual = (Get-FileHash .\omnicli-windows-x86_64.zip -Algorithm SHA256).Hash.ToLower()
+$Expected = (Select-String -Path .\SHA256SUMS.txt -Pattern "omnicli-x86_64-pc-windows-msvc.zip").Line.Split(" ")[0]
+$Actual = (Get-FileHash .\omnicli-x86_64-pc-windows-msvc.zip -Algorithm SHA256).Hash.ToLower()
 if ($Expected -eq $Actual) { Write-Output "Checksum OK" } else { Write-Output "Checksum MISMATCH" }
 ```
 
@@ -308,7 +308,7 @@ New-Item -ItemType Directory -Force -Path $env:USERPROFILE\OmniCLI
 Set-Location $env:USERPROFILE\OmniCLI
 
 # Download the latest Windows release
-Invoke-WebRequest -Uri "https://github.com/Manash07Bhoi/OmniCLI/releases/latest/download/omnicli-windows-x86_64.zip" -OutFile "omnicli.zip"
+Invoke-WebRequest -Uri "https://github.com/Manash07Bhoi/OmniCLI/releases/latest/download/omnicli-x86_64-pc-windows-msvc.zip" -OutFile "omnicli.zip"
 
 # Extract the archive
 Expand-Archive -Path "omnicli.zip" -DestinationPath . -Force
@@ -319,7 +319,7 @@ if ($UserPath -notmatch "OmniCLI") {
     [Environment]::SetEnvironmentVariable("PATH", "$UserPath;$env:USERPROFILE\OmniCLI", "User")
 }
 
-# Verify installation (open a new PowerShell window first if omni is not found)
+# Verify installation (open a new PowerShell window first if omnicli is not found)
 omnicli --version
 ```
 
@@ -430,7 +430,7 @@ cargo clippy -- -D warnings
 
 ## Global Flags
 
-Every `omni` command accepts these flags at any position:
+Every `omnicli` command accepts these flags at any position:
 
 | Flag | Short | Description |
 |------|-------|-------------|
@@ -552,13 +552,13 @@ OmniCLI/
 ├── omnicli/                            ← Rust workspace
 │   ├── Cargo.toml                      ← Shared dependency versions (workspace deps)
 │   └── crates/
-│       ├── omni-cli/                   ← Binary: clap parse → dispatch
-│       ├── omni-core/                  ← Shared: hashing, output, config, platform
-│       ├── omni-file/                  ← File operations (11 verbs)
-│       ├── omni-search/                ← SQLite FTS5 index + query
-│       ├── omni-archive/               ← zip/tar/* — zip-slip protected
-│       ├── omni-convert/               ← 16 format codecs
-│       └── omni-config/                ← Config loading (TOML)
+│       ├── omnicli-cli/                   ← Binary: clap parse → dispatch
+│       ├── omnicli-core/                  ← Shared: hashing, output, config, platform
+│       ├── omnicli-file/                  ← File operations (11 verbs)
+│       ├── omnicli-search/                ← SQLite FTS5 index + query
+│       ├── omnicli-archive/               ← zip/tar/* — zip-slip protected
+│       ├── omnicli-convert/               ← 16 format codecs
+│       └── omnicli-config/                ← Config loading (TOML)
 │
 ├── artifacts/
 │   ├── api-server/                     ← Express + TypeScript REST API
@@ -574,10 +574,10 @@ OmniCLI/
 ```
 
 **Dependency rules (enforced by crate graph):**
-- `omni-core` has zero module dependencies
-- All other crates may depend on `omni-core` only
-- `omni-file` may depend on `omni-archive` (compress delegates to it)
-- `omni-cli` is the only crate that imports all modules
+- `omnicli-core` has zero module dependencies
+- All other crates may depend on `omnicli-core` only
+- `omnicli-file` may depend on `omnicli-archive` (compress delegates to it)
+- `omnicli-cli` is the only crate that imports all modules
 
 ---
 
@@ -617,10 +617,10 @@ cd omnicli
 cargo test
 
 # Specific crate
-cargo test -p omni-file
-cargo test -p omni-archive
-cargo test -p omni-search
-cargo test -p omni-convert
+cargo test -p omnicli-file
+cargo test -p omnicli-archive
+cargo test -p omnicli-search
+cargo test -p omnicli-convert
 
 # With stdout
 cargo test -- --nocapture
@@ -643,17 +643,27 @@ cargo test -- --nocapture
 
 ---
 
-## Platform Notes
+## Platform Support Matrix
 
-| Platform | Notes |
+| Platform | Build | Runtime Tested | Release Artifact | Documented Support |
+|----------|-------|----------------|------------------|--------------------|
+| **Linux (x86_64)** (Kali, Parrot, Ubuntu) | ✅ BUILDS | ✅ RUNTIME TESTED | `omnicli-linux-x86_64.tar.gz` | YES |
+| **Windows (x86_64)** | ✅ BUILDS | ⚠️ NOT TESTED | `omnicli-windows-x86_64.zip` | YES |
+| **macOS (x86_64)** | ✅ BUILDS | ⚠️ NOT TESTED | NONE YET | YES |
+| **macOS (ARM64)** | ✅ BUILDS | ⚠️ NOT TESTED | NONE YET | YES |
+| **Linux ARM64** (Modern Termux) | ✅ BUILDS | ⚠️ NEEDS REAL-WORLD TESTING | `omnicli-linux-aarch64.tar.gz` | YES |
+| **Linux ARMv7** (32-bit Termux) | ✅ BUILDS | ⚠️ NEEDS REAL-WORLD TESTING | NONE YET | YES |
+
+---
+
+## Technical Notes
+
+| Target | Architecture / Features |
 |----------|-------|
-| **Replit** | All three services start via pnpm workflows; SQLite DB at `~/.local/share/omni/omni.db` |
-| **Windows** | Full native support; PowerShell recommended for script examples |
-| **Termux (Android)** | `isatty()` probe works; colour auto-detected; path expansion handles Termux prefix |
-| **Kali Linux** | `rusqlite` compiled with bundled SQLite — no system lib required |
-| **ParrotOS** | Static SQLite avoids version conflicts |
-| **macOS** | Compiles; `libc::isatty` supported via Unix trait |
-
+| **Termux (Android)** | Fully supported via cross-compiled MUSL targets. `isatty()` probe working securely without `unsafe` blocks. |
+| **Windows** | Native support via `std::io::IsTerminal`. Use PowerShell for all provided scripts. |
+| **Kali / ParrotOS** | Distributed as static binaries. `rusqlite` compiled with bundled SQLite to avoid system `libsqlite3` conflicts. |
+| **Replit** | Uses `pnpm dev` workspace execution; SQLite DB initializes cleanly at `~/.local/share/omni/omni.db`. |
 ---
 
 ## Contributing
