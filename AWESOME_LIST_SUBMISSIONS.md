@@ -45,4 +45,3 @@ Add OmniCLI to Utilities
 
 **awesome-cli-apps**: NOT ELIGIBLE — DO NOT SUBMIT
 *Reason:* The `awesome-cli-apps` repository's `contributing.md` explicitly requires apps to be "more than 3 months old" and have "more than 20 stars". OmniCLI does not yet meet either condition.
-
