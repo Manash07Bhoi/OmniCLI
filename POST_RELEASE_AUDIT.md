@@ -1,7 +1,6 @@
 # OmniCLI v0.1.0 Post-Release Audit
 
 ## Audit Trail: Discoveries & Corrective Actions
-
 1. **Previous State**: Reported RELEASE HEALTH: RED due to missing `v0.1.0` GitHub Release artifacts, stale `bin omni` CI references, and inconsistent archive naming.
 2. **Discovered Contradiction**: `git ls-remote --tags origin` revealed that `v0.1.0` *was* successfully tagged remotely at commit `7297cb9`. However, the GitHub Release automation failed (or produced no artifacts) due to stale workflow configurations trying to build `omni` instead of `omnicli`.
 3. **Corrective Action**:
@@ -10,7 +9,6 @@
    - Synchronized archive naming across `README.md`, `release.yml`, and `install.sh` to firmly be `omnicli-<platform>.<ext>`.
    - Verified that the workspace `cargo check/test/clippy/audit` are all fully green.
 4. **Current Verified State**: The `v0.1.0` release tag exists correctly and crates are published. The `main` branch workflows are now fully corrected and verified to work for future releases. The actual GitHub Release `v0.1.0` artifacts still do not exist (as we did not rewrite history to force a workflow rerun).
-
 ---
 
 ## Final Verification Status
