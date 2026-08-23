@@ -30,8 +30,8 @@ detect_target() {
   # Termux (Android)
   if [ -n "${TERMUX_VERSION:-}" ] || [ -d "/data/data/com.termux" ]; then
     case "${ARCH}" in
-      aarch64|arm64) echo "aarch64-unknown-linux-musl" ;;
-      armv7*|armv8l) echo "armv7-unknown-linux-musleabihf"   ;;
+      aarch64|arm64) echo "linux-aarch64" ;;
+      armv7*|armv8l) echo "linux-armv7"   ;;
       *) die "Unsupported Termux architecture: ${ARCH}" ;;
     esac
     return
@@ -40,9 +40,9 @@ detect_target() {
   case "${OS}" in
     Linux)
       case "${ARCH}" in
-        x86_64|amd64)       echo "x86_64-unknown-linux-musl"   ;;
-        aarch64|arm64)      echo "aarch64-unknown-linux-musl"   ;;
-        armv7*|armv6*)      echo "armv7-unknown-linux-musleabihf"     ;;
+        x86_64|amd64)       echo "linux-x86_64"   ;;
+        aarch64|arm64)      echo "linux-aarch64"   ;;
+        armv7*|armv6*)      echo "linux-armv7"     ;;
         *) die "Unsupported Linux architecture: ${ARCH}" ;;
       esac ;;
     Darwin)
