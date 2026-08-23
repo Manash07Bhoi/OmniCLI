@@ -47,3 +47,14 @@ Thumbs.db
 # Replit
 .cache/
 .local/
+
+# Cargo/Rust output (global just in case)
+target/
+*.rs.bk
+Cargo.lock
+
+# Logs and environment
+*.log
+.env
+.env.*
+.env.local

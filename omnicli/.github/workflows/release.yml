@@ -75,6 +75,7 @@ jobs:
           key: ${{ runner.os }}-${{ matrix.target }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Build release binary
+        working-directory: omnicli
         env:
           CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER: aarch64-linux-gnu-gcc
           CARGO_TARGET_ARMV7_UNKNOWN_LINUX_MUSLEABIHF_LINKER: arm-linux-gnueabihf-gcc
@@ -82,9 +83,10 @@ jobs:
 
       - name: Package archive (Unix)
         if: runner.os != 'Windows'
+        working-directory: omnicli
         run: |
           TAG="${{ github.ref_name }}"
-          ARCHIVE="omni-${{ matrix.target }}.tar.gz"
+          ARCHIVE="omnicli-${{ matrix.target }}.tar.gz"
           cp target/${{ matrix.target }}/release/omnicli .
           tar -czf "$ARCHIVE" omnicli README.md LICENSE
           sha256sum "$ARCHIVE" > "$ARCHIVE.sha256"
@@ -92,21 +94,38 @@ jobs:
 
       - name: Package archive (Windows)
         if: runner.os == 'Windows'
+        working-directory: omnicli
         shell: pwsh
         run: |
-          $ARCHIVE = "omni-${{ matrix.target }}.zip"
+          $ARCHIVE = "omnicli-${{ matrix.target }}.zip"
           Copy-Item "target/${{ matrix.target }}/release/omnicli.exe" .
           Compress-Archive -Path omnicli.exe,README.md,LICENSE -DestinationPath $ARCHIVE
           $hash = (Get-FileHash $ARCHIVE -Algorithm SHA256).Hash.ToLower()
           "$hash  $ARCHIVE" | Out-File "$ARCHIVE.sha256" -Encoding ascii
           echo "ARCHIVE=$ARCHIVE" | Out-File -FilePath $env:GITHUB_ENV -Append
 
+      - name: Rename artifacts (Unix)
+        if: runner.os != 'Windows'
+        run: |
+          mkdir -p final_artifacts
+          if [ -f "omnicli/omnicli-${{ matrix.target }}.tar.gz" ]; then
+            cp "omnicli/omnicli-${{ matrix.target }}.tar.gz" "final_artifacts/omnicli-${{ matrix.target }}.tar.gz"
+          fi
+
+      - name: Rename artifacts (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path final_artifacts
+          if (Test-Path "omnicli/omnicli-${{ matrix.target }}.zip") {
+            Copy-Item "omnicli/omnicli-${{ matrix.target }}.zip" "final_artifacts/omnicli-${{ matrix.target }}.zip"
+          }
+
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: omni-${{ matrix.target }}
-          path: |
-            omni-${{ matrix.target }}.*
+          name: release-${{ matrix.target }}
+          path: final_artifacts/*
 
   release:
     name: Create GitHub Release
@@ -121,12 +140,29 @@ jobs:
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
-          path: dist
+          pattern: release-*
           merge-multiple: true
+          path: release_assets
+
+      - name: Validate artifacts and generate checksums
+        run: |
+          cd release_assets
+
+          echo "Validating downloaded artifact tree:"
+          ls -laR
+
+          # Clean flattening is no longer required with actions/download-artifact@v4 merge-multiple: true,
+          # but we ensure everything is here and we generate the checksum file.
+
+          echo "Generating checksums for exactly the release artifacts..."
+          sha256sum omnicli-*.zip omnicli-*.tar.gz > SHA256SUMS.txt
+          cat SHA256SUMS.txt
 
       - name: Generate release notes
         id: notes
         run: |
+          # Move back to workspace root for the release notes creation
+          cd $GITHUB_WORKSPACE
           TAG="${{ github.ref_name }}"
           cat > RELEASE_NOTES.md << 'EOF'
           ## OmniCLI ${{ github.ref_name }}
@@ -135,23 +171,23 @@ jobs:
 
           **One-line installer (Linux / macOS / Termux):**
           ```bash
-          curl -fsSL https://raw.githubusercontent.com/${{ github.repository }}/main/scripts/install.sh | sh
+          curl -fsSL https://raw.githubusercontent.com/${{ github.repository }}/main/omnicli/scripts/install.sh | sh
           ```
 
           **Manual download:** Pick the binary for your platform from the assets below, verify the checksum, and place it in your `$PATH`.
 
           | Platform | File |
           |----------|------|
-          | Linux x86_64 (Kali, ParrotOS, Ubuntu) | `omni-x86_64-unknown-linux-musl.tar.gz` |
-          | Linux ARM64 (Termux modern Android) | `omni-aarch64-unknown-linux-musl.tar.gz` |
-          | Linux ARMv7 (Termux 32-bit Android) | `omni-armv7-unknown-linux-musleabihf.tar.gz` |
-          | macOS x86_64 | `omni-x86_64-apple-darwin.tar.gz` |
-          | macOS ARM64 (Apple Silicon) | `omni-aarch64-apple-darwin.tar.gz` |
-          | Windows x86_64 | `omni-x86_64-pc-windows-msvc.zip` |
+          | Linux x86_64 (Kali, ParrotOS, Ubuntu) | `omnicli-x86_64-unknown-linux-musl.tar.gz` |
+          | Linux ARM64 (Termux modern Android) | `omnicli-aarch64-unknown-linux-musl.tar.gz` |
+          | Linux ARMv7 (Termux 32-bit Android) | `omnicli-armv7-unknown-linux-musleabihf.tar.gz` |
+          | macOS x86_64 | `omnicli-x86_64-apple-darwin.tar.gz` |
+          | macOS ARM64 (Apple Silicon) | `omnicli-aarch64-apple-darwin.tar.gz` |
+          | Windows x86_64 | `omnicli-x86_64-pc-windows-msvc.zip` |
 
           ### Verify checksum
           ```bash
-          sha256sum -c omni-<platform>.tar.gz.sha256
+          grep omnicli-<platform>.tar.gz SHA256SUMS.txt | sha256sum -c
           ```
           EOF
 
@@ -160,6 +196,9 @@ jobs:
         with:
           name: "OmniCLI ${{ github.ref_name }}"
           body_path: RELEASE_NOTES.md
-          files: dist/**
+          files: |
+            release_assets/**/*.tar.gz
+            release_assets/**/*.zip
+            release_assets/SHA256SUMS.txt
           draft: false
           prerelease: ${{ contains(github.ref_name, '-') }}

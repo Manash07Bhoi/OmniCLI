@@ -17,10 +17,10 @@ TERMUX_PKG_DESCRIPTION="Professional-grade, full-stack command-line toolkit for 
 TERMUX_PKG_LICENSE="MIT"
 TERMUX_PKG_MAINTAINER="Manash07Bhoi <no-reply@github.com>"
 # IMPORTANT: Update TERMUX_PKG_VERSION to the exact SemVer tag (e.g. "0.1.0" or "1.0.0") without the 'v'
-TERMUX_PKG_VERSION="<ACTUAL_RELEASE_VERSION_HERE>"
+TERMUX_PKG_VERSION=0.1.1
 TERMUX_PKG_SRCURL="https://github.com/Manash07Bhoi/OmniCLI/archive/refs/tags/v${TERMUX_PKG_VERSION}.tar.gz"
 # IMPORTANT: Calculate the SHA-256 checksum of the downloaded tar.gz archive and paste it below
-TERMUX_PKG_SHA256="<ACTUAL_64_CHARACTER_SHA256_HERE>"
+TERMUX_PKG_SHA256=9732f3b96f51246f878d00af15c2245f8df6cdc62535dfb067b82e6e63614a6c
 TERMUX_PKG_BUILD_IN_SRC=true
 TERMUX_PKG_AUTO_UPDATE=true
 TERMUX_PKG_DEPENDS=""
@@ -37,10 +37,10 @@ termux_step_make_install() {
 
 ## Procedure to Finalize
 
-1. Ensure the Git tag (e.g., `v0.1.0`) has been pushed to GitHub.
+1. Ensure the Git tag (e.g., `v0.1.1`) has been pushed to GitHub.
 2. Download the source archive:
    ```bash
-   curl -sL https://github.com/Manash07Bhoi/OmniCLI/archive/refs/tags/v0.1.0.tar.gz -o omnicli.tar.gz
+   curl -sL https://github.com/Manash07Bhoi/OmniCLI/archive/refs/tags/v0.1.1.tar.gz -o omnicli.tar.gz
    ```
 3. Calculate the true SHA-256 checksum:
    ```bash

@@ -34,12 +34,15 @@ jobs:
           restore-keys: ${{ runner.os }}-cargo-
 
       - name: Check formatting
+        working-directory: omnicli
         run: cargo fmt --all -- --check
 
       - name: Clippy (zero warnings)
+        working-directory: omnicli
         run: cargo clippy --all-targets --all-features -- -D warnings
 
       - name: Run all tests
+        working-directory: omnicli
         run: cargo test --all
 
   build-check:
@@ -59,4 +62,5 @@ jobs:
           key: ${{ runner.os }}-cargo-release-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Build release binary
-        run: cargo build --release --bin omni
+        working-directory: omnicli
+        run: cargo build --release --bin omnicli

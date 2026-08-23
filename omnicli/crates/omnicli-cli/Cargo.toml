@@ -1,6 +1,6 @@
 [package]
 name = "omnicli-app"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 license = "MIT"
 description = "Professional-grade, full-stack command-line toolkit for file ops, search, conversion, and archives."
@@ -14,15 +14,15 @@ name = "omnicli"
 path = "src/main.rs"
 
 [dependencies]
-omnicli-core = { path = "../omnicli-core", version = "0.1.0" }
-omnicli-file = { path = "../omnicli-file", version = "0.1.0" }
-omnicli-search = { path = "../omnicli-search", version = "0.1.0" }
-omnicli-archive = { path = "../omnicli-archive", version = "0.1.0" }
-omnicli-convert = { path = "../omnicli-convert", version = "0.1.0" }
-omnicli-dev = { path = "../omnicli-dev", version = "0.1.0" }
-omnicli-workspace = { path = "../omnicli-workspace", version = "0.1.0" }
-omnicli-backup = { path = "../omnicli-backup", version = "0.1.0" }
-omnicli-config = { path = "../omnicli-config", version = "0.1.0" }
+omnicli-core = { path = "../omnicli-core", version = "0.1.1" }
+omnicli-file = { path = "../omnicli-file", version = "0.1.1" }
+omnicli-search = { path = "../omnicli-search", version = "0.1.1" }
+omnicli-archive = { path = "../omnicli-archive", version = "0.1.1" }
+omnicli-convert = { path = "../omnicli-convert", version = "0.1.1" }
+omnicli-dev = { path = "../omnicli-dev", version = "0.1.1" }
+omnicli-workspace = { path = "../omnicli-workspace", version = "0.1.1" }
+omnicli-backup = { path = "../omnicli-backup", version = "0.1.1" }
+omnicli-config = { path = "../omnicli-config", version = "0.1.1" }
 
 clap           = { workspace = true }
 clap_complete  = { workspace = true }
