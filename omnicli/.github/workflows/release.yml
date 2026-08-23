@@ -104,12 +104,28 @@ jobs:
           "$hash  $ARCHIVE" | Out-File "$ARCHIVE.sha256" -Encoding ascii
           echo "ARCHIVE=$ARCHIVE" | Out-File -FilePath $env:GITHUB_ENV -Append
 
+      - name: Rename artifacts (Unix)
+        if: runner.os != 'Windows'
+        run: |
+          mkdir -p final_artifacts
+          if [ -f "omnicli/omnicli-${{ matrix.target }}.tar.gz" ]; then
+            cp "omnicli/omnicli-${{ matrix.target }}.tar.gz" "final_artifacts/omnicli-${{ matrix.target }}.tar.gz"
+          fi
+
+      - name: Rename artifacts (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path final_artifacts
+          if (Test-Path "omnicli/omnicli-${{ matrix.target }}.zip") {
+            Copy-Item "omnicli/omnicli-${{ matrix.target }}.zip" "final_artifacts/omnicli-${{ matrix.target }}.zip"
+          }
+
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: omnicli-${{ matrix.target }}
-          path: |
-            omnicli/omnicli-${{ matrix.target }}.*
+          name: release-${{ matrix.target }}
+          path: final_artifacts/*
 
   release:
     name: Create GitHub Release
@@ -124,12 +140,29 @@ jobs:
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
-          path: dist
+          pattern: release-*
           merge-multiple: true
+          path: release_assets
+
+      - name: Validate artifacts and generate checksums
+        run: |
+          cd release_assets
+
+          echo "Validating downloaded artifact tree:"
+          ls -laR
+
+          # Clean flattening is no longer required with actions/download-artifact@v4 merge-multiple: true,
+          # but we ensure everything is here and we generate the checksum file.
+
+          echo "Generating checksums for exactly the release artifacts..."
+          sha256sum omnicli-*.zip omnicli-*.tar.gz > SHA256SUMS.txt
+          cat SHA256SUMS.txt
 
       - name: Generate release notes
         id: notes
         run: |
+          # Move back to workspace root for the release notes creation
+          cd $GITHUB_WORKSPACE
           TAG="${{ github.ref_name }}"
           cat > RELEASE_NOTES.md << 'EOF'
           ## OmniCLI ${{ github.ref_name }}
@@ -154,7 +187,7 @@ jobs:
 
           ### Verify checksum
           ```bash
-          sha256sum -c omnicli-<platform>.tar.gz.sha256
+          grep omnicli-<platform>.tar.gz SHA256SUMS.txt | sha256sum -c
           ```
           EOF
 
@@ -163,6 +196,9 @@ jobs:
         with:
           name: "OmniCLI ${{ github.ref_name }}"
           body_path: RELEASE_NOTES.md
-          files: dist/**
+          files: |
+            release_assets/**/*.tar.gz
+            release_assets/**/*.zip
+            release_assets/SHA256SUMS.txt
           draft: false
           prerelease: ${{ contains(github.ref_name, '-') }}
