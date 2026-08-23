@@ -31,3 +31,8 @@ Add OmniCLI to Utilities
 ```markdown
 - [OmniCLI](https://github.com/Manash07Bhoi/OmniCLI) - Professional-grade, full-stack CLI for file ops, full-text search, and format conversion.
 ```
+
+---
+
+**Current Status:**
+`READY_FOR_MANUAL_SUBMISSION` (Wait for a human to submit to prevent spamming repositories with automated PRs.)
