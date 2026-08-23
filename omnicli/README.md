@@ -647,12 +647,12 @@ cargo test -- --nocapture
 
 | Platform | Build | Runtime Tested | Release Artifact | Documented Support |
 |----------|-------|----------------|------------------|--------------------|
-| **Linux (x86_64)** (Kali, Parrot, Ubuntu) | ✅ BUILDS | ✅ RUNTIME TESTED | `omnicli-x86_64-unknown-linux-musl.tar.gz` | YES |
-| **Windows (x86_64)** | ✅ BUILDS | ⚠️ NOT TESTED | `omnicli-x86_64-pc-windows-msvc.zip` | YES |
-| **macOS (x86_64)** | ✅ BUILDS | ⚠️ NOT TESTED | `omnicli-x86_64-apple-darwin.tar.gz` | YES |
-| **macOS (ARM64)** | ✅ BUILDS | ⚠️ NOT TESTED | `omnicli-aarch64-apple-darwin.tar.gz` | YES |
-| **Linux ARM64** (Modern Termux) | ✅ BUILDS | ⚠️ NEEDS REAL-WORLD TESTING | `omnicli-aarch64-unknown-linux-musl.tar.gz` | YES |
-| **Linux ARMv7** (32-bit Termux) | ✅ BUILDS | ⚠️ NEEDS REAL-WORLD TESTING | `omnicli-armv7-unknown-linux-musleabihf.tar.gz` | YES |
+| **Linux (x86_64)** (Kali, Parrot, Ubuntu) | ✅ BUILDS | ✅ RUNTIME TESTED | `omnicli-linux-x86_64.tar.gz` | YES |
+| **Windows (x86_64)** | ✅ BUILDS | ⚠️ NOT TESTED | `omnicli-windows-x86_64.zip` | YES |
+| **macOS (x86_64)** | ✅ BUILDS | ⚠️ NOT TESTED | NONE YET | YES |
+| **macOS (ARM64)** | ✅ BUILDS | ⚠️ NOT TESTED | NONE YET | YES |
+| **Linux ARM64** (Modern Termux) | ✅ BUILDS | ⚠️ NEEDS REAL-WORLD TESTING | `omnicli-linux-aarch64.tar.gz` | YES |
+| **Linux ARMv7** (32-bit Termux) | ✅ BUILDS | ⚠️ NEEDS REAL-WORLD TESTING | NONE YET | YES |
 
 ---
 
