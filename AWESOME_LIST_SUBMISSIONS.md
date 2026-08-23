@@ -35,4 +35,13 @@ Add OmniCLI to Utilities
 ---
 
 **Current Status:**
-`READY_FOR_MANUAL_SUBMISSION` (Wait for a human to submit to prevent spamming repositories with automated PRs.)
+
+
+## Status Update (External PR Execution)
+
+**awesome-rust**: NOT ELIGIBLE — DO NOT SUBMIT
+*Reason:* The `awesome-rust` repository's `CONTRIBUTING.md` explicitly requires new submissions to have `stars > 50` or `downloads > 2000`. OmniCLI currently has 0 stars and is newly published, failing this objective metric.
+
+
+**awesome-cli-apps**: NOT ELIGIBLE — DO NOT SUBMIT
+*Reason:* The `awesome-cli-apps` repository's `contributing.md` explicitly requires apps to be "more than 3 months old" and have "more than 20 stars". OmniCLI does not yet meet either condition.
