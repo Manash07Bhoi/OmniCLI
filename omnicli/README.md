@@ -643,17 +643,27 @@ cargo test -- --nocapture
 
 ---
 
-## Platform Notes
+## Platform Support Matrix
 
-| Platform | Notes |
+| Platform | Build | Runtime Tested | Release Artifact | Documented Support |
+|----------|-------|----------------|------------------|--------------------|
+| **Linux (x86_64)** (Kali, Parrot, Ubuntu) | ✅ BUILDS | ✅ RUNTIME TESTED | `omnicli-x86_64-unknown-linux-musl.tar.gz` | YES |
+| **Windows (x86_64)** | ✅ BUILDS | ⚠️ NOT TESTED | `omnicli-x86_64-pc-windows-msvc.zip` | YES |
+| **macOS (x86_64)** | ✅ BUILDS | ⚠️ NOT TESTED | `omnicli-x86_64-apple-darwin.tar.gz` | YES |
+| **macOS (ARM64)** | ✅ BUILDS | ⚠️ NOT TESTED | `omnicli-aarch64-apple-darwin.tar.gz` | YES |
+| **Linux ARM64** (Modern Termux) | ✅ BUILDS | ⚠️ NEEDS REAL-WORLD TESTING | `omnicli-aarch64-unknown-linux-musl.tar.gz` | YES |
+| **Linux ARMv7** (32-bit Termux) | ✅ BUILDS | ⚠️ NEEDS REAL-WORLD TESTING | `omnicli-armv7-unknown-linux-musleabihf.tar.gz` | YES |
+
+---
+
+## Technical Notes
+
+| Target | Architecture / Features |
 |----------|-------|
-| **Replit** | All three services start via pnpm workflows; SQLite DB at `~/.local/share/omni/omni.db` |
-| **Windows** | Full native support; PowerShell recommended for script examples |
-| **Termux (Android)** | `isatty()` probe works; colour auto-detected; path expansion handles Termux prefix |
-| **Kali Linux** | `rusqlite` compiled with bundled SQLite — no system lib required |
-| **ParrotOS** | Static SQLite avoids version conflicts |
-| **macOS** | Compiles; `libc::isatty` supported via Unix trait |
-
+| **Termux (Android)** | Fully supported via cross-compiled MUSL targets. `isatty()` probe working securely without `unsafe` blocks. |
+| **Windows** | Native support via `std::io::IsTerminal`. Use PowerShell for all provided scripts. |
+| **Kali / ParrotOS** | Distributed as static binaries. `rusqlite` compiled with bundled SQLite to avoid system `libsqlite3` conflicts. |
+| **Replit** | Uses `pnpm dev` workspace execution; SQLite DB initializes cleanly at `~/.local/share/omni/omni.db`. |
 ---
 
 ## Contributing

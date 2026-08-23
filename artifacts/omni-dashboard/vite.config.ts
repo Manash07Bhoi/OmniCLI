@@ -42,7 +42,6 @@ export default defineConfig({
         import.meta.dirname,
         '..',
         '..',
-        'attached_assets',
       ),
     },
     dedupe: ['react', 'react-dom'],
