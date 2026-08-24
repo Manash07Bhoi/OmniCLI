@@ -1,53 +1,38 @@
-# OmniCLI v0.1.1 Final External Audit & Closeout
+# TUR PR #2763 - CI Failure Investigation and Fix Report
 
-This is the evidence-based final external audit report for the OmniCLI `v0.1.1` release.
+## Overview
+This report details the investigation and fix applied to Termux User Repository (TUR) Pull Request #2763 to resolve CI failures across all architectures.
 
-## Final Release Health
-**RELEASE HEALTH: GREEN FOR RELEASE**
-*(The `v0.1.1` GitHub release and crates.io packages are successfully published, artifact hashes exactly match, and consumer cargo install resolves flawlessly.)*
+## Current State
+- **PR #2763 Status**: OPEN
+- **Final PR Head Commit SHA**: `525b76f4ebaba22b7d679dc39d78368c779d408a`
+- **Merge Conflicts**: NONE
 
-**EXTERNAL DISTRIBUTION: TUR PR PENDING**
-*(TUR PR #2763 is submitted, linter rules passed, and awaits maintainer action.)*
+## Investigation
+### Exact Failure Cause
+The CI jobs for `build (aarch64)`, `build (i686)`, `build (x86_64)`, and `build (arm)` were previously failing with the following error:
+```
+error: cannot create the lock file /home/builder/.termux-build/omnicli/src/omnicli/Cargo.lock because --locked was passed to prevent this
+```
+### Root Cause Proof
+An investigation of the OmniCLI v0.1.1 source release archive at `https://github.com/Manash07Bhoi/OmniCLI/archive/refs/tags/v0.1.1.tar.gz` (SHA256: `9732f3b96f51246f878d00af15c2245f8df6cdc62535dfb067b82e6e63614a6c`) proved that the `Cargo.lock` file is **not included** in the release archive.
+Because the source archive does not contain a `Cargo.lock`, running `cargo build` with the `--locked` flag inevitably triggers the observed error (exit code 101).
 
----
+## Fix Performed
+The fix involved modifying the `omnicli/build.sh` recipe purely within the TUR PR branch `add-omnicli` (PR #2763).
+- **Files Changed**: `tur/omnicli/build.sh`
+- **Modification**: Removed the `--locked` flag from the `cargo build` command in `termux_step_make()`.
+- **Reasoning**: This allows Cargo to resolve and generate a lockfile on the fly during the TUR build process, which is the correct and standard Termux/TUR approach when packaging source archives lacking a pre-existing lockfile.
+- **Commits Pushed**: 1 commit (`525b76f4ebaba22b7d679dc39d78368c779d408a`) pushed to the `add-omnicli` head branch.
+- **Integrity Kept**: The original v0.1.1 source URL and its verified SHA256 checksum remained completely unchanged. The original repo was not modified.
 
-## External Verifications
+## Final CI Results After Fix
+The new commits triggered new GitHub Actions workflows for PR #2763.
+- **Workflow Run IDs**: `32694798519` (Package updates TUR), `32694798612` (Packages-TUR)
+- **Status of New Jobs**: **PENDING MAINTAINER APPROVAL**
+- **Conclusion**: `action_required`
 
-### 1. GitHub Release
-- **Status:** EXTERNALLY VERIFIED
-- **Release Version:** `v0.1.1`
-- **Tag SHA:** `280bc20d14ff32fb322f8d1b440f61dceee0b40e`
-- **GitHub Actions Run:** `#32627187745` (Conclusion: `success`)
-- **Assets Enumerated & Independently Verified:**
-  - `omnicli-linux-aarch64.tar.gz` (Size: 5628535 bytes)
-  - `omnicli-linux-x86_64.tar.gz` (Size: 5262489 bytes)
-  - `omnicli-windows-x86_64.zip` (Size: 4950710 bytes)
-  - `SHA256SUMS.txt` (Size: 282 bytes)
+## Conclusion
+The technical defect within the TUR recipe has been fixed, pushed, and correctly linked to the PR. However, due to Termux/TUR GitHub security policies on first-time/external contributors, the actual CI jobs are paused and require maintainer action to execute.
 
-### 2. Checksum Verification
-- **Status:** EXTERNALLY VERIFIED
-- All three distribution artifacts were independently downloaded via the GitHub API, and their computed hashes matched `SHA256SUMS.txt` exactly.
-- **Source Archive Hash:** Independently computed from `https://github.com/Manash07Bhoi/OmniCLI/archive/refs/tags/v0.1.1.tar.gz` as `9732f3b96f51246f878d00af15c2245f8df6cdc62535dfb067b82e6e63614a6c`.
-
-### 3. Crates.io Public Registry
-- **Status:** EXTERNALLY VERIFIED
-- All 10 workspace packages exist natively on crates.io and resolve accurately to `v0.1.1`.
-- `cargo search` successfully confirms independent existence for `omnicli-core`, `omnicli-archive`, `omnicli-file`, `omnicli-backup`, `omnicli-config`, `omnicli-convert`, `omnicli-dev`, `omnicli-search`, `omnicli-workspace`, and `omnicli-app`.
-- **Consumer Validation:** Executing `cargo install omnicli-app --version 0.1.1 --force` in a pristine `tmp/` environment strictly sourced from the remote registry completed correctly, generating `omnicli 0.1.1`.
-
-### 4. Termux & Android
-- **Status (Build):** BUILDS / CROSS-COMPILED
-- **Status (Runtime):** NEEDS REAL-DEVICE TESTING (As the CI and agent runner environment is purely x86_64 Ubuntu, it is formally untested).
-- **TUR PR #2763:** PENDING MAINTAINER ACTION. The `build.sh` recipe was submitted pointing to the real `v0.1.1` URL with the precise checksum `9732f3...`. Lint formatting (tabs) was resolved. (See [PR #2763](https://github.com/termux-user-repository/tur/pull/2763)).
-
-### 5. Ecosystem Submissions
-- **Awesome Rust:** NOT ELIGIBLE (Requires > 50 stars. Currently 0).
-- **Awesome CLI Apps:** NOT ELIGIBLE (Requires > 20 stars and > 3 months old).
-
-### 6. Security & Repository Hygiene
-- **Security Check:** SCANNER VERIFIED (0 vulnerabilities across 359 crates in Cargo.lock).
-- **Repository Branch State:** EXTERNALLY VERIFIED (`main` is strictly the only local and remote branch. All stale features and post-release tracking branches were deleted).
-- **Documentation:** EXTERNALLY VERIFIED (`README.md` natively mirrors accurate artifact matrices and strictly drops legacy `v0.1.0` references).
-
----
-*Closeout complete. No artificial data injected.*
+**MAINTAINER APPROVAL REQUIRED**: The PR is currently blocked solely by external infrastructure waiting for a TUR maintainer to click "Approve and run" on the workflows. Once approved, the checks will execute against the fixed recipe and validation will resume.
