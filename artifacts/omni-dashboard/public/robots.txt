@@ -1,2 +1,4 @@
+# The dashboard is a local admin panel for the omnicli binary: it exposes local
+# file paths and activity history, so crawlers are asked to stay away.
 User-agent: *
-Allow: /
+Disallow: /

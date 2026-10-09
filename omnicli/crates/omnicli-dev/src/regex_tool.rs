@@ -52,19 +52,21 @@ pub fn test_regex(pattern: &str, text: &str, flags: &str) -> Result<RegexResult,
         }
     };
 
+    // `Captures::get(0)` is the whole match and is always present, but the
+    // iteration stays total so a future regex-engine change cannot panic here.
     let matches: Vec<RegexMatch> = re
         .captures_iter(text)
-        .map(|cap| {
-            let m = cap.get(0).unwrap();
+        .filter_map(|cap| {
+            let m = cap.get(0)?;
             let groups = (1..cap.len())
                 .map(|i| cap.get(i).map(|g| g.as_str().to_owned()))
                 .collect();
-            RegexMatch {
+            Some(RegexMatch {
                 text: m.as_str().to_owned(),
                 start: m.start(),
                 end: m.end(),
                 groups,
-            }
+            })
         })
         .collect();
 

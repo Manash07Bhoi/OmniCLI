@@ -27,10 +27,13 @@ omnicli-config = { path = "../omnicli-config", version = "0.1.1" }
 clap           = { workspace = true }
 clap_complete  = { workspace = true }
 age            = { workspace = true }
+# Unix only (see main.rs): reset SIGPIPE so a closed pipe is not a panic.
+libc           = { workspace = true }
 anyhow         = { workspace = true }
 serde_json     = { workspace = true }
 serde          = { workspace = true }
 toml           = { workspace = true }
 chrono         = { workspace = true }
+thiserror      = { workspace = true }
 tempfile       = { workspace = true }
 rusqlite       = { workspace = true }

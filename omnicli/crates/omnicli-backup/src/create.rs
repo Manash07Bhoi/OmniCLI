@@ -78,11 +78,12 @@ pub fn backup_create(
         ProgressBar::hidden()
     } else {
         let pb = ProgressBar::new(entries.len() as u64);
-        pb.set_style(
-            ProgressStyle::with_template(" {bar:40.cyan/blue} {pos}/{len} {msg}")
-                .unwrap()
-                .progress_chars("█▉▊▋▌▍▎▏  "),
-        );
+        // The template is a compile-time constant; fall back to the default
+        // style rather than panicking if a future indicatif release rejects it.
+        let style = ProgressStyle::with_template(" {bar:40.cyan/blue} {pos}/{len} {msg}")
+            .map(|st| st.progress_chars("█▉▊▋▌▍▎▏  "))
+            .unwrap_or_else(|_| ProgressStyle::default_bar());
+        pb.set_style(style);
         pb
     };
 

@@ -87,7 +87,57 @@ pub fn parse_content(content: &str, fmt: ConfigFormat, path: &str) -> Result<Val
 pub fn write_config(path: &Path, value: &Value) -> Result<(), ConfigError> {
     let fmt = ConfigFormat::from_path(path)?;
     let content = serialise_value(value, fmt)?;
-    std::fs::write(path, content)?;
+    write_atomic(path, content.as_bytes())?;
+    Ok(())
+}
+
+/// Write `bytes` to `path` atomically.
+///
+/// The data is written to a temporary file in the same directory, flushed to
+/// disk, and only then renamed over the target. A crash, a full disk, or a
+/// concurrent reader can therefore never observe a truncated or partially
+/// written config — the old file stays intact until the new one is complete.
+///
+/// Existing permissions are preserved (a config may be `0600` because it holds
+/// credentials); brand-new files get the process default, matching the previous
+/// `std::fs::write` behaviour.
+fn write_atomic(path: &Path, bytes: &[u8]) -> Result<(), ConfigError> {
+    use std::io::Write;
+
+    let file_name = path.file_name().ok_or_else(|| ConfigError::Serialise {
+        message: format!("cannot write config to {}: not a file path", path.display()),
+    })?;
+    let dir = match path.parent() {
+        Some(p) if !p.as_os_str().is_empty() => p,
+        _ => Path::new("."),
+    };
+
+    let existing_perms = std::fs::metadata(path).ok().map(|m| m.permissions());
+    let tmp_path = dir.join(format!(
+        ".{}.{}.tmp",
+        file_name.to_string_lossy(),
+        std::process::id()
+    ));
+
+    let write_result = (|| -> std::io::Result<()> {
+        let mut file = std::fs::File::create(&tmp_path)?;
+        file.write_all(bytes)?;
+        file.sync_all()?;
+        // Permissions must be set before the rename: after it, the new file is
+        // already visible under `path`.
+        if let Some(perms) = existing_perms {
+            std::fs::set_permissions(&tmp_path, perms)?;
+        }
+        drop(file);
+        std::fs::rename(&tmp_path, path)?;
+        Ok(())
+    })();
+
+    if let Err(err) = write_result {
+        // Never leave stray temp files behind on failure.
+        let _ = std::fs::remove_file(&tmp_path);
+        return Err(ConfigError::Io(err));
+    }
     Ok(())
 }
 
@@ -310,5 +360,108 @@ fn scalar_to_string(v: &Value) -> String {
         Value::Bool(b) => b.to_string(),
         Value::Null => String::new(),
         other => other.to_string(),
+    }
+}
+
+#[cfg(test)]
+mod atomic_write_tests {
+    use super::*;
+    use serde_json::json;
+
+    fn tmp_dir(tag: &str) -> std::path::PathBuf {
+        let d = std::env::temp_dir().join(format!("omnicli-cfg-{}-{}", tag, std::process::id()));
+        let _ = std::fs::remove_dir_all(&d);
+        std::fs::create_dir_all(&d).unwrap();
+        d
+    }
+
+    #[test]
+    fn write_config_replaces_contents_and_leaves_no_temp_files() {
+        let dir = tmp_dir("replace");
+        let path = dir.join("config.toml");
+        std::fs::write(&path, "old = 1\n").unwrap();
+
+        write_config(&path, &json!({ "core": { "color": "auto" } })).unwrap();
+
+        let text = std::fs::read_to_string(&path).unwrap();
+        assert!(text.contains("color"));
+        let leftovers: Vec<_> = std::fs::read_dir(&dir)
+            .unwrap()
+            .filter_map(|e| e.ok())
+            .map(|e| e.file_name().to_string_lossy().into_owned())
+            .filter(|n| n != "config.toml")
+            .collect();
+        assert!(
+            leftovers.is_empty(),
+            "temp files left behind: {leftovers:?}"
+        );
+    }
+
+    #[test]
+    fn write_config_creates_missing_file() {
+        let dir = tmp_dir("create");
+        let path = dir.join("fresh.json");
+        write_config(&path, &json!({ "a": 1 })).unwrap();
+        assert!(std::fs::read_to_string(&path).unwrap().contains("\"a\""));
+    }
+
+    #[test]
+    fn write_atomic_rejects_path_without_file_name() {
+        let err = write_atomic(Path::new("/"), b"{}").unwrap_err();
+        assert!(matches!(err, ConfigError::Serialise { .. }), "got {err:?}");
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn write_config_preserves_existing_permissions() {
+        use std::os::unix::fs::PermissionsExt;
+
+        let dir = tmp_dir("perms");
+        let path = dir.join("secret.json");
+        std::fs::write(&path, "{}").unwrap();
+        std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o600)).unwrap();
+
+        write_config(&path, &json!({ "token": "keep-me-private" })).unwrap();
+
+        let mode = std::fs::metadata(&path).unwrap().permissions().mode() & 0o777;
+        assert_eq!(mode, 0o600, "permissions changed to {mode:o}");
+    }
+
+    #[test]
+    fn failed_serialisation_keeps_original_content_intact() {
+        let dir = tmp_dir("intact");
+        let path = dir.join("config.toml");
+        std::fs::write(&path, "original = \"yes\"\n").unwrap();
+
+        // TOML has no null value, so serialisation fails before any bytes are
+        // written and the existing file must survive untouched.
+        let err = write_config(&path, &json!({ "bad": null })).unwrap_err();
+        assert!(matches!(err, ConfigError::Serialise { .. }), "got {err:?}");
+        assert_eq!(
+            std::fs::read_to_string(&path).unwrap(),
+            "original = \"yes\"\n"
+        );
+    }
+
+    #[test]
+    fn failed_write_reports_io_error_and_leaves_no_temp_files() {
+        let dir = tmp_dir("ioerr");
+        let blocker = dir.join("not-a-dir");
+        std::fs::write(&blocker, "x").unwrap();
+        let target = blocker.join("config.json"); // parent is a file
+
+        let err = write_config(&target, &json!({ "a": 1 })).unwrap_err();
+        assert!(matches!(err, ConfigError::Io(_)), "got {err:?}");
+
+        let leftovers: Vec<_> = std::fs::read_dir(&dir)
+            .unwrap()
+            .filter_map(|e| e.ok())
+            .map(|e| e.file_name().to_string_lossy().into_owned())
+            .filter(|n| n != "not-a-dir")
+            .collect();
+        assert!(
+            leftovers.is_empty(),
+            "temp files left behind: {leftovers:?}"
+        );
     }
 }

@@ -39,10 +39,12 @@ rusqlite = { version = "0.32", features = ["bundled"] }
 
 # Filesystem / traversal
 walkdir = "2"
-notify = "6"
 
 # Output / formatting
-indicatif = "0.17"
+indicatif = "0.18"
+# Reset SIGPIPE to its default disposition so `omnicli … | head` behaves like
+# every other Unix tool instead of panicking on a closed pipe.
+libc = "0.2"
 console = "0.15"
 
 # Compression / archiving

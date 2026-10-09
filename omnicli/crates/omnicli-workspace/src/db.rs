@@ -1,19 +1,8 @@
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use rusqlite::Connection;
 
 use crate::error::WorkspaceError;
-
-pub fn workspace_db_path() -> PathBuf {
-    let base = std::env::var("XDG_DATA_HOME")
-        .ok()
-        .map(PathBuf::from)
-        .unwrap_or_else(|| {
-            let home = std::env::var("HOME").unwrap_or_else(|_| "/tmp".to_owned());
-            PathBuf::from(home).join(".local").join("share")
-        });
-    base.join("omni").join("workspace.db")
-}
 
 pub fn open_workspace_db(db_path: &Path) -> Result<Connection, WorkspaceError> {
     if let Some(parent) = db_path.parent() {

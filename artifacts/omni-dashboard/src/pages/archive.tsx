@@ -46,7 +46,6 @@ export default function ArchivePage() {
               onChange={(e) => setArchivePath(e.target.value)}
               placeholder="/path/to/archive.tar.gz"
               className="font-mono h-11 flex-1"
-              autoFocus
             />
             <Button type="submit" className="h-11 font-bold tracking-wider" disabled={isLoading || !archivePath.trim()}>
               INSPECT

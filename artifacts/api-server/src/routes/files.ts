@@ -1,7 +1,9 @@
 import { Router, type IRouter } from "express";
-import { promises as fs, type Dirent } from "fs";
+import { promises as fs, type Dirent, type Stats } from "fs";
 import path from "path";
-import crypto from "crypto";
+import { createHash } from "node:crypto";
+import { createReadStream } from "node:fs";
+import { blake3 } from "@noble/hashes/blake3.js";
 import {
   FindFilesQueryParams,
   FindFilesResponse,
@@ -12,6 +14,7 @@ import {
 } from "@workspace/api-zod";
 import { db } from "@workspace/db";
 import { activityLogTable } from "@workspace/db";
+import { invalidRequest, missingRequiredParams } from "../lib/validation";
 
 const router: IRouter = Router();
 
@@ -86,7 +89,7 @@ function matchesModified(mtimeMs: number, filter: string | undefined): boolean {
 router.get("/files/find", async (req, res): Promise<void> => {
   const parsed = FindFilesQueryParams.safeParse(req.query);
   if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.message });
+    invalidRequest(res, parsed.error);
     return;
   }
 
@@ -100,6 +103,18 @@ router.get("/files/find", async (req, res): Promise<void> => {
     regex = false,
     limit = 200,
   } = parsed.data;
+
+  let rootStat: Stats;
+  try {
+    rootStat = await fs.stat(searchPath);
+  } catch {
+    res.status(404).json({ error: `Path not found: ${searchPath}` });
+    return;
+  }
+  if (!rootStat.isDirectory()) {
+    res.status(400).json({ error: `Not a directory: ${searchPath}` });
+    return;
+  }
 
   const start = Date.now();
   const entries: { path: string; fileType: string; sizeBytes: number; modified: number }[] = [];
@@ -133,10 +148,47 @@ router.get("/files/find", async (req, res): Promise<void> => {
   res.json(FindFilesResponse.parse({ entries, total: entries.length, durationMs: Date.now() - start }));
 });
 
+/**
+ * Hash a file with the requested algorithm, streaming so memory stays bounded
+ * for large files. BLAKE3 comes from @noble/hashes (no native build needed) and
+ * MD5/SHA-256 from Node's crypto — each digest is computed with the algorithm
+ * the caller asked for.
+ */
+type HashAlgo = "blake3" | "sha256" | "md5";
+
+interface StreamHasher {
+  update(data: Uint8Array): unknown;
+  digest(): Uint8Array;
+}
+
+async function hashFile(filePath: string, algo: HashAlgo): Promise<string> {
+  const hasher: StreamHasher =
+    algo === "blake3"
+      ? (blake3.create() as unknown as StreamHasher)
+      : algo === "sha256"
+        ? (createHash("sha256") as unknown as StreamHasher)
+        : (createHash("md5") as unknown as StreamHasher);
+
+  const stream = createReadStream(filePath, { highWaterMark: 1 << 20 });
+  for await (const chunk of stream) {
+    hasher.update(chunk as Uint8Array);
+  }
+  return Buffer.from(hasher.digest()).toString("hex");
+}
+
 router.get("/files/hash", async (req, res): Promise<void> => {
+  // `path` is required in the OpenAPI spec; `zod.coerce.string()` would coerce
+  // a missing value to the string "undefined" instead of failing.
+  const missing = missingRequiredParams(req.query as Record<string, unknown>, ["path"]);
+  if (missing.length > 0) {
+    invalidRequest(res, {
+      issues: missing.map((name) => ({ path: [name], message: "Required" })),
+    });
+    return;
+  }
   const parsed = HashFileQueryParams.safeParse(req.query);
   if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.message });
+    invalidRequest(res, parsed.error);
     return;
   }
 
@@ -152,10 +204,13 @@ router.get("/files/hash", async (req, res): Promise<void> => {
     return;
   }
 
-  // Node.js crypto doesn't support blake3, use sha256 as equivalent
-  const nodeAlgo = algo === "blake3" ? "sha256" : algo === "sha256" ? "sha256" : "md5";
-  const content = await fs.readFile(filePath);
-  const digest = crypto.createHash(nodeAlgo).update(content).digest("hex");
+  let digest: string;
+  try {
+    digest = await hashFile(filePath, algo);
+  } catch (err: unknown) {
+    res.status(500).json({ error: `Hashing failed: ${(err as Error).message}` });
+    return;
+  }
 
   res.json(HashFileResponse.parse({
     path: filePath,
@@ -168,7 +223,11 @@ router.get("/files/hash", async (req, res): Promise<void> => {
 
 router.get("/files/stats", async (req, res): Promise<void> => {
   const parsed = GetFileStatsQueryParams.safeParse(req.query);
-  const searchPath = parsed.success ? (parsed.data.path ?? ".") : ".";
+  if (!parsed.success) {
+    invalidRequest(res, parsed.error);
+    return;
+  }
+  const searchPath = parsed.data.path ?? ".";
 
   try {
     await fs.access(searchPath);

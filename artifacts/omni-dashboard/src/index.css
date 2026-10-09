@@ -1,4 +1,6 @@
-@import url('https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap');
+/* No webfont imports: this is a local admin panel, so it must not contact a
+   third-party font CDN on load (privacy, offline use, and a strict CSP). The
+   system stack below is available on Linux, macOS, Windows and Termux. */
 @import 'tailwindcss';
 @import 'tw-animate-css';
 @plugin "@tailwindcss/typography";
@@ -105,9 +107,9 @@
   --chart-4: 280 80% 50%;
   --chart-5: 320 80% 50%;
 
-  --app-font-sans: 'Space Mono', monospace;
+  --app-font-sans: ui-monospace, 'Cascadia Mono', 'Segoe UI Mono', 'Liberation Mono', 'DejaVu Sans Mono', Menlo, Consolas, monospace;
   --app-font-serif: Georgia, serif;
-  --app-font-mono: 'Space Mono', monospace;
+  --app-font-mono: ui-monospace, 'Cascadia Mono', 'Segoe UI Mono', 'Liberation Mono', 'DejaVu Sans Mono', Menlo, Consolas, monospace;
   --radius: 0;
 }
 
@@ -151,7 +153,9 @@
   --secondary-foreground: 180 30% 90%;
   
   --muted: 222 30% 10%;
-  --muted-foreground: 222 20% 50%;
+  /* 56% lightness: 5.4:1 on the darkest surfaces. At the previous 50% the
+     label and helper text sat at 4.3:1, below the 4.5:1 WCAG AA threshold. */
+  --muted-foreground: 222 20% 56%;
   
   --accent: 180 100% 15%;
   --accent-foreground: 180 100% 50%;
@@ -212,4 +216,25 @@
   background: linear-gradient(to bottom right, hsl(var(--primary) / 0.5), transparent, hsl(var(--chart-2) / 0.5));
   z-index: -1;
   border-radius: inherit;
+}
+
+/* Respect the operating system's reduced-motion preference for every
+   animation and transition, including the ones inherited from component
+   libraries. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* A visible, consistent focus ring for keyboard users on every interactive
+   element, including links and custom controls that opt out of the default. */
+:where(a, button, [role='button'], [tabindex]):focus-visible {
+  outline: 2px solid hsl(var(--primary));
+  outline-offset: 2px;
 }

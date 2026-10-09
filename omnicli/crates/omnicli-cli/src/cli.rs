@@ -1,38 +1,49 @@
 use clap::{Parser, Subcommand};
 use std::path::PathBuf;
 
-/// OmniCLI — one binary, one grammar, twelve modules.
+/// OmniCLI — one binary, one grammar, eight command groups.
 #[derive(Debug, Parser)]
 #[command(
     name = "omnicli",
     version,
     author,
     about = "One CLI for file ops, search, conversion, backup, archiving, and workspace management.",
-    long_about = None,
-    propagate_version = true,
+    long_about = "OmniCLI — one binary, one grammar.\n\n\
+Command groups: file, search, archive, convert, config, dev, backup, workspace,\n\
+doctor, report, security.\n\n\
+Global flags accept both `--flag` and `--flag=value` forms. `--json`, `--plain`,\n\
+`--no-color` and the NO_COLOR environment variable control output formatting;\n\
+`--json` never emits ANSI escape sequences.\n\n\
+Exit codes:\n  0  success\n  1  runtime failure (nothing partial was left behind beyond documented dry-run behaviour)\n  2  command-line usage error\n  3  configuration file missing or invalid\n\n\
+Configuration: ~/.config/omni/omnicli.toml (override with --config).",
+    propagate_version = true
 )]
 pub struct Cli {
     /// Structured JSON output — no ANSI codes.
     #[arg(long, global = true)]
     pub json: bool,
 
+    /// Plain text output — no colours, no decorative glyphs.
+    #[arg(long, global = true)]
+    pub plain: bool,
+
     /// Disable colour output (also honours the NO_COLOR env var).
     #[arg(long, global = true)]
     pub no_color: bool,
 
-    /// Suppress non-error output.
+    /// Suppress non-error, non-payload output (headers, summaries, progress).
     #[arg(long, short = 'q', global = true)]
     pub quiet: bool,
 
-    /// Enable debug-level tracing to stderr.
+    /// Enable debug-level diagnostics to stderr.
     #[arg(long, short = 'v', global = true)]
     pub verbose: bool,
 
-    /// For destructive operations: show plan without executing.
+    /// For destructive operations: report the plan without changing anything.
     #[arg(long, global = true)]
     pub dry_run: bool,
 
-    /// Override default config path (~/.config/omni/omni.toml).
+    /// Override default config path (~/.config/omni/omnicli.toml).
     #[arg(long, value_name = "PATH", global = true)]
     pub config: Option<PathBuf>,
 
@@ -44,27 +55,50 @@ pub struct Cli {
 
 #[derive(Debug, Subcommand)]
 pub enum Commands {
-    /// File operations: find, copy, move, compare, duplicate, clean, hash, encrypt, decrypt, compress, sync.
+    /// File operations: find, copy, move, compare, duplicate, clean, hash, stats, encrypt, decrypt, sync.
     File {
         #[command(subcommand)]
         cmd: FileCmd,
     },
     /// Generate shell completion scripts (bash, zsh, fish, powershell, elvish).
     ///
-    /// Usage:
-    ///   omni completions bash   >> ~/.bashrc
-    ///   omni completions zsh    >> ~/.zshrc
-    ///   omni completions fish   > ~/.config/fish/completions/omni.fish
+    /// Usage (the script is registered for `omnicli`):
+    ///   omnicli completions bash > ~/.local/share/bash-completion/completions/omnicli
+    ///   omnicli completions zsh  > ~/.zsh/completions/_omnicli     # fpath must contain that dir
+    ///   omnicli completions fish > ~/.config/fish/completions/omnicli.fish
+    ///   source <(omnicli completions bash)                          # or just for this shell
     Completions {
         /// Target shell: bash, zsh, fish, powershell, elvish.
         shell: String,
     },
-    /// Universal search across files, code, PDFs, SQLite, logs.
+    /// Universal search across indexed files, code, and logs.
     ///
-    /// Shorthand: `omni search "query"` runs an immediate search.
+    /// Shorthand: `omnicli search "query" [--limit N] [--in TYPES] [--regex]` is
+    /// equivalent to `omnicli search query "query"` with the same flags.
+    #[command(args_conflicts_with_subcommands = true)]
     Search {
+        /// Query to run immediately (shorthand for `search query <QUERY>`).
+        #[arg(value_name = "QUERY")]
+        query: Option<String>,
+
+        /// Shorthand only: limit results (default: 20).
+        #[arg(long, value_name = "N", requires = "query")]
+        limit: Option<usize>,
+
+        /// Shorthand only: filter by content types: files,pdf,code,sqlite,json,logs,zip.
+        #[arg(long, value_name = "TYPES", requires = "query")]
+        r#in: Option<String>,
+
+        /// Shorthand only: use regex matching instead of full-text search.
+        #[arg(long, requires = "query")]
+        regex: bool,
+
+        /// Shorthand only: match case exactly (default: case-insensitive).
+        #[arg(long, requires = "query")]
+        case_sensitive: bool,
+
         #[command(subcommand)]
-        cmd: SearchCmd,
+        cmd: Option<SearchCmd>,
     },
     /// Archive management: create, extract, list, convert.
     Archive {
@@ -96,15 +130,54 @@ pub enum Commands {
         #[command(subcommand)]
         cmd: WorkspaceCmd,
     },
+    /// Diagnose the local environment, configuration, and data stores.
+    ///
+    /// Every check runs for real; a failing check makes the command exit 1.
+    Doctor,
+    /// Summarise environment, storage, and files in one report.
+    Report {
+        /// Path whose file statistics are included (default: current directory).
+        #[arg(value_name = "PATH")]
+        path: Option<PathBuf>,
+
+        /// Output format: terminal (default), json, or markdown.
+        #[arg(long, value_name = "FORMAT", default_value = "terminal")]
+        format: String,
+    },
+    /// Defensive security checks for files and data you own.
+    Security {
+        #[command(subcommand)]
+        cmd: SecurityCmd,
+    },
 }
 
-// ── omni file ─────────────────────────────────────────────────────────────────
+// ── omnicli security ────────────────────────────────────────────────────────────
+
+#[derive(Debug, Subcommand)]
+pub enum SecurityCmd {
+    /// Report risky permission bits: setuid/setgid and world-writable entries.
+    Permissions {
+        /// Directory tree to scan.
+        #[arg(value_name = "PATH", default_value = ".")]
+        path: PathBuf,
+    },
+    /// Scan text files for credential-like strings (values are always redacted).
+    Secrets {
+        /// Directory tree to scan.
+        #[arg(value_name = "PATH", default_value = ".")]
+        path: PathBuf,
+    },
+    /// Audit configuration-file and data-directory permissions.
+    Config,
+}
+
+// ── omnicli file ─────────────────────────────────────────────────────────────────
 
 #[derive(Debug, Subcommand)]
 pub enum FileCmd {
     /// Find files matching a pattern.
     Find {
-        /// Name pattern (substring match; use --regex for full regex).
+        /// Name pattern: substring, or a glob such as `*.rs` (--regex for full regex).
         #[arg(value_name = "PATTERN")]
         pattern: Option<String>,
 
@@ -159,7 +232,14 @@ pub enum FileCmd {
         verify: bool,
     },
     /// Move a file or directory.
-    Move { source: PathBuf, dest: PathBuf },
+    Move {
+        source: PathBuf,
+        dest: PathBuf,
+
+        /// Re-hash after move to verify byte-identical transfer.
+        #[arg(long)]
+        verify: bool,
+    },
     /// Compare two files or directories and report differences.
     Compare {
         a: PathBuf,
@@ -174,11 +254,20 @@ pub enum FileCmd {
         #[arg(value_name = "PATH", default_value = ".")]
         path: PathBuf,
 
-        /// Minimum file size to consider (e.g. 1K).
+        /// Minimum file size to consider (e.g. 1K). Zero-byte files are always ignored.
         #[arg(long, value_name = "SIZE")]
         min_size: Option<String>,
+
+        /// Delete every duplicate except the first file in each group.
+        /// Requires --yes unless --dry-run is also given.
+        #[arg(long)]
+        delete_dupes: bool,
+
+        /// Confirm the destructive --delete-dupes operation non-interactively.
+        #[arg(long)]
+        yes: bool,
     },
-    /// Remove empty directories, temp files, or matching entries.
+    /// Remove empty directories, stale files, or files matching a glob.
     Clean {
         #[arg(value_name = "PATH", default_value = ".")]
         path: PathBuf,
@@ -187,9 +276,13 @@ pub enum FileCmd {
         #[arg(long)]
         empty_dirs: bool,
 
-        /// Remove files matching this glob.
+        /// Remove files matching this glob, e.g. '*.tmp' (matched against the file name).
         #[arg(long, value_name = "GLOB")]
         pattern: Option<String>,
+
+        /// Remove files older than this duration, e.g. 30d, 12h.
+        #[arg(long, value_name = "DURATION")]
+        older_than: Option<String>,
 
         /// Preview changes without deleting.
         #[arg(long)]
@@ -200,8 +293,8 @@ pub enum FileCmd {
         path: PathBuf,
 
         /// Algorithm: blake3 (default), sha256, md5.
-        #[arg(long, value_name = "ALGO", default_value = "blake3")]
-        algo: String,
+        #[arg(long, value_name = "ALGO")]
+        algo: Option<String>,
     },
     /// Encrypt a file using age (X25519 recipient key).
     Encrypt {
@@ -235,25 +328,29 @@ pub enum FileCmd {
         /// Remove files in dest not in source.
         #[arg(long)]
         delete: bool,
+
+        /// Preview changes without copying or deleting.
+        #[arg(long)]
+        dry_run: bool,
     },
-    /// Get file stats (size, mtime, permissions, hash).
+    /// Get file stats (size, mtime, hash).
     Stats {
         path: PathBuf,
 
-        /// Hash algorithm to include in stats.
+        /// Hash algorithm to include in stats: blake3, sha256, md5.
         #[arg(long, value_name = "ALGO")]
         algo: Option<String>,
     },
 }
 
-// ── omni search ───────────────────────────────────────────────────────────────
+// ── omnicli search ───────────────────────────────────────────────────────────────
 
 #[derive(Debug, Subcommand)]
 pub enum SearchCmd {
     /// Query the search index.
     #[command(name = "query", alias = "q")]
     Query {
-        /// Search query (supports AND, OR, NOT, "phrase").
+        /// Search query (matches as a phrase).
         query: String,
 
         /// Limit results (default: 20).
@@ -264,24 +361,36 @@ pub enum SearchCmd {
         #[arg(long, value_name = "TYPES")]
         r#in: Option<String>,
 
-        /// Use regex matching instead of FTS5.
+        /// Use regex matching instead of full-text search.
         #[arg(long)]
         regex: bool,
+
+        /// Match case exactly (default: case-insensitive).
+        #[arg(long)]
+        case_sensitive: bool,
     },
     /// Index a directory (add or update entries).
+    ///
+    /// When PATH is omitted, the `search.index_paths` values from the config file
+    /// are used.
     Index {
-        #[arg(value_name = "PATH", default_value = ".")]
-        path: PathBuf,
+        /// One or more directories to index. Defaults to `search.index_paths`.
+        #[arg(value_name = "PATH")]
+        paths: Vec<PathBuf>,
 
         /// Force full re-index, removing stale entries first.
         #[arg(long)]
         rebuild: bool,
+
+        /// Extra exclusion substrings (repeatable). Config `search.exclude` always applies.
+        #[arg(long, value_name = "SUBSTRING")]
+        exclude: Vec<String>,
     },
     /// Show index statistics.
     Info,
 }
 
-// ── omni archive ──────────────────────────────────────────────────────────────
+// ── omnicli archive ──────────────────────────────────────────────────────────────
 
 #[derive(Debug, Subcommand)]
 pub enum ArchiveCmd {
@@ -308,7 +417,7 @@ pub enum ArchiveCmd {
     Convert { input: PathBuf, output: PathBuf },
 }
 
-// ── omni convert ──────────────────────────────────────────────────────────────
+// ── omnicli convert ──────────────────────────────────────────────────────────────
 
 #[derive(Debug, Subcommand)]
 pub enum ConvertCmd {
@@ -318,13 +427,13 @@ pub enum ConvertCmd {
     List,
 }
 
-// ── omni config ───────────────────────────────────────────────────────────────
+// ── omnicli config ───────────────────────────────────────────────────────────────
 
 #[derive(Debug, Subcommand)]
 pub enum ConfigCmd {
-    /// Print the current active omni configuration (defaults + config file).
+    /// Print the current active omnicli configuration (defaults + config file).
     Show,
-    /// Print the path where omni looks for its config file.
+    /// Print the path where omnicli looks for its config file.
     Path,
     /// Read and display a config file (JSON, YAML, TOML, XML, INI).
     Read {
@@ -343,7 +452,7 @@ pub enum ConfigCmd {
     Validate { path: PathBuf },
 }
 
-// ── omni dev ──────────────────────────────────────────────────────────────────
+// ── omnicli dev ──────────────────────────────────────────────────────────────────
 
 #[derive(Debug, Subcommand)]
 pub enum DevCmd {
@@ -407,7 +516,7 @@ pub enum DevCmd {
     },
 }
 
-// ── omni backup ───────────────────────────────────────────────────────────────
+// ── omnicli backup ───────────────────────────────────────────────────────────────
 
 #[derive(Debug, Subcommand)]
 pub enum BackupCmd {
@@ -416,8 +525,9 @@ pub enum BackupCmd {
         /// Source directory to back up.
         source: PathBuf,
 
-        /// Backup destination directory.
-        dest: PathBuf,
+        /// Backup destination directory. Defaults to `backup.default_dest` from config.
+        #[arg(long, value_name = "DIR")]
+        dest: Option<PathBuf>,
 
         /// Job name for this backup (used in snapshot IDs).
         #[arg(long, value_name = "NAME", default_value = "default")]
@@ -428,7 +538,7 @@ pub enum BackupCmd {
         /// Backup directory containing snapshots.
         backup_dir: PathBuf,
 
-        /// Snapshot ID to restore (see `omni backup list`).
+        /// Snapshot ID to restore (see `omnicli backup list`).
         snapshot_id: String,
 
         /// Target directory to restore files into.
@@ -450,7 +560,7 @@ pub enum BackupCmd {
     },
 }
 
-// ── omni workspace ────────────────────────────────────────────────────────────
+// ── omnicli workspace ────────────────────────────────────────────────────────────
 
 #[derive(Debug, Subcommand)]
 pub enum WorkspaceCmd {
@@ -498,12 +608,14 @@ pub enum NoteCmd {
 pub enum TodoCmd {
     /// List todos.
     List {
-        #[arg(long)]
+        /// Filter by completion state: --done true or --done false.
+        #[arg(long, value_name = "BOOL", value_parser = clap::value_parser!(bool))]
         done: Option<bool>,
     },
     /// Add a new todo.
     Add {
         description: String,
+        /// Due date as a Unix timestamp (seconds).
         #[arg(long, value_name = "TIMESTAMP")]
         due: Option<i64>,
     },

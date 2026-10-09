@@ -117,9 +117,13 @@ pub fn parse_duration(s: &str) -> Result<Duration, FileError> {
 /// Options for `omnicli file find`.
 #[derive(Debug, Clone, Default)]
 pub struct FindOptions {
-    /// Glob / regex pattern to match against the file name. If `None`, matches all.
+    /// Pattern to match against the file name. If `None`, matches all.
+    ///
+    /// Without `regex`, a pattern containing glob metacharacters (`*`, `?`,
+    /// `[`) is matched as a glob against the file name (e.g. `*.rs`); any other
+    /// pattern is matched as a substring.
     pub pattern: Option<String>,
-    /// Use the pattern as a regex (otherwise treated as a glob-like substring).
+    /// Use the pattern as a regex instead of a glob/substring.
     pub regex: bool,
     /// Filter by entry type.
     pub entry_type: EntryType,
@@ -134,6 +138,9 @@ pub struct FindOptions {
     /// Follow symbolic links. When true, inode-based cycle detection prevents
     /// infinite loops from circular symlinks. Default: false.
     pub follow_symlinks: bool,
+    /// Substrings; any entry whose path contains one of them is skipped.
+    /// Populated from `search.exclude` in the config file.
+    pub exclude: Vec<String>,
 }
 
 /// A matched filesystem entry.
@@ -150,6 +157,8 @@ pub struct FileEntry {
 }
 
 /// Run `omnicli file find` and return matched entries.
+///
+/// The root path itself is never returned; only entries beneath it are matches.
 ///
 /// When `opts.follow_symlinks` is true, the traversal follows symbolic links but
 /// detects cycles by tracking visited directory inodes. Circular symlinks cause a
@@ -170,6 +179,20 @@ pub fn find_files(opts: &FindOptions) -> Result<Vec<FileEntry>, FileError> {
         }
     } else {
         None
+    };
+
+    // A non-regex pattern that looks like a glob (`*.rs`, `report-??.csv`) is
+    // matched as one — a literal `contains()` check would silently match
+    // nothing for those. Patterns without glob metacharacters keep the
+    // documented substring behaviour. An invalid glob (e.g. an unclosed `[`)
+    // falls back to the substring check rather than failing the whole walk.
+    let glob: Option<glob::Pattern> = if opts.regex {
+        None
+    } else {
+        opts.pattern
+            .as_deref()
+            .filter(|p| p.contains(['*', '?', '[']))
+            .and_then(|p| glob::Pattern::new(p).ok())
     };
 
     let now = SystemTime::now();
@@ -205,6 +228,25 @@ pub fn find_files(opts: &FindOptions) -> Result<Vec<FileEntry>, FileError> {
                 continue; // skip permission-denied and other errors
             }
         };
+
+        // The root of the walk is the search scope, not a match: reporting it
+        // would make `find --count` off by one for every invocation.
+        if entry.depth() == 0 {
+            continue;
+        }
+
+        // Config-driven exclusions (e.g. .git, node_modules) are applied to the
+        // full path so nested matches are skipped too.
+        if !opts.exclude.is_empty() {
+            let p = entry.path().to_string_lossy();
+            if opts
+                .exclude
+                .iter()
+                .any(|ex| !ex.is_empty() && p.contains(ex.as_str()))
+            {
+                continue;
+            }
+        }
 
         let ft = entry.file_type();
 
@@ -244,6 +286,8 @@ pub fn find_files(opts: &FindOptions) -> Result<Vec<FileEntry>, FileError> {
         if let Some(pat) = &opts.pattern {
             let matches_pattern = if let Some(r) = &re {
                 r.is_match(&file_name)
+            } else if let Some(g) = &glob {
+                g.matches(&file_name)
             } else {
                 file_name.contains(pat.as_str())
             };
@@ -312,6 +356,13 @@ mod tests {
     use super::*;
     use tempfile::tempdir;
 
+    /// Fresh temporary directory for a test (kept on disk for the test's life).
+    fn tmp(tag: &str) -> std::path::PathBuf {
+        let dir = tempdir().unwrap().keep().join(tag);
+        std::fs::create_dir_all(&dir).unwrap();
+        dir
+    }
+
     #[test]
     fn test_parse_size() {
         assert!(
@@ -349,6 +400,68 @@ mod tests {
         };
         let results = find_files(&opts).unwrap();
         assert!(results.iter().any(|e| e.path.contains("hello.txt")));
+    }
+
+    #[test]
+    fn test_find_glob_pattern_matches_file_names() {
+        let dir = tmp("find_glob");
+        std::fs::write(dir.join("main.rs"), "fn main() {}").unwrap();
+        std::fs::write(dir.join("lib.rs"), "").unwrap();
+        std::fs::write(dir.join("notes.txt"), "").unwrap();
+
+        let opts = FindOptions {
+            path: dir.clone(),
+            pattern: Some("*.rs".into()),
+            ..Default::default()
+        };
+        let results = find_files(&opts).unwrap();
+        let names: Vec<_> = results
+            .iter()
+            .map(|e| {
+                std::path::Path::new(&e.path)
+                    .file_name()
+                    .unwrap()
+                    .to_string_lossy()
+                    .into_owned()
+            })
+            .collect();
+
+        assert_eq!(names.len(), 2, "expected both .rs files, got {names:?}");
+        assert!(names.contains(&"main.rs".to_string()));
+        assert!(!names.contains(&"notes.txt".to_string()));
+    }
+
+    #[test]
+    fn test_find_plain_pattern_still_matches_substrings() {
+        let dir = tmp("find_substr");
+        std::fs::write(dir.join("hello.txt"), "").unwrap();
+        std::fs::write(dir.join("world.txt"), "").unwrap();
+
+        let opts = FindOptions {
+            path: dir,
+            pattern: Some("ello".into()),
+            ..Default::default()
+        };
+        let results = find_files(&opts).unwrap();
+        assert_eq!(results.len(), 1);
+        assert!(results[0].path.ends_with("hello.txt"));
+    }
+
+    #[test]
+    fn test_find_regex_pattern_takes_precedence_over_glob() {
+        let dir = tmp("find_regex_prec");
+        std::fs::write(dir.join("a1.txt"), "").unwrap();
+        std::fs::write(dir.join("ab.txt"), "").unwrap();
+
+        let opts = FindOptions {
+            path: dir,
+            pattern: Some(r"a\d\.txt".into()),
+            regex: true,
+            ..Default::default()
+        };
+        let results = find_files(&opts).unwrap();
+        assert_eq!(results.len(), 1);
+        assert!(results[0].path.ends_with("a1.txt"));
     }
 
     #[test]

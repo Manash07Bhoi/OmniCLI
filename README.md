@@ -35,7 +35,9 @@ omnicli file find "*.rs" --modified 7d
 # Hash a binary with BLAKE3 and pipe it
 omnicli file hash firmware.bin --json | jq .digest
 
-# Search millions of indexed files for a CVE in under a second
+# Build the full-text index, then search it (20k files index in ~0.4 s;
+# queries answer in single-digit milliseconds)
+omnicli search index ~/projects ~/Documents
 omnicli search "CVE-2026-1234"
 
 # Convert an entire CSV dataset to JSON
@@ -44,11 +46,12 @@ omnicli convert run data.csv data.json
 # Pack a directory into a compressed archive
 omnicli archive create release.tar.gz ./dist
 
-# Encrypt a file with age X25519
-omnicli file encrypt secrets.toml --recipient age1ql3z7hjy54pw3hjymouwyfx24i98aw2aqx77k5
+# Encrypt a file with age X25519 (recipient below is a throwaway example key —
+# use the public half of your own key pair, e.g. from `age-keygen`)
+omnicli file encrypt secrets.toml --recipient age15q67675v0dt4l36pnzkcf9qyaznvx54p7x7d9mqhh2flw27937wqlxgaux
 
-# Open the dashboard (Replit / local)
-open http://localhost:$PORT
+# Open the dashboard (API on :8080, dashboard on :3000 by default)
+open http://localhost:3000
 ```
 
 ---
@@ -57,11 +60,20 @@ open http://localhost:$PORT
 
 | Component | Technology | Purpose |
 |-----------|------------|---------|
-| **Rust CLI** (`omni`) | Rust 1.88 · clap 4 · SQLite FTS5 | Core binary — all commands, all modules |
+| **Rust CLI** (`omnicli`) | Rust 1.88 · clap 4 · SQLite FTS5 | Core binary — all commands, all modules |
 | **REST API** | Node.js · Express · TypeScript · Zod | Bridges CLI modules with the web layer |
 | **Web Dashboard** | React 19 · Vite · Tailwind CSS 4 | Live telemetry, search, converter, dev toolkit |
 | **Shared DB** | Drizzle ORM · SQLite | Notes, todos, snippets, activity log, backups |
 | **OpenAPI Spec** | Orval · Zod · React Query | End-to-end typed client/server contract |
+
+### Documentation index
+
+| Document | Contents |
+|----------|----------|
+| [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) | Build outputs, configuration model (development/testing/staging/production), environment variables, supervision, data locations, deployment security |
+| [`docs/SECURITY.md`](docs/SECURITY.md) | Reporting a vulnerability, what is in scope for the defensive security commands, built-in protections and the tests that cover them, dependency-audit results, known limitations |
+| [`CHANGELOG.md`](CHANGELOG.md) | Version history, including which Phase-2 changes are unreleased |
+| [`AUDIT_AND_FIX_REPORT.md`](AUDIT_AND_FIX_REPORT.md) | The Phase-1 audit that this work started from (historical evidence, not current documentation) |
 
 ---
 
@@ -69,24 +81,26 @@ open http://localhost:$PORT
 
 | Module | Commands | Highlights |
 |--------|----------|------------|
-| **`omnicli file`** | find, copy, move, compare, duplicate, clean, hash, encrypt, decrypt, compress, sync | BLAKE3/SHA256/MD5 · age X25519 encryption · verified copy · BLAKE3-powered sync |
-| **`omnicli search`** | index, query, rebuild | SQLite FTS5 · Porter stemmer · regex · per-type filters · sub-second queries |
+| **`omnicli file`** | find, copy, move, compare, duplicate, clean, hash, encrypt, decrypt, sync, stats | BLAKE3/SHA256/MD5 · age X25519 encryption · verified copy · BLAKE3-powered sync |
+| **`omnicli search`** | index, query, info | SQLite FTS5 · Porter stemmer · regex · per-type filters · millisecond queries |
 | **`omnicli archive`** | create, extract, list, convert | zip · tar.gz · tar.xz · tar.bz2 · magic-byte detection · zip-slip protected |
 | **`omnicli convert`** | run, list | 16 format pairs: CSV↔JSON · YAML↔TOML↔JSON · MD→HTML · PNG/JPG↔WebP · PDF→TXT |
-| **`omnicli config`** | show, path | Full TOML config with live defaults |
+| **`omnicli config`** | show, path, read, get, set, validate | Full TOML config with validated defaults |
 
 ## Web Dashboard Panels
 
 | Panel | What it does |
 |-------|-------------|
-| **Command Center** | Real-time system telemetry — file counts, storage, module status, activity log |
-| **Global Search** | Full-text search across indexed files via the REST API |
+| **Command Center** | Live telemetry — file counts, storage, module status and command surface read from the `omnicli` binary, activity log |
+| **Global Search** | Search a directory tree (name or content, optional regex) and rebuild the FTS5 index |
 | **File Finder** | Browse the filesystem and inspect file metadata |
 | **Archive Inspector** | List and inspect archive contents without extracting |
 | **Format Converter** | Convert files between 16 format pairs via drag-and-drop |
 | **Dev Toolkit** | Hash, Base64, UUID generation, regex tester, JSON formatter, JWT decoder |
 | **Workspace** | Notes, todos, and snippets — persisted in SQLite |
 | **Backup Ops** | Incremental backup tracking with BLAKE3 deduplication |
+| **Doctor & Report** | CLI: `omnicli doctor` checks the environment, config and data stores; `omni report` summarises them (terminal, JSON, Markdown) |
+| **Security Audit** | CLI: `omnicli security permissions|secrets|config` — defensive checks for files and data you own |
 
 ---
 
@@ -99,7 +113,7 @@ open http://localhost:$PORT
 | **BLAKE3 by default** | All content-hash operations use BLAKE3. SHA256 and MD5 available via `--algo`. |
 | **Zip-slip protected** | Archive extraction validates all entry paths against `..` traversal and absolute-path injection. |
 | **`--json` on every command** | Every command emits machine-readable JSON — no screen-scraping required. |
-| **`--dry-run` on destructive ops** | `clean`, `sync --delete-extraneous`, and `duplicate --delete-dupes` all support `--dry-run`. |
+| **`--dry-run` on destructive ops** | `clean`, `sync --delete`, and `duplicate --delete-dupes` all support `--dry-run`; `duplicate --delete-dupes` also requires `--yes` or `--dry-run` before it removes anything. |
 | **`NO_COLOR` respected** | Colour output honours the [no-color.org](https://no-color.org) standard and the `--no-color` flag. |
 
 ---
@@ -114,11 +128,11 @@ Explore OmniCLI's capabilities through our full-stack interface.
 
 ### Web Dashboard
 
-#### Light Theme Dashboard
+#### Dashboard
 <p align="center">
-  <img src="docs/assets/dashboard.png" alt="OmniCLI Command Center Dashboard Light Theme" width="800" />
+  <img src="docs/assets/dashboard.png" alt="OmniCLI Command Center Dashboard" width="800" />
   <br>
-  <em>Real-time system telemetry, file counts, storage stats, and module status in Light Mode.</em>
+  <em>Real-time system telemetry, file counts, storage stats, and module status.</em>
 </p>
 
 #### Command Center
@@ -132,7 +146,7 @@ Explore OmniCLI's capabilities through our full-stack interface.
 <p align="center">
   <img src="docs/assets/convert-dark.png" alt="Format Converter View" width="800" />
   <br>
-  <em>Convert files between 16 formats via an intuitive drag-and-drop interface.</em>
+  <em>Convert files between 16 format pairs by pointing at an input and an output path.</em>
 </p>
 
 ### Core Features
@@ -165,11 +179,11 @@ Explore OmniCLI's capabilities through our full-stack interface.
   <em>Generate cryptographically secure hashes directly from the web dashboard.</em>
 </p>
 
-#### Compression & Encryption
+#### File Finder
 <p align="center">
-  <img src="docs/assets/compression-encryption-dark.png" alt="Compression and Encryption" width="800" />
+  <img src="docs/assets/compression-encryption-dark.png" alt="File Finder" width="800" />
   <br>
-  <em>Manage file compression and secure them with encryption via the dashboard.</em>
+  <em>Search the filesystem in real time and inspect file metadata.</em>
 </p>
 
 #### Sync & Backup
@@ -188,18 +202,18 @@ Explore OmniCLI's capabilities through our full-stack interface.
 
 ### Application Management
 
-#### Settings & Workspace
+#### Workspace (notes, todos, snippets)
 <p align="center">
-  <img src="docs/assets/settings-dark.png" alt="Application Settings" width="800" />
+  <img src="docs/assets/settings-dark.png" alt="Workspace panel" width="800" />
   <br>
-  <em>Configure workspace features, notes, and manage application state.</em>
+  <em>Notes, todos and snippets backed by the workspace SQLite database.</em>
 </p>
 
-#### Help & About (Archive Inspector)
+#### Archive Inspector
 <p align="center">
-  <img src="docs/assets/about-dark.png" alt="Help and About" width="800" />
+  <img src="docs/assets/about-dark.png" alt="Archive Inspector panel" width="800" />
   <br>
-  <em>Explore archive details and view in-depth information about your files.</em>
+  <em>List archive contents (zip, tar, tar.gz, tar.xz, tar.bz2) without extracting.</em>
 </p>
 
 ### CLI Experience
@@ -241,12 +255,16 @@ This automatically triggers the GitHub Actions release workflow, which builds, p
 Users can download pre-compiled binaries from the [GitHub Releases](https://github.com/Manash07Bhoi/OmniCLI/releases) page.
 
 ### Officially Supported CI Platforms
-The automated release pipeline currently supports and builds artifacts for:
-- **Windows** (x86_64)
-- **Linux** (x86_64) - Covers Debian, Ubuntu, Kali Linux, ParrotOS, etc.
-- **Linux ARM64** (aarch64)
+`.github/workflows/release.yml` cross-compiles and publishes artifacts for seven targets:
+- **Windows** (x86_64-pc-windows-msvc)
+- **Linux** (x86_64-unknown-linux-gnu) — Debian, Ubuntu, Kali Linux, ParrotOS, etc.
+- **Linux ARM64** (aarch64-unknown-linux-gnu) — Raspberry Pi, ARM servers
+- **macOS** (x86_64 and aarch64)
+- **Termux / Android** (aarch64-unknown-linux-musl, armv7-unknown-linux-musleabihf) — static binaries
 
-*(Note: Termux/Android releases are handled separately but remain fully supported.)*
+Cross-compilation is verified in CI; only Linux x86_64 has been executed locally. The
+[platform support matrix](#platform-support-matrix) records, for every target, whether
+the binary has actually been run.
 
 ### Verifying SHA-256 Checksums
 Every release includes a `SHA256SUMS.txt` file containing checksums for all archives. To verify your downloaded archive, run the following command in the directory containing both the archive and the checksum file:
@@ -273,8 +291,8 @@ All three services start automatically. After cloning:
 
 ```bash
 pnpm install
-pnpm --filter @workspace/db run push   # create SQLite tables (first run only)
 # workflows start automatically — API on :8080, dashboard on the preview URL
+# (the SQLite schema is created automatically the first time the API opens the database)
 ```
 
 Build the Rust CLI:
@@ -284,15 +302,26 @@ cd omnicli && cargo build --release
 ./target/release/omnicli --help
 ```
 
-### crates.io
+### From source (recommended)
 ```bash
-cargo install omnicli-app
-omnicli --version
+git clone https://github.com/Manash07Bhoi/OmniCLI
+cd OmniCLI/omnicli && cargo build --release
+./target/release/omnicli --version
 ```
+
+> **crates.io:** the workspace is published as `omnicli-app` (binary `omnicli`)
+> plus its library crates (`omnicli-core`, `omnicli-file`, `omnicli-search`,
+> `omnicli-archive`, `omnicli-convert`, `omnicli-backup`, `omnicli-workspace`,
+> `omnicli-dev`, `omnicli-config`), all at 0.1.1. **Note:** the published 0.1.1
+> matches the `v0.1.1` GitHub release, not the newer unreleased commits on
+> `main`. `cargo install omnicli-app` resolves and its manifest is valid
+> (MIT, `[[bin]] omnicli`), but the first build compiles the full
+> `age`/`i18n-embed` dependency tree and can take a while on small machines;
+> for a fast install use a GitHub release (above) or build from source.
 
 ### Windows (PowerShell)
 
-OmniCLI is fully supported on Windows. You can install the CLI standalone, or run the full Web Dashboard suite.
+OmniCLI builds for Windows x86_64 and avoids Unix-only APIs (TTY detection uses `std::io::IsTerminal`, paths go through one `platform` module). You can install the CLI standalone, or run the full Web Dashboard suite. See the [platform support matrix](#platform-support-matrix): no Windows binary has been executed on the machine that produced this documentation, so Windows is build-verified rather than runtime-verified.
 
 **System Requirements:**
 - Windows 10 or Windows 11
@@ -319,7 +348,7 @@ if ($UserPath -notmatch "OmniCLI") {
     [Environment]::SetEnvironmentVariable("PATH", "$UserPath;$env:USERPROFILE\OmniCLI", "User")
 }
 
-# Verify installation (open a new PowerShell window first if omni is not found)
+# Verify installation (open a new PowerShell window first if omnicli is not found)
 omnicli --version
 ```
 
@@ -342,10 +371,8 @@ cd OmniCLI
 # 2. Install dependencies
 pnpm install
 
-# 3. Setup the local SQLite database schema (first run only)
-pnpm --filter @workspace/db run push
-
-# 4. Start the dashboard and REST API
+# 3. Start the dashboard and REST API
+#    (the SQLite schema is created automatically on first run)
 pnpm run dev
 ```
 
@@ -374,9 +401,9 @@ omnicli --version
 cd ..
 npm install -g pnpm
 pnpm install
-pnpm --filter @workspace/db run push
 
 # Run the dashboard and API in development mode
+# (the SQLite schema is created automatically on first run)
 # It will start the API on port 8080 and the Dashboard on port 3000
 pnpm run dev
 ```
@@ -401,9 +428,9 @@ omnicli --version
 cd ..
 sudo npm install -g pnpm
 pnpm install
-pnpm --filter @workspace/db run push
 
 # Run the dashboard and API in development mode
+# (the SQLite schema is created automatically on first run)
 pnpm run dev
 ```
 *Open a web browser and navigate to `http://localhost:3000` to view the dashboard!*
@@ -430,7 +457,7 @@ cargo clippy -- -D warnings
 
 ## Global Flags
 
-Every `omni` command accepts these flags at any position:
+Every `omnicli` command accepts these flags at any position:
 
 | Flag | Short | Description |
 |------|-------|-------------|
@@ -439,7 +466,7 @@ Every `omni` command accepts these flags at any position:
 | `--quiet` | `-q` | Suppress non-error output |
 | `--verbose` | `-v` | Show debug traces to stderr |
 | `--dry-run` | | Show plan without executing (destructive ops only) |
-| `--config <PATH>` | | Override `~/.config/omni/omni.toml` |
+| `--config <PATH>` | | Override `~/.config/omni/omnicli.toml` |
 
 ---
 
@@ -458,8 +485,8 @@ omnicli --help
 omnicli file find "*.rs" --modified 7d --type f
 omnicli file hash firmware.bin --algo sha256 --json
 omnicli file copy src\ dist\ --recursive --verify
-omnicli file sync ~\source ~\backup --delete-extraneous --dry-run
-omnicli file duplicate --scan ~\Downloads --delete-dupes --dry-run
+omnicli file sync ~\source ~\backup --delete --dry-run
+omnicli file duplicate ~\Downloads --delete-dupes --dry-run
 
 # ── Search ────────────────────────────────────────────────────────────────────
 omnicli search index ~\projects ~\Documents
@@ -490,8 +517,8 @@ omnicli config path
 omnicli file find "*.rs" --modified 7d --type f
 omnicli file hash firmware.bin --algo sha256 --json | jq .digest
 omnicli file copy src/ dist/ --recursive --verify
-omnicli file sync ~/source ~/backup --delete-extraneous --dry-run
-omnicli file duplicate --scan ~/Downloads --delete-dupes --dry-run
+omnicli file sync ~/source ~/backup --delete --dry-run
+omnicli file duplicate ~/Downloads --delete-dupes --dry-run
 
 # ── Search ────────────────────────────────────────────────────────────────────
 omnicli search index ~/projects ~/Documents
@@ -552,19 +579,27 @@ OmniCLI/
 ├── omnicli/                            ← Rust workspace
 │   ├── Cargo.toml                      ← Shared dependency versions (workspace deps)
 │   └── crates/
-│       ├── omni-cli/                   ← Binary: clap parse → dispatch
-│       ├── omni-core/                  ← Shared: hashing, output, config, platform
-│       ├── omni-file/                  ← File operations (11 verbs)
-│       ├── omni-search/                ← SQLite FTS5 index + query
-│       ├── omni-archive/               ← zip/tar/* — zip-slip protected
-│       ├── omni-convert/               ← 16 format codecs
-│       └── omni-config/                ← Config loading (TOML)
+│       ├── omnicli-cli/                ← Binary: clap parse → dispatch
+│       ├── omnicli-core/               ← Shared: hashing, output, config, platform
+│       ├── omnicli-file/               ← File operations (11 verbs)
+│       ├── omnicli-search/             ← SQLite FTS5 index + query
+│       ├── omnicli-archive/            ← zip/tar/* — zip-slip protected
+│       ├── omnicli-convert/            ← 16 format codecs
+│       ├── omnicli-backup/             ← Incremental, content-addressed backups
+│       ├── omnicli-workspace/          ← Notes/todos/snippets store
+│       ├── omnicli-dev/                ← Developer toolkit (hash, json, uuid, …)
+│       └── omnicli-config/             ← Config loading (TOML)
+
 │
 ├── artifacts/
 │   ├── api-server/                     ← Express + TypeScript REST API
 │   │   └── src/routes/                 ← health, dashboard, files, search, …
-│   ├── omni-dashboard/                 ← React 19 + Vite + Tailwind CSS 4
-│   └── mockup-sandbox/                 ← Vite component preview server
+│   └── omni-dashboard/                 ← React 19 + Vite + Tailwind CSS 4
+│
+│   artifacts/mockup-sandbox/ is a Replit-only component preview server. It is
+│   excluded from the pnpm workspace (see pnpm-workspace.yaml) because it is not
+│   part of the product and its design-time dependency tree pulled in the only
+│   advisory with no patched release. The source is kept in the repository.
 │
 └── lib/
     ├── api-spec/                       ← OpenAPI 3.1 specification
@@ -574,10 +609,10 @@ OmniCLI/
 ```
 
 **Dependency rules (enforced by crate graph):**
-- `omni-core` has zero module dependencies
-- All other crates may depend on `omni-core` only
-- `omni-file` may depend on `omni-archive` (compress delegates to it)
-- `omni-cli` is the only crate that imports all modules
+- `omnicli-core` has zero module dependencies
+- All other crates may depend on `omnicli-core` only
+- `omnicli-file` may depend on `omnicli-archive` (compress delegates to it)
+- `omnicli-cli` is the only crate that imports all modules
 
 ---
 
@@ -603,7 +638,7 @@ main.rs          →  exit(1) + stderr         (never silently swallows)
 | **Encryption** | age X25519 asymmetric encryption via the audited [`age`](https://crates.io/crates/age) crate |
 | **Key exposure** | Identity keys in `--identity` are visible in `ps` — use shell substitution for production |
 | **BLAKE3 integrity** | `--verify` on copy re-hashes the destination to confirm byte-identical transfer |
-| **Dependency auditing** | Weekly `cargo audit` + `cargo deny` + `pnpm audit` via GitHub Actions |
+| **Dependency auditing** | `pnpm audit` is run in CI and is clean; `cargo audit`/`cargo deny` are wired into `.github/workflows/security.yml` and also runnable locally |
 | **License gate** | `cargo deny` blocks GPL/AGPL/LGPL and the `openssl` crate (rustls only) |
 
 ---
@@ -611,48 +646,101 @@ main.rs          →  exit(1) + stderr         (never silently swallows)
 ## Testing
 
 ```bash
-cd omnicli
+# Rust: 269 tests across 10 crates (unit + integration + black-box CLI)
+cd omnicli && cargo test --workspace
 
-# All tests across all crates
-cargo test
+# CLI black box: drives the compiled binary as a user would
+cargo test -p omnicli-app --test cli
 
-# Specific crate
-cargo test -p omni-file
-cargo test -p omni-archive
-cargo test -p omni-search
-cargo test -p omni-convert
+# API: 104 tests that boot the real HTTP server with the real CLI and SQLite
+pnpm --filter @workspace/api-server test
 
-# With stdout
-cargo test -- --nocapture
+# Installer: packages a release the way the release workflow does, serves it
+# over HTTP, and runs the real install.sh through four scenarios
+cd omnicli && ./scripts/test-installer.sh ./target/release/omnicli
+
+# Rendered accessibility audit (needs a running dashboard + API, and the
+# browser + axe-core, which are deliberately not dependencies of this package)
+cd artifacts/omni-dashboard
+npx --yes playwright@1.56.1 install chromium
+pnpm add -D playwright @axe-core/playwright   # or install them temporarily
+node scripts/a11y-audit.mjs http://127.0.0.1:3000
+
+# Browser E2E smoke: the dashboard really shows what the API returns, every
+# route reaches a loaded state, offline state appears and recovers, and the
+# console stays clean (same browser prerequisites as the audit above)
+node scripts/e2e-smoke.mjs http://127.0.0.1:3000
 ```
 
-- Unit tests for every public function
-- Integration tests: encrypt→decrypt roundtrips, archive format roundtrips, CSV→JSON→YAML chain
-- No synthetic data — fixtures use real files
-- All tests are hermetic: tempdir-isolated, no global state
+What the suites cover, and what they deliberately avoid:
+
+- **Rust** — unit tests per module plus integration tests for encrypt→decrypt
+  round trips, archive format round trips and CSV→JSON→YAML chains, and a
+  black-box suite that runs the compiled binary and checks output, exit codes
+  and JSON shapes.
+- **API** — real HTTP requests against a real server that shells out to a real
+  `omnicli` binary and a real SQLite workspace in a sandboxed `HOME`. Fixtures
+  are written by the API and read back by an independent tool (Python), so a
+  test cannot pass because two parts of the code share a wrong assumption.
+- **Installer** — the actual download → checksum → extract → install path,
+  including the three refusals that matter (bad checksum, missing checksum file,
+  path-traversal member).
+- **Accessibility** — axe-core over every route in a real browser, plus
+  keyboard order, landmarks and the reduced-motion policy.
+
+Nothing is mocked that can be run for real, and no test asserts a fabricated
+result: where a component is unavailable the tests assert the honest failure
+(503, 404, non-zero exit).
 
 ---
 
 ## Performance
 
-- **BLAKE3** is ~3× faster than SHA-256 on modern hardware (AVX2-accelerated via the `blake3` crate)
-- **FTS5 queries** return results in under 10 ms on a 100k-file index
-- **Archive creation** streams through the encoder — no full in-memory buffer
-- **Sync** only copies changed files (BLAKE3 content comparison), making reruns cheap
-- **Duplicate scan** uses a two-pass strategy: size-group first, hash only size-collision candidates
+Measured on the machine that produced this documentation — **2 vCPU Intel Xeon @ 2.60 GHz, 2 GB RAM, Linux x86_64**, release build (`cargo build --release`), best-of-5 runs. Numbers on your hardware will differ; the method is described so you can reproduce them.
+
+| Operation | Corpus | Result |
+|-----------|--------|--------|
+| `omnicli search index` (fresh) | 20,000 text files (20,401 entries incl. directories) | **530–700 ms** (later runs 770–920 ms: every file is re-hashed) |
+| `omnicli search index` size on disk | same corpus | 23–24 MB index for 20,000 documents |
+| `omnicli search "needle"` (content hit, 20 matches) | same corpus | **22–26 ms** |
+| `omnicli search query "needle" --regex` (content hit, 20 matches) | same corpus | 33 ms (a no-hit regex scans all 20,000 documents in ~60 ms) |
+| `omnicli search "commonword"` (no matches) | same corpus | **6–8 ms** |
+| `omnicli file find --count` | same corpus | 41 ms |
+| `omnicli file hash --algo blake3` | 64 MB file | **19–27 ms** (≈2.4–3.4 GB/s) |
+| `omnicli file hash --algo sha256` | 64 MB file | 50–69 ms |
+| `omnicli file hash --algo md5` | 64 MB file | 134–146 ms |
+
+Reproduce all of it with `omnicli/scripts/bench.sh` — it generates the same 20,000-file corpus (fixed random seed) and prints the timings above:
+
+```bash
+cd omnicli && cargo build --release
+./scripts/bench.sh              # release binary + generated corpus
+./scripts/bench.sh ./target/release/omnicli ~/my-corpus   # your own data
+```
+
+Design notes that explain the numbers:
+
+- **BLAKE3** hashes ~2.5× faster than SHA-256 here (and ~6× faster than MD5) because the `blake3` crate uses SIMD where available.
+- **Re-indexing is idempotent**: a file's content row is replaced, not appended, so repeated indexing neither duplicates search results nor grows the database.
+- **Archive creation** streams through the encoder — no full in-memory buffer.
+- **Sync** only copies changed files (BLAKE3 content comparison), making reruns cheap.
+- **Duplicate scan** uses a two-pass strategy: size-group first, hash only size-collision candidates.
 
 ---
 
 ## Platform Support Matrix
 
-| Platform | Build | Runtime Tested | Release Artifact | Documented Support |
-|----------|-------|----------------|------------------|--------------------|
-| **Linux (x86_64)** (Kali, Parrot, Ubuntu) | ✅ BUILDS | ✅ RUNTIME TESTED | `omnicli-linux-x86_64.tar.gz` | YES |
-| **Windows (x86_64)** | ✅ BUILDS | ⚠️ NOT TESTED | `omnicli-windows-x86_64.zip` | YES |
-| **macOS (x86_64)** | ✅ BUILDS | ⚠️ NOT TESTED | NONE YET | YES |
-| **macOS (ARM64)** | ✅ BUILDS | ⚠️ NOT TESTED | NONE YET | YES |
-| **Linux ARM64** (Modern Termux) | ✅ BUILDS | ⚠️ NEEDS REAL-WORLD TESTING | `omnicli-linux-aarch64.tar.gz` | YES |
-| **Linux ARMv7** (32-bit Termux) | ✅ BUILDS | ⚠️ NEEDS REAL-WORLD TESTING | NONE YET | YES |
+| Target | CI build target | Runtime verified | Release artifact |
+|--------|-----------------|------------------|------------------|
+| **Linux x86_64** (Debian, Ubuntu, Kali, Parrot) | `x86_64-unknown-linux-gnu` | ✅ executed during this audit (`omnicli --version` → `0.1.1`, full test suite run) | `omnicli-linux-x86_64.tar.gz` |
+| **Linux ARM64** (Raspberry Pi, ARM servers) | `aarch64-unknown-linux-gnu` | ⛔ not executed — build only | `omnicli-linux-aarch64.tar.gz` |
+| **Termux / Android ARM64** (static musl) | `aarch64-unknown-linux-musl` | ⛔ not executed — build only | `omnicli-linux-aarch64-musl.tar.gz` |
+| **Termux / Android ARMv7** (static musl) | `armv7-unknown-linux-musleabihf` | ⛔ not executed — build only | `omnicli-linux-armv7-musl.tar.gz` |
+| **Windows x86_64** | `x86_64-pc-windows-msvc` | ⛔ not executed — build only | `omnicli-windows-x86_64.zip` |
+| **macOS Intel** | `x86_64-apple-darwin` | ⛔ not executed — build only | `omnicli-macos-x86_64.tar.gz` |
+| **macOS Apple Silicon** | `aarch64-apple-darwin` | ⛔ not executed — build only | `omnicli-macos-aarch64.tar.gz` |
+
+**How to read this table.** "Build target" is what the release workflow compiles (`.github/workflows/release.yml`). "Runtime verified" is what has actually been *executed*: only Linux x86_64 was run — on the machine that produced this documentation, using the source tree in this repository. No macOS, Windows, or Termux binary has been executed here, so this project does not claim those work at runtime; they are build-verified only, and issues reported by users on those platforms are treated as real bugs. The workflow re-verifies that the packaged binary reports the tag's version before publishing.
 
 ---
 
@@ -660,8 +748,8 @@ cargo test -- --nocapture
 
 | Target | Architecture / Features |
 |----------|-------|
-| **Termux (Android)** | Fully supported via cross-compiled MUSL targets. `isatty()` probe working securely without `unsafe` blocks. |
-| **Windows** | Native support via `std::io::IsTerminal`. Use PowerShell for all provided scripts. |
+| **Termux (Android)** | Static MUSL builds for aarch64 and armv7 (see the matrix for verification status). TTY detection uses `std::io::IsTerminal` — no `unsafe` blocks, no `libc` dependency. |
+| **Windows** | Built for `x86_64-pc-windows-msvc`; TTY detection via `std::io::IsTerminal`. Use PowerShell for all provided scripts. |
 | **Kali / ParrotOS** | Distributed as static binaries. `rusqlite` compiled with bundled SQLite to avoid system `libsqlite3` conflicts. |
 | **Replit** | Uses `pnpm dev` workspace execution; SQLite DB initializes cleanly at `~/.local/share/omni/omni.db`. |
 ---

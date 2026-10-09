@@ -1,0 +1,12 @@
+{
+  "name": "OmniCLI Dashboard",
+  "short_name": "OmniCLI",
+  "description": "Local control panel for the OmniCLI toolkit.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#120f0e",
+  "theme_color": "#ff3c00",
+  "icons": [
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}

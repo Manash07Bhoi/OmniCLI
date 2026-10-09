@@ -32,7 +32,9 @@ const CardTitle = React.forwardRef<
   HTMLParagraphElement,
   React.HTMLAttributes<HTMLHeadingElement>
 >(({ className, ...props }, ref) => (
-  <h3
+  // h2, not h3: card titles are the first heading level below the page's h1.
+  // Jumping from h1 to h3 breaks the document outline for screen readers.
+  <h2
     ref={ref}
     className={cn(
       "text-lg font-bold leading-none tracking-tight text-primary terminal-text-glow",

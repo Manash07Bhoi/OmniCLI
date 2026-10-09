@@ -36,6 +36,13 @@ minimumReleaseAgeExclude:
 
 packages:
   - artifacts/*
+  # Not part of the product: a Replit-only component preview server for design
+  # work. It is excluded from the workspace so its 60 design-time dependencies
+  # are neither installed nor tracked by dependency auditing; it also pulled in
+  # the only advisory with no patched release (braces via fast-glob). The source
+  # is kept in the repository: to use it, delete the two lines below and run
+  # `pnpm install`.
+  - '!artifacts/mockup-sandbox'
   - lib/*
   - lib/integrations/*
   - scripts

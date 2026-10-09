@@ -6,14 +6,21 @@ on:
   pull_request:
     branches: [main, master]
 
+permissions:
+  contents: read
+
 env:
   CARGO_TERM_COLOR: always
   PNPM_VERSION: 10.x
 
 jobs:
-  # ── Rust ──────────────────────────────────────────────────────────────────────
+  # ── Rust: cross-platform build & smoke ──────────────────────────────────────
+  # The formatting, clippy and test gates for the Rust workspace live in
+  # rust.yml (path-filtered, includes the MSRV job) so they are not run twice
+  # on every push. This job adds what rust.yml does not cover: a release build
+  # and a CLI smoke test on macOS and Windows.
   rust:
-    name: Rust — ${{ matrix.os }}
+    name: Rust build & smoke — ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -32,21 +39,9 @@ jobs:
         with:
           workspaces: omnicli
 
-      - name: Clippy (zero warnings)
-        working-directory: omnicli
-        run: cargo clippy --all-targets -- -D warnings
-
-      - name: Tests
-        working-directory: omnicli
-        run: cargo test
-
       - name: Release build
         working-directory: omnicli
         run: cargo build --release
-
-      - name: Format check
-        working-directory: omnicli
-        run: cargo fmt --check
 
       - name: Smoke test — version
         shell: bash
@@ -70,30 +65,33 @@ jobs:
           ./target/release/omnicli completions zsh  | head -5
           ./target/release/omnicli completions fish | head -5
 
-  # ── TypeScript ────────────────────────────────────────────────────────────────
-  typescript:
-    name: TypeScript — typecheck & build
+  # ── Installer: end-to-end against a real packaged release ───────────────────
+  # Packages the release binary in the published layout, publishes it over a
+  # local HTTP server and installs it with the real scripts/install.sh. Covers
+  # the happy path plus the three refusals that matter: wrong checksum, missing
+  # checksum file and a path-traversal member.
+  installer:
+    name: Installer end-to-end (real archive, real install.sh)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - uses: pnpm/action-setup@v4
+      - name: Install Rust toolchain (stable)
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Cargo
+        uses: Swatinem/rust-cache@v2
         with:
-          version: ${{ env.PNPM_VERSION }}
+          workspaces: omnicli
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-          cache: pnpm
+      - name: Build release binary
+        working-directory: omnicli
+        run: cargo build --release
 
-      - run: pnpm install --frozen-lockfile
+      - name: Run installer end-to-end test
+        working-directory: omnicli
+        run: ./scripts/test-installer.sh ./target/release/omnicli
 
-      - name: Typecheck all packages
-        run: pnpm typecheck
-
-      - name: Build all packages
-        run: pnpm build
-        env:
-          PORT: '3000'
-          BASE_PATH: '/'
-          NODE_ENV: 'production'
+  # NOTE: TypeScript typecheck/build and the API smoke test live in
+  # typescript.yml; running them here as well tripled the install+build cost per
+  # pull request with no extra coverage.

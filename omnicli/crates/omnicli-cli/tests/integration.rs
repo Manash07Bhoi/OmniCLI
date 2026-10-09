@@ -269,7 +269,7 @@ fn test_search_index_and_query() {
 
     let db_path = dir.path().join("search.db");
     let mut conn = open_index_db(&db_path).unwrap();
-    let stats = rebuild_index(&mut conn, &[dir.path().to_owned()], &[], true).unwrap();
+    let stats = rebuild_index(&mut conn, &[dir.path().to_owned()], &[], true, true).unwrap();
     assert!(stats.files_indexed >= 2);
 
     let opts = SearchOptions {
@@ -306,6 +306,7 @@ fn test_find_files_by_pattern() {
         path: dir.path().to_owned(),
         max_depth: None,
         follow_symlinks: false,
+        exclude: vec![],
     };
 
     let entries = find_files(&opts).unwrap();
@@ -331,6 +332,7 @@ fn test_find_files_all_types() {
         path: dir.path().to_owned(),
         max_depth: None,
         follow_symlinks: false,
+        exclude: vec![],
     };
 
     let entries = find_files(&opts).unwrap();
@@ -353,7 +355,7 @@ fn test_duplicate_detection() {
     )
     .unwrap();
 
-    let result = scan_duplicates(dir.path()).unwrap();
+    let result = scan_duplicates(dir.path(), 0).unwrap();
     assert_eq!(result.groups.len(), 1, "exactly one duplicate group");
     assert_eq!(result.groups[0].files.len(), 2);
     assert!(result.wasted_bytes > 0);

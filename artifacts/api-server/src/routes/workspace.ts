@@ -1,11 +1,13 @@
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
+import { isUniqueViolation } from "../lib/sqlite-errors";
+import { activityLogTable } from "@workspace/db";
 import {
-  notesTable,
-  todosTable,
-  snippetsTable,
-  activityLogTable,
-} from "@workspace/db";
+  workspaceNotesTable as notesTable,
+  workspaceTodosTable as todosTable,
+  workspaceSnippetsTable as snippetsTable,
+  workspaceStore,
+} from "../lib/workspace";
 import { count, eq, desc, like } from "drizzle-orm";
 import {
   ListNotesQueryParams,
@@ -33,6 +35,7 @@ import {
   DeleteSnippetParams,
   GetWorkspaceStatsResponse,
 } from "@workspace/api-zod";
+import { invalidRequest } from "../lib/validation";
 
 const router: IRouter = Router();
 
@@ -49,23 +52,25 @@ function serializeNote(n: typeof notesTable.$inferSelect) {
 }
 
 router.get("/workspace/notes", async (req, res): Promise<void> => {
+  const { db: wdb } = await workspaceStore();
   const params = ListNotesQueryParams.safeParse(req.query);
   const search = params.success ? params.data.search : undefined;
 
   const notes = search
-    ? await db.select().from(notesTable).where(like(notesTable.title, `%${search}%`)).orderBy(desc(notesTable.updatedAt))
-    : await db.select().from(notesTable).orderBy(desc(notesTable.updatedAt));
+    ? await wdb.select().from(notesTable).where(like(notesTable.title, `%${search}%`)).orderBy(desc(notesTable.updatedAt))
+    : await wdb.select().from(notesTable).orderBy(desc(notesTable.updatedAt));
 
   res.json(ListNotesResponse.parse(notes.map(serializeNote)));
 });
 
 router.post("/workspace/notes", async (req, res): Promise<void> => {
+  const { db: wdb } = await workspaceStore();
   const parsed = CreateNoteBody.safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.message });
+    invalidRequest(res, parsed.error);
     return;
   }
-  const [note] = await db
+  const [note] = await wdb
     .insert(notesTable)
     .values({ title: parsed.data.title, body: parsed.data.body ?? "", tags: parsed.data.tags })
     .returning();
@@ -74,19 +79,21 @@ router.post("/workspace/notes", async (req, res): Promise<void> => {
 });
 
 router.get("/workspace/notes/:id", async (req, res): Promise<void> => {
+  const { db: wdb } = await workspaceStore();
   const params = GetNoteParams.safeParse(req.params);
-  if (!params.success) { res.status(400).json({ error: params.error.message }); return; }
-  const [note] = await db.select().from(notesTable).where(eq(notesTable.id, params.data.id));
+  if (!params.success) { invalidRequest(res, params.error); return; }
+  const [note] = await wdb.select().from(notesTable).where(eq(notesTable.id, params.data.id));
   if (!note) { res.status(404).json({ error: "Note not found" }); return; }
   res.json(GetNoteResponse.parse(serializeNote(note)));
 });
 
 router.patch("/workspace/notes/:id", async (req, res): Promise<void> => {
+  const { db: wdb } = await workspaceStore();
   const params = UpdateNoteParams.safeParse(req.params);
-  if (!params.success) { res.status(400).json({ error: params.error.message }); return; }
+  if (!params.success) { invalidRequest(res, params.error); return; }
   const body = UpdateNoteBody.safeParse(req.body);
-  if (!body.success) { res.status(400).json({ error: body.error.message }); return; }
-  const [note] = await db
+  if (!body.success) { invalidRequest(res, body.error); return; }
+  const [note] = await wdb
     .update(notesTable)
     .set({ ...body.data, updatedAt: new Date() })
     .where(eq(notesTable.id, params.data.id))
@@ -96,9 +103,10 @@ router.patch("/workspace/notes/:id", async (req, res): Promise<void> => {
 });
 
 router.delete("/workspace/notes/:id", async (req, res): Promise<void> => {
+  const { db: wdb } = await workspaceStore();
   const params = DeleteNoteParams.safeParse(req.params);
-  if (!params.success) { res.status(400).json({ error: params.error.message }); return; }
-  const [d] = await db.delete(notesTable).where(eq(notesTable.id, params.data.id)).returning();
+  if (!params.success) { invalidRequest(res, params.error); return; }
+  const [d] = await wdb.delete(notesTable).where(eq(notesTable.id, params.data.id)).returning();
   if (!d) { res.status(404).json({ error: "Note not found" }); return; }
   res.sendStatus(204);
 });
@@ -115,18 +123,20 @@ function serializeTodo(t: typeof todosTable.$inferSelect) {
 }
 
 router.get("/workspace/todos", async (req, res): Promise<void> => {
+  const { db: wdb } = await workspaceStore();
   const params = ListTodosQueryParams.safeParse(req.query);
   const doneFilter = params.success ? params.data.done : undefined;
 
-  const todos = await db.select().from(todosTable).orderBy(desc(todosTable.createdAt));
+  const todos = await wdb.select().from(todosTable).orderBy(desc(todosTable.createdAt));
   const filtered = doneFilter !== undefined ? todos.filter((t) => t.done === doneFilter) : todos;
   res.json(ListTodosResponse.parse(filtered.map(serializeTodo)));
 });
 
 router.post("/workspace/todos", async (req, res): Promise<void> => {
+  const { db: wdb } = await workspaceStore();
   const parsed = CreateTodoBody.safeParse(req.body);
-  if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
-  const [todo] = await db
+  if (!parsed.success) { invalidRequest(res, parsed.error); return; }
+  const [todo] = await wdb
     .insert(todosTable)
     .values({ description: parsed.data.description, dueAt: parsed.data.dueAt ? new Date(parsed.data.dueAt) : null })
     .returning();
@@ -135,23 +145,25 @@ router.post("/workspace/todos", async (req, res): Promise<void> => {
 });
 
 router.patch("/workspace/todos/:id", async (req, res): Promise<void> => {
+  const { db: wdb } = await workspaceStore();
   const params = UpdateTodoParams.safeParse(req.params);
-  if (!params.success) { res.status(400).json({ error: params.error.message }); return; }
+  if (!params.success) { invalidRequest(res, params.error); return; }
   const body = UpdateTodoBody.safeParse(req.body);
-  if (!body.success) { res.status(400).json({ error: body.error.message }); return; }
+  if (!body.success) { invalidRequest(res, body.error); return; }
   const updateData: Partial<typeof todosTable.$inferInsert> = {};
   if (body.data.description !== undefined) updateData.description = body.data.description;
   if (body.data.done !== undefined) updateData.done = body.data.done;
   if ("dueAt" in body.data) updateData.dueAt = body.data.dueAt ? new Date(body.data.dueAt) : null;
-  const [todo] = await db.update(todosTable).set(updateData).where(eq(todosTable.id, params.data.id)).returning();
+  const [todo] = await wdb.update(todosTable).set(updateData).where(eq(todosTable.id, params.data.id)).returning();
   if (!todo) { res.status(404).json({ error: "Todo not found" }); return; }
   res.json(UpdateTodoResponse.parse(serializeTodo(todo)));
 });
 
 router.delete("/workspace/todos/:id", async (req, res): Promise<void> => {
+  const { db: wdb } = await workspaceStore();
   const params = DeleteTodoParams.safeParse(req.params);
-  if (!params.success) { res.status(400).json({ error: params.error.message }); return; }
-  const [d] = await db.delete(todosTable).where(eq(todosTable.id, params.data.id)).returning();
+  if (!params.success) { invalidRequest(res, params.error); return; }
+  const [d] = await wdb.delete(todosTable).where(eq(todosTable.id, params.data.id)).returning();
   if (!d) { res.status(404).json({ error: "Todo not found" }); return; }
   res.sendStatus(204);
 });
@@ -168,40 +180,53 @@ function serializeSnippet(s: typeof snippetsTable.$inferSelect) {
 }
 
 router.get("/workspace/snippets", async (req, res): Promise<void> => {
+  const { db: wdb } = await workspaceStore();
   const params = ListSnippetsQueryParams.safeParse(req.query);
   const langFilter = params.success ? params.data.language : undefined;
-  const snippets = await db.select().from(snippetsTable).orderBy(desc(snippetsTable.createdAt));
+  const snippets = await wdb.select().from(snippetsTable).orderBy(desc(snippetsTable.createdAt));
   const filtered = langFilter ? snippets.filter((s) => s.language === langFilter) : snippets;
   res.json(ListSnippetsResponse.parse(filtered.map(serializeSnippet)));
 });
 
 router.post("/workspace/snippets", async (req, res): Promise<void> => {
+  const { db: wdb } = await workspaceStore();
   const parsed = CreateSnippetBody.safeParse(req.body);
-  if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
-  const [snippet] = await db
-    .insert(snippetsTable)
-    .values({ name: parsed.data.name, language: parsed.data.language, body: parsed.data.body })
-    .returning();
+  if (!parsed.success) { invalidRequest(res, parsed.error); return; }
+  let snippet: typeof snippetsTable.$inferSelect;
+  try {
+    [snippet] = await wdb
+      .insert(snippetsTable)
+      .values({ name: parsed.data.name, language: parsed.data.language, body: parsed.data.body })
+      .returning();
+  } catch (err: unknown) {
+    if (isUniqueViolation(err)) {
+      res.status(409).json({ error: `A snippet named "${parsed.data.name}" already exists.` });
+      return;
+    }
+    throw err;
+  }
   await db.insert(activityLogTable).values({ type: "snippet", description: `Snippet saved: "${parsed.data.name}"` }).catch(() => {});
-  res.status(201).json(CreateSnippetResponse.parse(serializeSnippet(snippet!)));
+  res.status(201).json(CreateSnippetResponse.parse(serializeSnippet(snippet)));
 });
 
 router.delete("/workspace/snippets/:id", async (req, res): Promise<void> => {
+  const { db: wdb } = await workspaceStore();
   const params = DeleteSnippetParams.safeParse(req.params);
-  if (!params.success) { res.status(400).json({ error: params.error.message }); return; }
-  const [d] = await db.delete(snippetsTable).where(eq(snippetsTable.id, params.data.id)).returning();
+  if (!params.success) { invalidRequest(res, params.error); return; }
+  const [d] = await wdb.delete(snippetsTable).where(eq(snippetsTable.id, params.data.id)).returning();
   if (!d) { res.status(404).json({ error: "Snippet not found" }); return; }
   res.sendStatus(204);
 });
 
 // ── Workspace stats ────────────────────────────────────────────────────────
 router.get("/workspace/stats", async (_req, res): Promise<void> => {
+  const { db: wdb } = await workspaceStore();
   const [[noteCount], [todoCount], [pendingCount], [snippetCount], langs] = await Promise.all([
-    db.select({ count: count() }).from(notesTable),
-    db.select({ count: count() }).from(todosTable),
-    db.select({ count: count() }).from(todosTable).where(eq(todosTable.done, false)),
-    db.select({ count: count() }).from(snippetsTable),
-    db.select({ language: snippetsTable.language }).from(snippetsTable),
+    wdb.select({ count: count() }).from(notesTable),
+    wdb.select({ count: count() }).from(todosTable),
+    wdb.select({ count: count() }).from(todosTable).where(eq(todosTable.done, false)),
+    wdb.select({ count: count() }).from(snippetsTable),
+    wdb.select({ language: snippetsTable.language }).from(snippetsTable),
   ]);
 
   const languageSet = new Set(langs.map((l) => l.language).filter(Boolean) as string[]);

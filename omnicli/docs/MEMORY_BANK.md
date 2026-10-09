@@ -19,15 +19,15 @@ Runs on Replit via pnpm workspaces. All three services start automatically.
 ## Crate map and responsibilities
 
 ```
-omni-core      shared foundation — never depends on other omni-* crates
-omni-file      filesystem operations — depends on omni-core, omni-archive
-omni-search    FTS5 search engine — depends on omni-core
-omni-archive   compression/archiving — depends on omni-core
-omni-convert   format conversion codecs — depends on omni-core (via anyhow)
-omni-cli       binary + clap CLI + dispatch — depends on all of the above
+omnicli-core      shared foundation — never depends on other omni-* crates
+omnicli-file      filesystem operations — depends on omnicli-core, omnicli-archive
+omnicli-search    FTS5 search engine — depends on omnicli-core
+omnicli-archive   compression/archiving — depends on omnicli-core
+omnicli-convert   format conversion codecs — depends on omnicli-core (via anyhow)
+omnicli-cli       binary + clap CLI + dispatch — depends on all of the above
 ```
 
-**Rule:** No circular deps. `omni-file` may depend on `omni-archive` (for the `Compress` verb) but `omni-archive` must never depend on `omni-file`.
+**Rule:** No circular deps. `omnicli-file` may depend on `omnicli-archive` (for the `Compress` verb) but `omnicli-archive` must never depend on `omnicli-file`.
 
 ---
 
@@ -37,7 +37,7 @@ omni-cli       binary + clap CLI + dispatch — depends on all of the above
 
 **Decision:** Default hash is BLAKE3 (`blake3` crate). SHA256 and MD5 are provided for compatibility.  
 **Why:** BLAKE3 is 3–10× faster than SHA256 on modern hardware, and output is fixed at 256 bits (64 hex chars). Termux devices benefit from the speed.  
-**How to apply:** `omni-core::hash::HashAlgo` is the single enum for all three. Config `[file].default_hash` controls the default. The `--algo` CLI flag overrides it.
+**How to apply:** `omnicli-core::hash::HashAlgo` is the single enum for all three. Config `[file].default_hash` controls the default. The `--algo` CLI flag overrides it.
 
 ### age 0.10 encryption API
 
@@ -80,27 +80,21 @@ main():          if Err → eprintln! + exit(1)
 
 ## CLI grammar decisions
 
-### omni file compress
+### omnicli search bare query
 
-Thin wrapper over `omni archive create` — exists purely for discoverability ("omni file" is the natural entry point for most users).
+`omnicli search "term"` is shorthand for `omnicli search query "term"`: the top-level
+`Search` variant carries an optional positional query plus `--limit`, `--in`,
+`--regex`, and `--case-sensitive`, and dispatch folds them into the same
+`SearchCmd::Query` the explicit subcommand produces. Passing both a bare query
+and a subcommand is an error. `--in` categories: files,pdf,code,sqlite,json,
+logs,zip — pdf/sqlite/zip entries match by name only (text extensions get FTS
+content).
 
-```
-omni file compress <output.tar.gz> <inputs...>
-# == omni archive create <output.tar.gz> <inputs...>
-```
-
-Dispatch delegates directly to `omni_archive::create::create_archive`.
-
-### omni search bare query
-
-`omni search "term"` routes through `SearchCmd::External(Vec<OsString>)` (clap `external_subcommand`). The args are joined with spaces to form the query, then dispatched with all defaults (limit=100, no regex, no type filter).  
-**Limitation:** bare form does not support `--in` / `--regex` / `--limit`. Use `omni search query "term" --flags` for full control.
-
-### omni file hash — config-driven default algorithm
+### omnicli file hash — config-driven default algorithm
 
 `FileCmd::Hash.algo` is `Option<String>`. When `None`, the dispatch layer reads `cfg.file.default_hash` (default: `"blake3"`). This means `--algo blake3` and omitting `--algo` produce the same result for the default config, but a user can set `default_hash = "sha256"` and get SHA256 without typing `--algo sha256` every time.
 
-### omni config show
+### omnicli config show
 
 Emits the full resolved config (post-defaults + config file) as TOML (`toml::to_string_pretty`) or JSON (`--json`). The `OmniConfig` struct is `Serialize + Deserialize + Default`, which enables both.
 
@@ -108,7 +102,7 @@ Emits the full resolved config (post-defaults + config file) as TOML (`toml::to_
 
 ## Output system
 
-All print helpers live in `omni-core::output`. They check `cfg.quiet` and `cfg.is_json()` before emitting anything. Progress bars (indicatif) check `omni_core::is_tty()` and fall back to `ProgressBar::hidden()` when not on a TTY — prevents garbage in piped/redirected output.
+All print helpers live in `omnicli-core::output`. They check `cfg.quiet` and `cfg.is_json()` before emitting anything. Progress bars (indicatif) check `omni_core::is_tty()` and fall back to `ProgressBar::hidden()` when not on a TTY — prevents garbage in piped/redirected output.
 
 `OutputMode::Plain` is activated from `config.core.output = "plain"` in `main.rs` (after config load, before dispatch).
 
@@ -123,15 +117,15 @@ All print helpers live in `omni-core::output`. They check `cfg.quiet` and `cfg.i
 
 ## Platform: libc dependency
 
-`omni-core/src/platform.rs` uses `libc::isatty(2)` to detect stderr TTY. This requires `libc = "0.2"` in `omni-core/Cargo.toml`. Do not replace with a pure-Rust approach — `libc` is already a transitive dependency of most crates in the tree and adds no measurable overhead.
+`omnicli-core/src/platform.rs` uses `libc::isatty(2)` to detect stderr TTY. This requires `libc = "0.2"` in `omnicli-core/Cargo.toml`. Do not replace with a pure-Rust approach — `libc` is already a transitive dependency of most crates in the tree and adds no measurable overhead.
 
 ---
 
 ## Workspace layout rules
 
 - All shared dependency versions live in `[workspace.dependencies]` in `omnicli/Cargo.toml`. Per-crate `Cargo.toml` files use `{ workspace = true }` — never duplicate version numbers.
-- `tempfile` is listed in workspace deps and every crate that uses it (including `omni-cli` for integration tests).
-- `bzip2 = "0.4"` is a workspace dep; only `omni-archive` includes it.
+- `tempfile` is listed in workspace deps and every crate that uses it (including `omnicli-cli` for integration tests).
+- `bzip2 = "0.4"` is a workspace dep; only `omnicli-archive` includes it.
 - Run `cargo build` / `cargo test` from **inside `omnicli/`** — the repo root is a pnpm workspace, not a Cargo workspace.
 
 ---
@@ -159,32 +153,30 @@ The dashboard panels that show 500 errors when no data exists yet (backup, works
 | Level | Where | What |
 |-------|-------|-------|
 | Unit tests | `src/*.rs` inline `#[cfg(test)]` | Pure logic: hash vectors, error conditions, format detection |
-| Integration | `crates/omni-cli/tests/integration.rs` | Cross-crate pipelines: hash→compare, CSV→JSON→YAML, archive roundtrips, encrypt→decrypt, search index+query |
+| Integration | `crates/omnicli-cli/tests/integration.rs` | Cross-crate pipelines: hash→compare, CSV→JSON→YAML, archive roundtrips, encrypt→decrypt, search index+query |
 
-**NIST SHA256 test vector:** `hash_bytes(b"", HashAlgo::Sha256)` must equal `e3b0c44298fc1c14...` (empty string). This is verified in `omni-core` unit tests.
+**NIST SHA256 test vector:** `hash_bytes(b"", HashAlgo::Sha256)` must equal `e3b0c44298fc1c14...` (empty string). This is verified in `omnicli-core` unit tests.
 
 ---
 
 ## Phase 2 status
 
-| Feature | Status |
+| Feature | Status (verified against the current tree) |
 |---------|--------|
-| `omni backup` module (Rust) | Not implemented — returns `Err(NotYetImplemented)` |
-| `omni workspace` module (Rust) | Not implemented — returns `Err(NotYetImplemented)` |
-| `omni dev` module (Rust) | Not implemented — returns `Err(NotYetImplemented)` |
-| `omni backup` API route | Stub active in `artifacts/api-server/src/routes/backup.ts` |
-| `omni workspace` API route | Active — notes/todos/snippets in SQLite via Drizzle |
-| `omni dev` API route | Active — hash, UUID, Base64, regex via `artifacts/api-server/src/routes/dev.ts` |
-| `omni file sync --watch` | Dep present (`notify` crate), implementation pending |
-| `ColorsConfig` | Config struct field exists, no effect at runtime |
-| `trash_instead_of_delete` | Config field exists, always hard-deletes |
-| `.7z` format | Not supported — needs external library or system `7z` |
+| `omnicli backup` module (Rust) | Implemented — `backup create/restore/verify`, BLAKE3 content-addressed store |
+| `omnicli workspace` module (Rust) | Implemented — notes/todos/snippets in SQLite |
+| `omnicli dev` module (Rust) | Implemented — hash, json, base64, uuid, regex, jwt decode |
+| `omnicli backup` API route | Active — jobs CRUD, snapshots, stats (`artifacts/api-server/src/routes/backup.ts`) |
+| `omnicli workspace` API route | Active — notes/todos/snippets in SQLite via Drizzle |
+| `omnicli dev` API route | Active — hash, UUID, Base64, regex via `artifacts/api-server/src/routes/dev.ts` |
+| `omnicli file sync --watch` | Not implemented — no `--watch` flag exists; the unused `notify` dependency was removed |
+| `[colors]` config section | Applied at startup (`set_color_palette(&config.colors)` in `main.rs`) |
 
 ---
 
 ## Extension points
 
-To add a new conversion pair in `omni-convert`:
+To add a new conversion pair in `omnicli-convert`:
 1. Add a match arm in `codec::convert()`.
 2. Add a `FormatPair` entry in `list_supported_pairs()` — must be kept in sync with the match arm (enforced by the `test_list_supported_pairs_complete` integration test).
 
@@ -194,10 +186,10 @@ To add a new archive format:
 3. Add create/extract/list functions.
 4. Wire up in `ArchiveCmd` dispatch.
 
-To add a new `omni file` verb:
+To add a new `omnicli file` verb:
 1. Add variant to `FileCmd` in `cli.rs`.
 2. Add a handler arm in `dispatch_file()` in `dispatch.rs`.
-3. If the verb needs a new library function, add it to `omni-file/src/` with its own `CrateError` variant.
+3. If the verb needs a new library function, add it to `omnicli-file/src/` with its own `CrateError` variant.
 
 To add a new API route:
 1. Create `artifacts/api-server/src/routes/<name>.ts`
