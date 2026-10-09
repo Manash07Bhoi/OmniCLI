@@ -325,8 +325,9 @@ cd OmniCLI/omnicli && cargo build --release
 > **crates.io:** the workspace is published as `omnicli-app` (binary `omnicli`)
 > plus its library crates (`omnicli-core`, `omnicli-file`, `omnicli-search`,
 > `omnicli-archive`, `omnicli-convert`, `omnicli-backup`, `omnicli-workspace`,
-> `omnicli-dev`, `omnicli-config`), all at 0.1.1. **Note:** the published 0.1.1
-> matches the `v0.1.1` GitHub release, not the newer unreleased commits on
+> `omnicli-dev`, `omnicli-config`), published at 0.1.1 on 2026-08-23. **Note:** the
+> published 0.1.1
+> matches the `v0.1.1` GitHub release, not the newer commits on
 > `main`. `cargo install omnicli-app` resolves and its manifest is valid
 > (MIT, `[[bin]] omnicli`), but the first build compiles the full
 > `age`/`i18n-embed` dependency tree and can take a while on small machines;
@@ -750,7 +751,7 @@ Design notes that explain the numbers:
 
 | Target | CI build target | Runtime verified | Release artifact |
 |--------|-----------------|------------------|------------------|
-| **Linux x86_64** (Debian, Ubuntu, Kali, Parrot) | `x86_64-unknown-linux-gnu` | ✅ executed during this audit (`omnicli --version` → `0.1.1`, full test suite run) | `omnicli-linux-x86_64.tar.gz` |
+| **Linux x86_64** (Debian, Ubuntu, Kali, Parrot) | `x86_64-unknown-linux-gnu` | ✅ executed natively — full test suite + release binary (`omnicli 0.2.0`) | `omnicli-linux-x86_64.tar.gz` |
 | **Linux ARM64** (Raspberry Pi, ARM servers) | `aarch64-unknown-linux-gnu` | ✅ executed — full 276-test suite under qemu (emulated) | `omnicli-linux-aarch64.tar.gz` |
 | **Termux / Android ARM64** (static musl) | `aarch64-unknown-linux-musl` | ✅ executed — full 276-test suite under qemu (emulated) | `omnicli-linux-aarch64-musl.tar.gz` |
 | **Termux / Android ARMv7** (static musl) | `armv7-unknown-linux-musleabihf` | ✅ executed — full 276-test suite under qemu (emulated) | `omnicli-linux-armv7-musl.tar.gz` |

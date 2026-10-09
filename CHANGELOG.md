@@ -6,7 +6,12 @@ This project uses [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) forma
 
 ---
 
-## [Unreleased]
+## [0.2.0] - 2026-10-09
+
+This is the first release produced end-to-end by the fixed, verified pipeline
+(fixed version gate, hardened workflows, cross-platform certification, and a
+clean dependency audit). It supersedes the defective public v1.0.0 page and
+the stale v0.1.1 binaries.
 
 ### Fixed
 - **The release pipeline could never publish a tag.** The `verify-version` gate (and the pre-release `version-check` job) grepped the workspace-root `omnicli/Cargo.toml` for `^version`, but the version lives in `crates/omnicli-cli/Cargo.toml`; the grep returned an empty string, so every tag would be refused. Both gates now read the binary-crate manifest (verified locally: extracts `0.1.1`).
