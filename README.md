@@ -11,12 +11,12 @@
 
 **One binary. One dashboard. Full-stack power.**
 
-[![Rust](https://img.shields.io/badge/rust-1.88%2B-orange?logo=rust&logoColor=white)](https://www.rust-lang.org/)
-[![TypeScript](https://img.shields.io/badge/typescript-5.x-3178c6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Rust CI](https://github.com/Manash07Bhoi/OmniCLI/actions/workflows/rust.yml/badge.svg)](https://github.com/Manash07Bhoi/OmniCLI/actions/workflows/rust.yml)
+[![TypeScript CI](https://github.com/Manash07Bhoi/OmniCLI/actions/workflows/typescript.yml/badge.svg)](https://github.com/Manash07Bhoi/OmniCLI/actions/workflows/typescript.yml)
+[![Security audits](https://github.com/Manash07Bhoi/OmniCLI/actions/workflows/security.yml/badge.svg)](https://github.com/Manash07Bhoi/OmniCLI/actions/workflows/security.yml)
+[![Installer & release build](https://github.com/Manash07Bhoi/OmniCLI/actions/workflows/ci.yml/badge.svg)](https://github.com/Manash07Bhoi/OmniCLI/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Clippy](https://img.shields.io/badge/clippy-clean-brightgreen?logo=rust)](#)
-[![Security](https://img.shields.io/badge/security-audited-brightgreen?logo=github-actions&logoColor=white)](.github/workflows/security.yml)
-[![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Termux%20%7C%20Kali%20%7C%20ParrotOS%20%7C%20Replit-0d1117?logo=linux&logoColor=white)](#)
+[![crates.io](https://img.shields.io/crates/v/omnicli-app.svg)](https://crates.io/crates/omnicli-app)
 
 *File ops · Full-text search · Format conversion · Archive management · Dev toolkit · Live web dashboard*
 
@@ -244,12 +244,23 @@ Explore OmniCLI's capabilities through our full-stack interface.
 ## Releases
 
 ### How to Create a Release
-Maintainers can create a new release simply by pushing a version tag to the repository:
+Maintainers can create a new release simply by pushing a version tag to the repository —
+the tag must equal the version in `omnicli/crates/omnicli-cli/Cargo.toml` (the workflow
+enforces this and fails the release otherwise):
 ```bash
-git tag v1.0.0
-git push origin v1.0.0
+git tag v0.2.0
+git push origin v0.2.0
 ```
 This automatically triggers the GitHub Actions release workflow, which builds, packages, and publishes the release artifacts.
+
+### Status of already-published releases
+- **v1.0.0** — defective release page: it contains a stale 0.1.0-era binary and a
+  malformed `SHA256SUMS.txt`. Treat it as deprecated; do not install from it.
+- **v0.1.1** (currently marked "latest") — healthy, checksum-valid assets, but the
+  binaries predate the current `main` (older search grammar, `_omni` completions
+  name, and a SIGPIPE panic when output is piped to `head`).
+- The next tagged release is the first produced end-to-end by the fixed, verified
+  pipeline; prefer it (or a current source build) over both of the above.
 
 ### Where to Download
 Users can download pre-compiled binaries from the [GitHub Releases](https://github.com/Manash07Bhoi/OmniCLI/releases) page.
@@ -262,9 +273,11 @@ Users can download pre-compiled binaries from the [GitHub Releases](https://gith
 - **macOS** (x86_64 and aarch64)
 - **Termux / Android** (aarch64-unknown-linux-musl, armv7-unknown-linux-musleabihf) — static binaries
 
-Cross-compilation is verified in CI; only Linux x86_64 has been executed locally. The
-[platform support matrix](#platform-support-matrix) records, for every target, whether
-the binary has actually been run.
+All five Linux targets have been executed with the full test suite (x86_64 natively;
+the three ARM/Termux triples under qemu emulation — see the
+[platform support matrix](#platform-support-matrix) for what that does and does not
+prove). Windows and macOS are build-verified in CI; their first runtime proof is the
+first tagged build on the native runners.
 
 ### Verifying SHA-256 Checksums
 Every release includes a `SHA256SUMS.txt` file containing checksums for all archives. To verify your downloaded archive, run the following command in the directory containing both the archive and the checksum file:
@@ -646,7 +659,7 @@ main.rs          →  exit(1) + stderr         (never silently swallows)
 ## Testing
 
 ```bash
-# Rust: 269 tests across 10 crates (unit + integration + black-box CLI)
+# Rust: 276 tests across 10 crates (unit + integration + black-box CLI)
 cd omnicli && cargo test --workspace
 
 # CLI black box: drives the compiled binary as a user would
@@ -659,12 +672,17 @@ pnpm --filter @workspace/api-server test
 # over HTTP, and runs the real install.sh through four scenarios
 cd omnicli && ./scripts/test-installer.sh ./target/release/omnicli
 
-# Rendered accessibility audit (needs a running dashboard + API, and the
-# browser + axe-core, which are deliberately not dependencies of this package)
-cd artifacts/omni-dashboard
-npx --yes playwright@1.56.1 install chromium
-pnpm add -D playwright @axe-core/playwright   # or install them temporarily
-node scripts/a11y-audit.mjs http://127.0.0.1:3000
+# Rendered browser checks (a11y audit + e2e smoke). Playwright/axe are NOT
+# package dependencies on purpose; install them in a scratch directory so the
+# repo lockfile stays untouched:
+mkdir -p /tmp/a11y-tools && cd /tmp/a11y-tools && npm init -y >/dev/null
+npm install playwright @axe-core/playwright
+npx playwright install chromium
+export PLAYWRIGHT_BROWSERS_PATH="$HOME/.cache/ms-playwright"
+ln -sfn /tmp/a11y-tools/node_modules /home/user/OmniCLI/artifacts/omni-dashboard/node_modules/a11y-tools
+cd /home/user/OmniCLI/artifacts/omni-dashboard
+node scripts/a11y-audit.mjs http://127.0.0.1:3000   # 9 pages, expect 0 problems
+node scripts/e2e-smoke.mjs http://127.0.0.1:3000    # 15 checks, expect all pass
 
 # Browser E2E smoke: the dashboard really shows what the API returns, every
 # route reaches a loaded state, offline state appears and recovers, and the
@@ -733,14 +751,14 @@ Design notes that explain the numbers:
 | Target | CI build target | Runtime verified | Release artifact |
 |--------|-----------------|------------------|------------------|
 | **Linux x86_64** (Debian, Ubuntu, Kali, Parrot) | `x86_64-unknown-linux-gnu` | ✅ executed during this audit (`omnicli --version` → `0.1.1`, full test suite run) | `omnicli-linux-x86_64.tar.gz` |
-| **Linux ARM64** (Raspberry Pi, ARM servers) | `aarch64-unknown-linux-gnu` | ⛔ not executed — build only | `omnicli-linux-aarch64.tar.gz` |
-| **Termux / Android ARM64** (static musl) | `aarch64-unknown-linux-musl` | ⛔ not executed — build only | `omnicli-linux-aarch64-musl.tar.gz` |
-| **Termux / Android ARMv7** (static musl) | `armv7-unknown-linux-musleabihf` | ⛔ not executed — build only | `omnicli-linux-armv7-musl.tar.gz` |
+| **Linux ARM64** (Raspberry Pi, ARM servers) | `aarch64-unknown-linux-gnu` | ✅ executed — full 276-test suite under qemu (emulated) | `omnicli-linux-aarch64.tar.gz` |
+| **Termux / Android ARM64** (static musl) | `aarch64-unknown-linux-musl` | ✅ executed — full 276-test suite under qemu (emulated) | `omnicli-linux-aarch64-musl.tar.gz` |
+| **Termux / Android ARMv7** (static musl) | `armv7-unknown-linux-musleabihf` | ✅ executed — full 276-test suite under qemu (emulated) | `omnicli-linux-armv7-musl.tar.gz` |
 | **Windows x86_64** | `x86_64-pc-windows-msvc` | ⛔ not executed — build only | `omnicli-windows-x86_64.zip` |
 | **macOS Intel** | `x86_64-apple-darwin` | ⛔ not executed — build only | `omnicli-macos-x86_64.tar.gz` |
 | **macOS Apple Silicon** | `aarch64-apple-darwin` | ⛔ not executed — build only | `omnicli-macos-aarch64.tar.gz` |
 
-**How to read this table.** "Build target" is what the release workflow compiles (`.github/workflows/release.yml`). "Runtime verified" is what has actually been *executed*: only Linux x86_64 was run — on the machine that produced this documentation, using the source tree in this repository. No macOS, Windows, or Termux binary has been executed here, so this project does not claim those work at runtime; they are build-verified only, and issues reported by users on those platforms are treated as real bugs. The workflow re-verifies that the packaged binary reports the tag's version before publishing.
+**How to read this table.** "Build target" is what the release workflow compiles (`.github/workflows/release.yml`). "Runtime verified" is what has actually been *executed*: Linux x86_64 natively, and every ARM/Termux target under qemu user-mode emulation with the complete 276-test workspace suite (methodology and evidence: [`docs/release/PHASE3_RELEASE_CERTIFICATION.md`](docs/release/PHASE3_RELEASE_CERTIFICATION.md), §5 and §13). Emulated execution is labelled as such — it is not a claim of native hardware testing. No macOS or Windows binary has been executed yet; those targets are build-verified only until the first tagged release runs on the native CI runners, and issues reported by users on those platforms are treated as real bugs. The workflow re-verifies that the packaged binary reports the tag's version before publishing.
 
 ---
 

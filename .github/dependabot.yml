@@ -1,0 +1,17 @@
+version: 2
+updates:
+  # Rust workspace (Cargo.lock lives in omnicli/)
+  - package-ecosystem: cargo
+    directory: /omnicli
+    schedule:
+      interval: weekly
+  # JS workspace (pnpm-lock.yaml at the root)
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+  # Workflow actions themselves
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
