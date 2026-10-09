@@ -30,9 +30,13 @@ The Phase-3 work was originally committed as **12 local commits** on top of
 `e410c42`, `7e2f0fb`, `de533d6`, `b31366f`). A sandbox reset between work
 sessions destroyed `.git` **before any push**; origin never contained those
 commits, so no shared history existed to lose or rewrite. The working tree
-survived intact via the workspace snapshot — verified by content markers
-(the certified report text, the e2e locale fix, all workflow fixes) and by
-the delta vs `origin/main`: 75 modified + 31 new files, secret-scanned clean.
+survived via the workspace snapshot but in a **mixed intermediate state**:
+most final content was present (verified markers: the certified report
+text, the e2e locale fix, the workflow fixes), while several final edits
+were absent or the file tail was corrupted (a duplicated, truncated closing
+paragraph) — all repaired in this revision, with every substantive result
+re-verified fresh (§13 post-reset block). The delta vs `origin/main`:
+75 modified + 31 new files, secret-scanned clean.
 Git metadata was rebuilt read-only from origin (`git init` + `git fetch` +
 `git reset --mixed 7636a78`) and the entire certified tree plus this
 reconciliation was re-committed as the single reconstruction commit that is
@@ -40,7 +44,20 @@ now `main` (= HEAD). The lost commit boundaries are unrecoverable;
 per-change attribution survives in this report's sections. This mirrors the
 disclosed Phase-2 incident (history rebuilt in `c81f396` after an earlier
 reset). Content carried by the lost commits — all re-verified post-reset,
-see §13 row 27:
+see §13 row 28:
+
+The certification environment itself was fully re-provisioned from scratch
+for the post-reset re-execution (§13): rustup/rustc 1.99.0, pnpm 10.15.1,
+qemu-user-static + binfmt handlers for aarch64 and armv7, GNU cross-gcc
+packages, musl.cc 11.2.1 cross-toolchains, shellcheck 0.10.0, cargo-deny
+0.20.2 (sha256 verified manually), Playwright + Chromium, and a 3 GB swap
+file (removed afterwards). One snapshot-recovery trap is documented for
+future sessions: the snapshot restores `*.tsbuildinfo` files (not
+name-excluded) while `dist/` directories ARE name-excluded — stale
+tsbuildinfo markers make `tsc --build` silently skip emitting, so
+`pnpm typecheck` fails with TS6305 on a restored tree. Purge all
+`*.tsbuildinfo` before typechecking a restored tree (done here; typecheck
+then passes with 0 errors).
 
 - certification fixes: yanked-crate lockfile bump, structured-400 guards,
   workflow hardening, e2e smoke, crates.io/README and 67→65 corrections
@@ -447,6 +464,41 @@ the gate supports it:
 | 25 | `git diff` review before commit | every modified file inspected; no generated garbage, no lockfile drift beyond the intentional chacha20 bump, no secrets |
 | 26 | `cargo-audit 0.22.2 audit --file omnicli/Cargo.lock` | PASS, exit 0 — 0 vulnerabilities, 1 unmaintained warning (RUSTSEC-2024-0370); independently confirms row 13. Re-executed post-reset (fresh toolchain install): exit 0, identical result |
 | 27 | Post-reset reconciliation (2026-10-09) | PASS — tree survived the sandbox reset but in a mixed intermediate state (three report edits from the final commits were absent and are re-applied here; all substantive results re-verified fresh); 75 modified + 31 new files vs origin, secret-scan clean; fresh rustc 1.99.0 release build → `omnicli 0.1.1`; docs examples re-executed 23/23; OSV scan: 1 known advisory; GitHub releases (v0.1.1, v1.0.0) and crates.io (0.1.1) states unchanged — all six blockers re-confirmed open |
+| 28 | **Post-reset re-execution of every locally-executable gate** (fresh environment, same tree, 2026-10-09) | PASS — see the block below; identical outcomes throughout; release-binary hashes necessarily differ (non-reproducible builds), fresh hashes recorded |
+
+**Post-reset re-execution (2026-10-09, fresh sandbox, rustc 1.99.0, Node
+v20.20.2, pnpm 10.15.1 — all re-provisioned from scratch on the
+reconstructed tree):** every gate executable in this environment was run
+again; results identical to the pre-reset certification.
+
+| Gate | Result |
+|------|--------|
+| `cargo fmt --all -- --check` | PASS |
+| `cargo clippy --workspace --all-targets --all-features -- -D warnings` | PASS, exit 0 |
+| `cargo test --workspace` | **276 passed / 0 failed**, exit 0 (suites: 4 security + 65 CLI black-box + 14 + 30 + 8 + 24 + 7 + 25 + 23 + 49 + 13 + 14) |
+| `cargo build --release --workspace` | PASS, `omnicli 0.1.1`, sha256 `6b73772c…` |
+| `pnpm install --frozen-lockfile` | PASS (15.9 s) |
+| `pnpm typecheck` | PASS, exit 0 (after purging stale `*.tsbuildinfo` left by the snapshot — see §1 incident note) |
+| `pnpm -r build` | PASS, exit 0 (API + dashboard dist) |
+| API suite (`vitest run`) | **13 files / 104 tests passed**, exit 0 |
+| `pnpm audit` | No known vulnerabilities found |
+| `omnicli/scripts/audit-rust.py` (OSV) | 1 match: RUSTSEC-2024-0370 (documented exception) |
+| `cargo-deny 0.20.2 check licenses advisories` | `advisories ok, licenses ok` |
+| `cargo-audit 0.22.2 audit --file omnicli/Cargo.lock` | exit 0 — 0 vulnerabilities, 1 unmaintained warning (row 26) |
+| MSRV `cargo +1.88.0 check --workspace` | PASS, exit 0 |
+| shellcheck 0.10.0 (install.sh, test-installer.sh, bench.sh) | PASS, clean at `-S warning` |
+| Installer end-to-end (`test-installer.sh <release-binary>`) | **4/4 scenarios**, exit 0 |
+| Docs lint + executed examples (fresh binary) | **23/23**, no problems |
+| aarch64-gnu suite (cross-gcc + binfmt qemu, emulated) | **276/276**; release `omnicli 0.1.1`, sha `8a91f478…` |
+| aarch64-musl suite (musl.cc + qemu, emulated) | **276/276**; release statically linked, sha `e3232ac5…` |
+| armv7-musl suite (musl.cc + binfmt qemu + 3 GB swap, emulated) | **276/276**; release smoke: version/blake3/`_omnicli()` completions; sha `9211e9d0…` |
+| armv7-gnu build + smoke (`qemu-arm -L /usr/arm-linux-gnueabihf`) | PASS — `omnicli 0.1.1`, blake3 ok; sha `9ed38efa…` |
+| `cargo install omnicli-app --version 0.1.1` (crates.io) | exit 0; published-binary markers re-confirmed: bare `search` rejected, `_omni()` completions, SIGPIPE panic exit 101 on pipe-to-head (= v0.1.1-era code, not main) |
+| Dashboard on shipped dist (API :8099 + preview :3000) | a11y **9 pages / 0 problems**; e2e-smoke **15/15** (locale-aware totalFiles check incl.) |
+| Published v0.1.1 x86_64 asset | sha256 `c51a61cf…` matches the release manifest |
+
+(Windows-x86_64 and the two macOS targets remain build-by-workflow-
+construction only — unchanged, Blocker 3.)
 
 ## 14. Remaining Blockers
 
@@ -481,8 +533,12 @@ Promotion to `RELEASE READY` requires, in order: push → green CI on `main` →
 version bump + tag through the fixed pipeline → verify the 7 artifacts
 (checksums + `--version` on-runner) → execute at least the Linux x86_64 and
 aarch64 artifacts on real systems → remediate the v1.0.0 release page.
-ted.
-Promotion to `RELEASE READY` requires, in order: push → green CI on `main` →
-version bump + tag through the fixed pipeline → verify the 7 artifacts
-(checksums + `--version` on-runner) → execute at least the Linux x86_64 and
-aarch64 artifacts on real systems → remediate the v1.0.0 release page.
+
+Post-reset note (2026-10-09): the certified content survived the sandbox
+reset, was re-committed (§1), and then **every gate executable in this
+environment was re-executed from scratch on the reconstructed tree with an
+identical outcome** (§13, post-reset block: 276/0 workspace, 104 API,
+4/4 installer, 23/23 docs, all five Linux targets re-certified, a11y 9/0,
+e2e 15/15, MSRV, shellcheck, cargo-deny, cargo-audit, crates.io install).
+The decision is unaffected.
+
