@@ -73,7 +73,7 @@ open http://localhost:3000
 | [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) | Build outputs, configuration model (development/testing/staging/production), environment variables, supervision, data locations, deployment security |
 | [`docs/SECURITY.md`](docs/SECURITY.md) | Reporting a vulnerability, what is in scope for the defensive security commands, built-in protections and the tests that cover them, dependency-audit results, known limitations |
 | [`CHANGELOG.md`](CHANGELOG.md) | Version history, including which Phase-2 changes are unreleased |
-| [`AUDIT_AND_FIX_REPORT.md`](AUDIT_AND_FIX_REPORT.md) | The Phase-1 audit that this work started from (historical evidence, not current documentation) |
+| [`AUDIT_AND_FIX_REPORT.md`](docs/archive/AUDIT_AND_FIX_REPORT.md) | The Phase-1 audit that this work started from (historical evidence, not current documentation) |
 
 ---
 
