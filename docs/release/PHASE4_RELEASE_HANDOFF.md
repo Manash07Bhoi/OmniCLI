@@ -70,6 +70,25 @@ Independent post-publication verification (downloaded every published asset):
 Installer gate: real `install.sh`, default channel (latest) → **exit 0**,
 installed binary reports `omnicli 0.2.0`.
 
+### Dependency maintenance (post-release, same session)
+Dependabot (activated by the new `dependabot.yml`) opened 18 update PRs. Outcome:
+
+| Disposition | PRs | Detail |
+|---|---|---|
+| **Merged (9)** | #28 #29 #31 #32 | actions: checkout v7, pnpm/action-setup v6, upload-artifact v7, setup-node v7 — each with the full 13-check gate green |
+| | #34 #35 #38 #39 | cargo: base64 0.23, rusqlite 0.40 (bundled SQLite), console 0.16, lopdf 0.45 |
+| | #48 (own PR superseding #30) | **zip 2 → 8**: builds + 276/276 tests pass; the only #30 failure was `cargo-deny licenses` — zip 8's new pure-Rust bzip2 stack (`libbz2-rs-sys`/`bzip2` 0.6) is licensed `bzip2-1.0.6` (permissive BSD-style), added to the allowlist with a comment; advisories stayed ok |
+| **Closed (2)** | #27 | dtolnay/rust-toolchain 1.88→1.120: the MSRV job **intentionally pins 1.88.0** (declared minimum); bumping would nullify the gate |
+| | #30 | superseded by #48 |
+| **Open — need deliberate work (7)** | #36 | age 0.10→0.12: **fails the MSRV job** — would silently raise the declared minimum; maintainer decision required (documented on the PR) |
+| | #33 | sha1 0.10→0.11: API rewrite (new traits) + MSRV raise — real migration |
+| | #44 | zod 3→4: typecheck/API-tests/audit fail — validation-layer migration |
+| | #37 #40 #41 #42 #43 | radix-ui dev-dep bumps: failing checks of the same class (peer/lockfile); dashboard-only dev dependencies, no user impact |
+
+Main after the merge train (`62f6643`): all required CI green on every merged
+head; post-merge push runs likewise green. The released `v0.2.0` artifacts are
+unaffected (tagged before these merges; next release picks them up).
+
 ### crates.io
 No registry credential exists in this environment (GitHub token ≠ crates.io token; no `CARGO_REGISTRY_TOKEN`, no credentials file). Registry still at 0.1.1. Procedure in §12 stands, ready to execute when a token is provided. Per the release criteria this is a documented pending publication, not a release blocker: the GitHub release, artifacts, and checksums are published and verified.
 
