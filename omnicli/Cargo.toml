@@ -63,7 +63,7 @@ regex = "1"
 base64 = "0.23"
 uuid = { version = "1", features = ["v4", "v7"] }
 chrono = { version = "0.4", features = ["serde"] }
-age = "0.10"
+age = "0.12"
 glob = "0.3"
 tempfile = "3"
 lopdf = "0.45"
