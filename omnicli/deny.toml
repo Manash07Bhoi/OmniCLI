@@ -15,6 +15,7 @@ allow = [
   "BSD-2-Clause",
   "BSD-3-Clause",
   "ISC",
+  "bzip2-1.0.6",  # bzip2 and libbzip2 license (BSD-style); pulled in by zip 8.x via libbz2-rs-sys
   "Unicode-3.0",
   "Zlib",
   "CC0-1.0",
