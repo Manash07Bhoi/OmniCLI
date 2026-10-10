@@ -2,7 +2,7 @@
 
 > **Full project documentation:** [README.md](../../README.md)
 >
-> This guide is the practical command reference for the `omni` binary. Every command includes real examples and expected output.
+> This guide is the practical command reference for the `omnicli` binary. Every command includes real examples and expected output.
 
 ---
 
@@ -10,11 +10,11 @@
 
 1. [Installation](#installation)
 2. [Global flags](#global-flags)
-3. [omni file](#omni-file)
-4. [omni search](#omni-search)
-5. [omni archive](#omni-archive)
-6. [omni convert](#omni-convert)
-7. [omni config](#omni-config)
+3. [omnicli file](#omnicli-file)
+4. [omnicli search](#omnicli-search)
+5. [omnicli archive](#omnicli-archive)
+6. [omnicli convert](#omnicli-convert)
+7. [omnicli config](#omnicli-config)
 8. [Scripting & JSON mode](#scripting--json-mode)
 9. [Configuration reference](#configuration-reference)
 10. [Exit codes](#exit-codes)
@@ -33,11 +33,11 @@ cd OmniCLI/omnicli
 cargo build --release
 
 # Put on PATH
-sudo cp target/release/omni /usr/local/bin/       # Linux
-cp target/release/omni $PREFIX/bin/               # Termux
+sudo cp target/release/omnicli /usr/local/bin/    # Linux
+cp target/release/omnicli $PREFIX/bin/            # Termux
 
 # Verify
-omni --version
+omnicli --version
 ```
 
 ### Windows
@@ -46,7 +46,7 @@ omni --version
 1. Download `omnicli-windows.zip` from [GitHub Releases](https://github.com/Manash07Bhoi/OmniCLI/releases).
 2. Extract and move `omni.exe` to a folder (e.g., `C:\Program Files\OmniCLI`).
 3. Add the folder to your `PATH` environment variable.
-4. Verify in PowerShell: `omni --version`
+4. Verify in PowerShell: `omnicli --version`
 
 #### Building from source (Developer)
 ```powershell
@@ -62,7 +62,7 @@ See [README.md](../../README.md#installation) for platform-specific (Termux, Kal
 
 ## Global flags
 
-These flags work on **every** `omni` command.
+These flags work on **every** `omnicli` command.
 
 | Flag | Short | Description |
 |------|-------|-------------|
@@ -75,12 +75,12 @@ These flags work on **every** `omni` command.
 
 ---
 
-## omni file
+## omnicli file
 
 ### find — locate files by name, type, size, or age
 
 ```bash
-omni file find [PATTERN] [OPTIONS]
+omnicli file find [PATTERN] [OPTIONS]
 ```
 
 | Option | Description |
@@ -98,47 +98,45 @@ omni file find [PATTERN] [OPTIONS]
 **Examples:**
 ```bash
 # All files in the current directory (recursive)
-omni file find
+omnicli file find
 
 # Files matching a pattern
-omni file find "*.rs" --path ~/projects
+omnicli file find "*.rs" --path ~/projects
 
 # Regex pattern
-omni file find "^test_" --regex --path src/
+omnicli file find "^test_" --regex --path src/
 
 # Files larger than 50 MB
-omni file find --size +50M --path /var/log
+omnicli file find --size +50M --path /var/log
 
 # Files modified in the last 7 days
-omni file find --modified 7d --path ~/projects
+omnicli file find --modified 7d --path ~/projects
 
 # Directories only
-omni file find --type d --path .
+omnicli file find --type d --path .
 
 # Limit depth to 2 levels
-omni file find "*.toml" --max-depth 2
+omnicli file find "*.toml" --max-depth 2
 
 # Count all JSON files
-omni file find "*.json" --count
+omnicli file find "*.json" --count
 
 # Long listing with metadata
-omni file find --path ~/projects --long
+omnicli file find --path ~/projects --long
 ```
 
 Expected output:
 ```
-./Cargo.toml
-./crates/omni-core/Cargo.toml
-./crates/omni-file/Cargo.toml
-  3 entries found
+10
 ```
+(10 crates in `crates/` each carry a `Cargo.toml`; `--count` prints just the number.)
 
 ---
 
 ### copy — copy files or directories
 
 ```bash
-omni file copy <src> <dst> [--recursive] [--verify] [--dry-run]
+omnicli file copy <src> <dst> [--recursive] [--verify] [--dry-run]
 ```
 
 | Option | Description |
@@ -149,16 +147,16 @@ omni file copy <src> <dst> [--recursive] [--verify] [--dry-run]
 
 ```bash
 # Copy a single file
-omni file copy report.pdf backup/report.pdf
+omnicli file copy report.pdf backup/report.pdf
 
 # Copy with BLAKE3 verification
-omni file copy firmware.bin /media/usb/firmware.bin --verify
+omnicli file copy firmware.bin /media/usb/firmware.bin --verify
 
 # Copy a directory recursively
-omni file copy src/ dist/ --recursive
+omnicli file copy src/ dist/ --recursive
 
 # Dry-run
-omni file copy src/ dist/ --recursive --dry-run
+omnicli file copy src/ dist/ --recursive --dry-run
 ```
 
 ---
@@ -166,12 +164,12 @@ omni file copy src/ dist/ --recursive --dry-run
 ### move — rename or move
 
 ```bash
-omni file move <src> <dst> [--recursive]
+omnicli file move <src> <dst> [--verify] [--dry-run]
 ```
 
 ```bash
-omni file move old_name.txt new_name.txt
-omni file move report_draft.pdf ~/Documents/final_report.pdf
+omnicli file move old_name.txt new_name.txt
+omnicli file move report_draft.pdf ~/Documents/final_report.pdf
 ```
 
 ---
@@ -179,21 +177,21 @@ omni file move report_draft.pdf ~/Documents/final_report.pdf
 ### compare — byte-level file comparison
 
 ```bash
-omni file compare <a> <b> [--hash-only]
+omnicli file compare <a> <b> [--hash]
 ```
 
-`--hash-only` skips byte-by-byte diff (faster for large files, uses BLAKE3).
+`--hash` compares by BLAKE3 digest only, skipping the byte-by-byte diff (faster for large files).
 
 ```bash
-omni file compare original.bin patched.bin
-omni file compare firmware.img backup.img --hash-only
-omni file compare a.bin b.bin --json | jq .identical
+omnicli file compare original.bin patched.bin
+omnicli file compare firmware.img backup.img --hash
+omnicli file compare a.bin b.bin --json | jq .identical
 ```
 
 Expected output:
 ```
-✓ files are identical        # exit 0
-✗ files differ               # exit 1
+[OK] Files are identical.    # exit 0
+[WARN] Files differ.         # exit 1
 ```
 
 ---
@@ -203,18 +201,18 @@ Expected output:
 Two-pass: size-group first, then BLAKE3 hash only size-collision candidates.
 
 ```bash
-omni file duplicate --scan <DIR> [--delete-dupes] [--dry-run]
+omnicli file duplicate [PATH] [--min-size <SIZE>] [--delete-dupes] [--dry-run]
 ```
 
 ```bash
 # Scan and report
-omni file duplicate --scan ~/Downloads
+omnicli file duplicate ~/Downloads
 
 # Dry-run — show what would be deleted
-omni file duplicate --scan ~/Downloads --delete-dupes --dry-run
+omnicli file duplicate ~/Downloads --delete-dupes --dry-run
 
 # Delete (keeps one copy per group)
-omni file duplicate --scan ~/Downloads --delete-dupes
+omnicli file duplicate ~/Downloads --delete-dupes
 ```
 
 Expected output:
@@ -230,21 +228,21 @@ Expected output:
 ### clean — remove old or empty files
 
 ```bash
-omni file clean <DIR> [--older-than DURATION] [--empty-dirs] [--dry-run]
+omnicli file clean <DIR> [--older-than DURATION] [--empty-dirs] [--dry-run]
 ```
 
 ```bash
 # Remove files older than 30 days
-omni file clean /tmp --older-than 30d
+omnicli file clean /tmp --older-than 30d
 
 # Remove files older than 2 hours
-omni file clean /var/log/app --older-than 2h
+omnicli file clean /var/log/app --older-than 2h
 
 # Also remove empty directories
-omni file clean ~/cache --older-than 7d --empty-dirs
+omnicli file clean ~/cache --older-than 7d --empty-dirs
 
 # Dry-run: preview without deleting
-omni file clean /tmp --older-than 30d --dry-run
+omnicli file clean /tmp --older-than 30d --dry-run
 ```
 
 ---
@@ -252,23 +250,23 @@ omni file clean /tmp --older-than 30d --dry-run
 ### hash — compute file checksums
 
 ```bash
-omni file hash <FILE> [--algo blake3|sha256|md5]
+omnicli file hash <FILE> [--algo blake3|sha256|md5]
 ```
 
 Default algorithm is read from `[file].default_hash` in config (BLAKE3 by default).
 
 ```bash
 # BLAKE3 (default)
-omni file hash firmware.bin
+omnicli file hash firmware.bin
 
 # SHA-256
-omni file hash firmware.bin --algo sha256
+omnicli file hash firmware.bin --algo sha256
 
 # MD5 (legacy compatibility)
-omni file hash legacy.iso --algo md5
+omnicli file hash legacy.iso --algo md5
 
 # JSON output for scripting
-omni file hash --json firmware.bin | jq -r .digest
+omnicli file hash --json firmware.bin | jq -r .digest
 ```
 
 Expected output:
@@ -292,20 +290,20 @@ cat key.txt | grep "public key"  # copy the AGE1... public key
 
 **Encrypt:**
 ```bash
-omni file encrypt report.pdf --recipient age1ql3z7hjy54pw3hyww5ayyfg7zqgvc7w3j2elw8zmrj2kg5sfn9aqmcac97
+omnicli file encrypt report.pdf --recipient age1ql3z7hjy54pw3hyww5ayyfg7zqgvc7w3j2elw8zmrj2kg5sfn9aqmcac97
 # → creates report.pdf.age
 
 # Custom output path
-omni file encrypt report.pdf --recipient age1... --out encrypted/report.age
+omnicli file encrypt report.pdf --recipient age1... --output encrypted/report.age
 ```
 
 **Decrypt:**
 ```bash
-omni file decrypt report.pdf.age --identity AGE-SECRET-KEY-1QJEPAXC...
+omnicli file decrypt report.pdf.age --identity AGE-SECRET-KEY-1QJEPAXC...
 # → creates report.pdf  (strips .age extension)
 
 # Custom output path
-omni file decrypt report.pdf.age --identity AGE-SECRET-KEY-... --out decrypted/report.pdf
+omnicli file decrypt report.pdf.age --identity AGE-SECRET-KEY-... --output decrypted/report.pdf
 ```
 
 > **Security note:** Passing `--identity` on the command line exposes the key in `ps aux`. For production, use shell substitution: `--identity "$(grep SECRET key.txt)"`
@@ -315,14 +313,14 @@ omni file decrypt report.pdf.age --identity AGE-SECRET-KEY-... --out decrypted/r
 ### compress — create archives (shorthand)
 
 ```bash
-omni file compress <output.tar.gz> <inputs...>
+omnicli file compress <output.tar.gz> <inputs...>
 ```
 
-Shorthand for `omni archive create`. Format is inferred from the extension.
+Shorthand for `omnicli archive create`. Format is inferred from the extension.
 
 ```bash
-omni file compress backup.tar.gz src/ docs/ scripts/
-omni file compress archive.zip *.txt
+omnicli file compress backup.tar.gz src/ docs/ scripts/
+omnicli file compress archive.zip *.txt
 ```
 
 ---
@@ -332,18 +330,18 @@ omni file compress archive.zip *.txt
 BLAKE3-powered one-way sync. Only copies files whose hash has changed.
 
 ```bash
-omni file sync <src> <dst> [--delete-extraneous] [--dry-run]
+omnicli file sync <src> <dst> [--delete] [--dry-run]
 ```
 
 ```bash
 # One-way sync (only copies changed files)
-omni file sync ~/projects /media/usb/projects
+omnicli file sync ~/projects /media/usb/projects
 
 # Also delete files in dst that don't exist in src
-omni file sync ~/projects /media/usb/projects --delete-extraneous
+omnicli file sync ~/projects /media/usb/projects --delete
 
 # Preview only
-omni file sync ~/projects /media/usb/projects --dry-run
+omnicli file sync ~/projects /media/usb/projects --dry-run
 ```
 
 Expected output:
@@ -353,35 +351,35 @@ Expected output:
 
 ---
 
-## omni search
+## omnicli search
 
 Full-text search powered by SQLite FTS5 with the Porter stemmer and unicode61 tokenizer. Index lives at `~/.local/share/omni/search.db`.
 
 ### index — build or update the search index
 
 ```bash
-omni search index [PATH...] [--rebuild]
+omnicli search index [PATH...] [--rebuild]
 ```
 
 ```bash
 # Index a directory
-omni search index ~/projects
+omnicli search index ~/projects
 
 # Index multiple directories
-omni search index ~/projects ~/Documents ~/work
+omnicli search index ~/projects ~/Documents ~/work
 
 # Rebuild from scratch
-omni search index ~/projects --rebuild
+omnicli search index ~/projects --rebuild
 
 # Use paths from config [search].index_paths
-omni search index
+omnicli search index
 ```
 
 ### query — search the index
 
 ```bash
-omni search "QUERY"                                  # shorthand
-omni search query "QUERY" [OPTIONS]                  # full form
+omnicli search "QUERY"                                  # shorthand
+omnicli search query "QUERY" [OPTIONS]                  # full form
 ```
 
 | Option | Description |
@@ -393,19 +391,19 @@ omni search query "QUERY" [OPTIONS]                  # full form
 
 ```bash
 # Quick lookup
-omni search "CVE-2026-1234"
+omnicli search "CVE-2026-1234"
 
 # With content-type filter
-omni search query "buffer overflow" --in code,logs
+omnicli search query "buffer overflow" --in code,logs
 
 # Regex across code
-omni search query "TODO|FIXME|HACK" --regex --in code
+omnicli search query "TODO|FIXME|HACK" --regex --in code
 
 # Case-sensitive
-omni search query "NullPointerException" --case-sensitive
+omnicli search query "NullPointerException" --case-sensitive
 
 # Limit results
-omni search query "password" --limit 20 --json | jq '.[].path'
+omnicli search query "password" --limit 20 --json | jq '.[].path'
 ```
 
 **Content types for `--in`:**
@@ -430,7 +428,7 @@ docs/advisory.txt                             files   1.1 KB   See CVE-2026-1234
 
 ---
 
-## omni archive
+## omnicli archive
 
 All formats are **detected by magic bytes** on extraction and listing — not by extension — so renamed archives still work.
 
@@ -439,40 +437,40 @@ All formats are **detected by magic bytes** on extraction and listing — not by
 ### create
 
 ```bash
-omni archive create <output> <inputs...>
+omnicli archive create <output> <inputs...>
 ```
 
 ```bash
-omni archive create backup.tar.gz src/ docs/ README.md
-omni archive create release.zip dist/
-omni archive create archive.tar.xz large_dir/      # smaller, slower
-omni archive create data.tar.bz2 data/
-omni archive create snapshot.tar src/              # uncompressed
+omnicli archive create backup.tar.gz src/ docs/ README.md
+omnicli archive create release.zip dist/
+omnicli archive create archive.tar.xz large_dir/      # smaller, slower
+omnicli archive create data.tar.bz2 data/
+omnicli archive create snapshot.tar src/              # uncompressed
 ```
 
 ### extract
 
 ```bash
-omni archive extract <archive> [--to DIR]
+omnicli archive extract <archive> [--to DIR]
 ```
 
 ```bash
 # Extract to auto-named directory (strips extension)
-omni archive extract backup.tar.gz
+omnicli archive extract backup.tar.gz
 
 # Extract to a specific directory
-omni archive extract release.zip --to /tmp/release
+omnicli archive extract release.zip --to /tmp/release
 ```
 
 ### list
 
 ```bash
-omni archive list <archive> [--json]
+omnicli archive list <archive> [--json]
 ```
 
 ```bash
-omni archive list backup.tar.gz
-omni archive list build.zip --json | jq '.[].name'
+omnicli archive list backup.tar.gz
+omnicli archive list build.zip --json | jq '.[].name'
 ```
 
 Expected output:
@@ -489,20 +487,20 @@ docs/README.md            1.8 KB       no
 Re-pack one format into another (extract then repack, preserving directory structure):
 
 ```bash
-omni archive convert old.zip new.tar.gz
-omni archive convert backup.tar.bz2 backup.tar.xz
+omnicli archive convert old.zip new.tar.gz
+omnicli archive convert backup.tar.bz2 backup.tar.xz
 ```
 
 ---
 
-## omni convert
+## omnicli convert
 
 Format is always inferred from the file **extension**. No extra flags needed.
 
 ### list — show supported pairs
 
 ```bash
-omni convert list
+omnicli convert list
 ```
 
 ```
@@ -527,32 +525,32 @@ pdf         txt         Extract text from PDF
 ### run — convert a file
 
 ```bash
-omni convert run <input> <output>
+omnicli convert run <input> <output>
 ```
 
 ```bash
 # Data formats
-omni convert run data.csv data.json
-omni convert run data.json data.yaml
-omni convert run data.yaml data.toml
+omnicli convert run data.csv data.json
+omnicli convert run data.json data.yaml
+omnicli convert run data.yaml data.toml
 
 # Config migration
-omni convert run config.yaml config.toml
-omni convert run settings.json settings.yaml
+omnicli convert run config.yaml config.toml
+omnicli convert run settings.json settings.yaml
 
 # Documents
-omni convert run README.md README.html
-omni convert run report.pdf report.txt
+omnicli convert run README.md README.html
+omnicli convert run report.pdf report.txt
 
 # Images
-omni convert run logo.png logo.webp
-omni convert run photo.jpg photo.png
-omni convert run banner.webp banner.png
+omnicli convert run logo.png logo.webp
+omnicli convert run photo.jpg photo.png
+omnicli convert run banner.webp banner.png
 
 # Roundtrip: JSON → YAML → TOML → JSON
-omni convert run data.json data.yaml
-omni convert run data.yaml data.toml
-omni convert run data.toml data2.json
+omnicli convert run data.json data.yaml
+omnicli convert run data.yaml data.toml
+omnicli convert run data.toml data2.json
 ```
 
 Expected output:
@@ -562,20 +560,20 @@ Expected output:
 
 ---
 
-## omni config
+## omnicli config
 
 ### show — print the active configuration
 
 ```bash
-omni config show                          # TOML (default)
-omni config show --json                   # JSON
-omni config show --json | jq .search.index_paths
+omnicli config show                          # TOML (default)
+omnicli config show --json                   # JSON
+omnicli config show --json | jq .search.index_paths
 ```
 
 ### path — show the config file location
 
 ```bash
-omni config path
+omnicli config path
 # → /home/user/.config/omni/omni.toml
 ```
 
@@ -587,35 +585,35 @@ Every command supports `--json` for machine-readable, pipe-friendly output.
 
 ```bash
 # Get just the digest
-omni file hash firmware.bin --json | jq -r .digest
+omnicli file hash firmware.bin --json | jq -r .digest
 
 # Check if files are identical in a script
-if omni file compare a.bin b.bin --json | jq -e .identical > /dev/null; then
+if omnicli file compare a.bin b.bin --json | jq -e .identical > /dev/null; then
   echo "Files match"
 fi
 
 # Find large files and process with jq
-omni file find --size +10M --path /var --json | jq '.[].path'
+omnicli file find --size +10M --path /var --json | jq '.[].path'
 
 # Search and get paths only
-omni search "TODO" --json | jq -r '.[].path' | sort -u
+omnicli search "TODO" --json | jq -r '.[].path' | sort -u
 
 # Archive listing filtered to files only
-omni archive list backup.tar.gz --json | jq 'map(select(.is_dir == false)) | length'
+omnicli archive list backup.tar.gz --json | jq 'map(select(.is_dir == false)) | length'
 
 # Hash verification in CI
 EXPECTED="af1349b9..."
-ACTUAL=$(omni file hash dist/binary --json | jq -r .digest)
+ACTUAL=$(omnicli file hash dist/binary --json | jq -r .digest)
 [ "$ACTUAL" = "$EXPECTED" ] || { echo "Hash mismatch — aborting"; exit 1; }
 
 # Find duplicates and report wasted space
-omni file duplicate --scan ~/Downloads --json | jq '.wasted_bytes'
+omnicli file duplicate ~/Downloads --json | jq '.wasted_bytes'
 
 # Sync with JSON progress
-omni file sync ~/src ~/backup --json | jq '{new: .added, updated: .updated, deleted: .deleted}'
+omnicli file sync ~/src ~/backup --json | jq '{new: .added, updated: .updated, deleted: .deleted}'
 
 # Get search results as CSV of paths
-omni search "error" --in logs --json | jq -r '.[].path' | sort | uniq -c | sort -rn
+omnicli search "error" --in logs --json | jq -r '.[].path' | sort | uniq -c | sort -rn
 ```
 
 ---
@@ -643,7 +641,7 @@ default_hash = "blake3"
 trash_instead_of_delete = true
 
 [search]
-# Paths to index when no argument is given to `omni search index`
+# Paths to index when no argument is given to `omnicli search index`
 index_paths = [
   "~/projects",
   "~/Documents",
@@ -688,7 +686,7 @@ warn    = "yellow"
 |------|---------|
 | `0` | Success |
 | `1` | General error (bad arguments, file not found, permission denied) |
-| `1` | `omni file compare` — files differ |
+| `1` | `omnicli file compare` — files differ |
 
 All errors are printed to **stderr**. `--json` output always goes to **stdout**.
 

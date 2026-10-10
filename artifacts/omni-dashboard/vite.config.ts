@@ -76,5 +76,17 @@ export default defineConfig({
     port,
     host: '0.0.0.0',
     allowedHosts: true,
+    // Same proxy as the dev server so `pnpm preview` (the production bundle)
+    // works outside Replit too, where nothing else routes /api.
+    ...(process.env.REPL_ID
+      ? {}
+      : {
+          proxy: {
+            '/api': {
+              target: `http://localhost:${process.env.API_PORT ?? 8080}`,
+              changeOrigin: true,
+            },
+          },
+        }),
   },
 });

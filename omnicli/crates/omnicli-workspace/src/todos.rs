@@ -13,16 +13,14 @@ pub struct Todo {
 }
 
 pub fn list_todos(conn: &Connection, done: Option<bool>) -> Result<Vec<Todo>, WorkspaceError> {
-    let (sql, use_filter) = match done {
-        Some(_) => ("SELECT id, description, done, due_at, created_at FROM todos WHERE done = ?1 ORDER BY created_at DESC", true),
-        None    => ("SELECT id, description, done, due_at, created_at FROM todos ORDER BY created_at DESC", false),
+    let sql = match done {
+        Some(_) => "SELECT id, description, done, due_at, created_at FROM todos WHERE done = ?1 ORDER BY created_at DESC",
+        None => "SELECT id, description, done, due_at, created_at FROM todos ORDER BY created_at DESC",
     };
     let mut stmt = conn.prepare(sql)?;
-    let rows = if use_filter {
-        let d = done.unwrap() as i32;
-        stmt.query_map(params![d], row_to_todo)?
-    } else {
-        stmt.query_map([], row_to_todo)?
+    let rows = match done {
+        Some(d) => stmt.query_map(params![d as i32], row_to_todo)?,
+        None => stmt.query_map([], row_to_todo)?,
     };
     rows.collect::<Result<Vec<_>, _>>()
         .map_err(WorkspaceError::from)

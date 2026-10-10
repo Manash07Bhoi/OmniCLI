@@ -16,13 +16,31 @@ import {
   DevJwtBody,
   DevJwtResponse as DevJwtResult,
 } from "@workspace/api-zod";
+import { invalidRequest } from "../lib/validation";
 
 const router: IRouter = Router();
+
+/**
+ * Decode standard base64 strictly. `Buffer.from(x, "base64")` silently drops
+ * invalid characters, which would turn malformed input into plausible-looking
+ * garbage — so the input is checked and round-tripped first. Returns null when
+ * the input is not canonical base64 or does not decode to UTF-8 text.
+ */
+export function decodeBase64(input: string): string | null {
+  const normalized = input.replace(/\s+/g, "");
+  if (normalized.length === 0 || normalized.length % 4 !== 0) return null;
+  if (!/^[A-Za-z0-9+/]+={0,2}$/.test(normalized)) return null;
+  const buf = Buffer.from(normalized, "base64");
+  if (buf.toString("base64") !== normalized) return null;
+  const text = buf.toString("utf8");
+  if (!Buffer.from(text, "utf8").equals(buf)) return null;
+  return text;
+}
 
 router.post("/dev/hash", (req, res): void => {
   const parsed = DevHashBody.safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.message });
+    invalidRequest(res, parsed.error);
     return;
   }
 
@@ -43,7 +61,7 @@ router.post("/dev/hash", (req, res): void => {
 router.post("/dev/json", (req, res): void => {
   const parsed = DevJsonBody.safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.message });
+    invalidRequest(res, parsed.error);
     return;
   }
 
@@ -96,7 +114,7 @@ router.post("/dev/json", (req, res): void => {
 router.post("/dev/base64", (req, res): void => {
   const parsed = DevBase64Body.safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.message });
+    invalidRequest(res, parsed.error);
     return;
   }
 
@@ -104,11 +122,12 @@ router.post("/dev/base64", (req, res): void => {
   let output: string;
 
   if (decode) {
-    try {
-      output = Buffer.from(input, "base64").toString("utf8");
-    } catch {
-      output = Buffer.from(input, "base64").toString("binary");
+    const decoded = decodeBase64(input);
+    if (decoded === null) {
+      res.status(400).json({ error: "Input is not valid base64." });
+      return;
     }
+    output = decoded;
   } else {
     output = Buffer.from(input, "utf8").toString("base64");
   }
@@ -118,7 +137,11 @@ router.post("/dev/base64", (req, res): void => {
 
 router.get("/dev/uuid", (req, res): void => {
   const parsed = DevUuidParams.safeParse(req.query);
-  const count = parsed.success ? Math.min(parsed.data.count ?? 1, 100) : 1;
+  if (!parsed.success) {
+    invalidRequest(res, parsed.error);
+    return;
+  }
+  const count = parsed.data.count ?? 1;
 
   const uuids: string[] = [];
   for (let i = 0; i < count; i++) {
@@ -131,7 +154,7 @@ router.get("/dev/uuid", (req, res): void => {
 router.post("/dev/regex", (req, res): void => {
   const parsed = DevRegexBody.safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.message });
+    invalidRequest(res, parsed.error);
     return;
   }
 
@@ -175,7 +198,7 @@ router.post("/dev/regex", (req, res): void => {
 router.post("/dev/jwt", (req, res): void => {
   const parsed = DevJwtBody.safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.message });
+    invalidRequest(res, parsed.error);
     return;
   }
 

@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useLocation } from "wouter";
+import { getGetModuleStatusQueryKey, useGetModuleStatus } from "@workspace/api-client-react";
 import {
   TerminalSquare,
   Search,
@@ -12,6 +13,8 @@ import {
   Activity,
   Menu,
   X,
+  TriangleAlert,
+  CircleOff,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -30,6 +33,75 @@ interface SidebarContentProps {
   onNavClick?: () => void;
 }
 
+type CliState =
+  | { kind: "checking" }
+  | { kind: "online"; modules: number }
+  | { kind: "cli-missing"; message: string }
+  | { kind: "api-offline" };
+
+/**
+ * Real readiness indicator. It reports what the last /api/dashboard/module-status
+ * call actually returned: the CLI's module count when reachable, the API's
+ * "CLI not found" message when the binary is missing, or an offline notice when
+ * the API itself cannot be reached. Nothing here is hardcoded to a happy path.
+ */
+function CliStatus() {
+  const { data, isError, error, isLoading } = useGetModuleStatus({
+    query: {
+      queryKey: getGetModuleStatusQueryKey(),
+      retry: false,
+      refetchInterval: 30_000,
+      staleTime: 15_000,
+    },
+  });
+
+  const state: CliState = isLoading
+    ? { kind: "checking" }
+    : isError
+      ? (error as { status?: number })?.status === 503
+        ? { kind: "cli-missing", message: (error as Error)?.message ?? "omnicli binary not found" }
+        : { kind: "api-offline" }
+      : { kind: "online", modules: data?.length ?? 0 };
+
+  const dot =
+    state.kind === "online"
+      ? "bg-primary"
+      : state.kind === "checking"
+        ? "bg-muted-foreground"
+        : "bg-destructive";
+
+  const label =
+    state.kind === "online"
+      ? `CLI online · ${state.modules} modules`
+      : state.kind === "checking"
+        ? "Checking CLI…"
+        : state.kind === "cli-missing"
+          ? "CLI not found"
+          : "API offline";
+
+  return (
+    <div
+      className="flex items-start gap-2 text-xs text-muted-foreground"
+      role="status"
+      aria-live="polite"
+      title={state.kind === "cli-missing" ? state.message : undefined}
+    >
+      <span
+        className={cn(
+          "mt-1 w-2 h-2 rounded-full flex-shrink-0",
+          dot,
+          state.kind === "online" && "motion-safe:animate-pulse"
+        )}
+      />
+      <span className="flex items-center gap-1">
+        {state.kind === "cli-missing" && <TriangleAlert className="w-3 h-3 text-destructive" />}
+        {state.kind === "api-offline" && <CircleOff className="w-3 h-3 text-destructive" />}
+        {label}
+      </span>
+    </div>
+  );
+}
+
 function SidebarContent({ onNavClick }: SidebarContentProps) {
   const [location] = useLocation();
   return (
@@ -38,7 +110,7 @@ function SidebarContent({ onNavClick }: SidebarContentProps) {
         <Link href="/" className="flex items-center gap-2 group outline-none" onClick={onNavClick}>
           <TerminalSquare className="w-6 h-6 text-primary group-hover:text-primary-foreground transition-colors group-hover:bg-primary rounded-sm p-0.5" />
           <span className="font-bold text-lg tracking-tight text-sidebar-foreground group-hover:text-primary transition-colors">
-            OmniCLI<span className="text-primary animate-pulse">_</span>
+            OmniCLI<span className="text-primary motion-safe:animate-pulse">_</span>
           </span>
         </Link>
       </div>
@@ -72,10 +144,7 @@ function SidebarContent({ onNavClick }: SidebarContentProps) {
       </div>
 
       <div className="p-4 border-t border-border bg-muted/20 flex-shrink-0">
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <div className="w-2 h-2 rounded-full bg-primary animate-pulse shadow-[0_0_5px_0_hsl(var(--primary))]" />
-          System Online
-        </div>
+        <CliStatus />
       </div>
     </>
   );
@@ -102,7 +171,7 @@ export function MobileHeader({ onOpen }: { onOpen: () => void }) {
       <Link href="/" className="flex items-center gap-2 group outline-none">
         <TerminalSquare className="w-5 h-5 text-primary" />
         <span className="font-bold tracking-tight text-sidebar-foreground">
-          OmniCLI<span className="text-primary animate-pulse">_</span>
+          OmniCLI<span className="text-primary motion-safe:animate-pulse">_</span>
         </span>
       </Link>
     </header>
@@ -110,20 +179,34 @@ export function MobileHeader({ onOpen }: { onOpen: () => void }) {
 }
 
 export function MobileDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
+  // Escape closes the drawer, matching the backdrop click.
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open, onClose]);
+
   return (
     <>
       {/* Backdrop */}
       <div
         className={cn(
-          "fixed inset-0 z-50 bg-black/60 backdrop-blur-sm transition-opacity duration-300 lg:hidden",
+          "fixed inset-0 z-50 bg-black/60 backdrop-blur-sm transition-opacity duration-300 motion-reduce:transition-none lg:hidden",
           open ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
         )}
         onClick={onClose}
+        aria-hidden="true"
       />
       {/* Drawer */}
       <aside
+        role="dialog"
+        aria-modal="true"
+        aria-label="Navigation"
         className={cn(
-          "fixed top-0 left-0 z-50 h-screen w-72 bg-sidebar border-r border-border flex flex-col transition-transform duration-300 lg:hidden",
+          "fixed top-0 left-0 z-50 h-screen w-72 bg-sidebar border-r border-border flex flex-col transition-transform duration-300 motion-reduce:transition-none lg:hidden",
           open ? "translate-x-0" : "-translate-x-full"
         )}
       >
@@ -147,6 +230,14 @@ export function Shell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex min-h-screen w-full bg-background text-foreground">
+      {/* Keyboard users can jump straight past the navigation. */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:top-2 focus:left-2 focus:px-3 focus:py-2 focus:bg-primary focus:text-primary-foreground focus:rounded-sm focus:text-sm"
+      >
+        Skip to content
+      </a>
+
       {/* Desktop sidebar */}
       <div className="hidden lg:block">
         <Sidebar />
@@ -156,7 +247,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
       <MobileDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
 
       {/* Main content */}
-      <main className="flex-1 lg:ml-64 min-w-0 flex flex-col">
+      <main id="main-content" className="flex-1 lg:ml-64 min-w-0 flex flex-col">
         <MobileHeader onOpen={() => setDrawerOpen(true)} />
         {children}
       </main>

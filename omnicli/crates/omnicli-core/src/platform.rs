@@ -19,6 +19,14 @@ pub fn expand_tilde(path: &str) -> PathBuf {
     PathBuf::from(path)
 }
 
+/// Human-readable platform identifier, e.g. `linux/x86_64`.
+///
+/// These come from the compiler's target constants, so they describe the
+/// running binary rather than a guess.
+pub fn platform_label() -> String {
+    format!("{}/{}", std::env::consts::OS, std::env::consts::ARCH)
+}
+
 /// Return the OmniCLI data directory: `~/.local/share/omni` (Linux/macOS)
 /// or `%LOCALAPPDATA%\omni` (Windows).
 pub fn data_dir() -> PathBuf {

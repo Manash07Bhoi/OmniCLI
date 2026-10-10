@@ -38,7 +38,13 @@ pub fn copy_path(opts: &CopyOptions) -> Result<CopyResult, FileError> {
 
     if opts.source.is_file() {
         let dest = if opts.dest.is_dir() {
-            opts.dest.join(opts.source.file_name().unwrap())
+            let name = opts.source.file_name().ok_or_else(|| {
+                FileError::Other(anyhow::anyhow!(
+                    "cannot determine the file name of {}",
+                    opts.source.display()
+                ))
+            })?;
+            opts.dest.join(name)
         } else {
             opts.dest.clone()
         };

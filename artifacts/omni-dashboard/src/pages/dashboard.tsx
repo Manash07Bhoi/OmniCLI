@@ -130,7 +130,12 @@ export default function Dashboard() {
               ) : modError ? (
                 <ErrorState compact title="Module status unavailable" />
               ) : modules ? (
-                <div className="space-y-2.5 max-h-[500px] overflow-y-auto pr-1">
+                <div
+                  className="space-y-2.5 max-h-[500px] overflow-y-auto pr-1"
+                  role="region"
+                  aria-label="Module status list"
+                  tabIndex={0}
+                >
                   {modules.map((mod) => (
                     <div
                       key={mod.name}
@@ -138,14 +143,15 @@ export default function Dashboard() {
                       style={{ borderLeftColor: mod.color, borderLeftWidth: 2 }}
                     >
                       <div className="flex justify-between items-center mb-1.5">
-                        <span className="font-bold text-xs sm:text-sm font-mono" style={{ color: mod.color }}>
+                        <span className="font-bold text-xs sm:text-sm font-mono text-foreground">
                           {mod.name}
                         </span>
                         <Badge
-                          variant={mod.status === "active" ? "default" : "secondary"}
+                          variant="default"
                           className="text-[10px] uppercase h-5"
+                          title={`${mod.verbCount} command${mod.verbCount === 1 ? "" : "s"} in this group`}
                         >
-                          {mod.status === "active" ? "ACTIVE" : `PH:${mod.phase}`}
+                          {mod.verbCount} cmds
                         </Badge>
                       </div>
                       <span className="text-[11px] text-muted-foreground leading-snug">{mod.description}</span>

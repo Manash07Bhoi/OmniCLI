@@ -8,7 +8,7 @@ pub enum DevError {
     #[error("Parse error: {message}")]
     Parse { message: String },
 
-    #[error("Unsupported algorithm: {algo}")]
+    #[error("Unknown hash algorithm: {algo}. Use sha256, sha1, md5, or blake3.")]
     UnsupportedAlgo { algo: String },
 
     #[error("JWT decode error: {message}")]

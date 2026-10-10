@@ -83,7 +83,7 @@ export function ErrorState({ title = "Something went wrong", message, onRetry, c
         <ServerOff className="w-8 h-8 text-destructive" />
       </div>
       <div>
-        <h3 className="font-bold text-lg text-foreground">{title}</h3>
+        <h2 className="font-bold text-lg text-foreground">{title}</h2>
         {message && (
           <p className="text-sm text-muted-foreground mt-1 font-mono max-w-sm">{message}</p>
         )}
@@ -114,7 +114,7 @@ export function EmptyState({ icon, title, description, action }: EmptyStateProps
         {icon ?? <Inbox className="w-8 h-8 text-muted-foreground" />}
       </div>
       <div>
-        <h3 className="font-semibold text-base text-foreground font-mono">{title}</h3>
+        <h2 className="font-semibold text-base text-foreground font-mono">{title}</h2>
         {description && (
           <p className="text-sm text-muted-foreground mt-1 max-w-xs">{description}</p>
         )}
@@ -131,7 +131,7 @@ export function SearchEmptyState({ query }: { query: string }) {
         <Search className="w-8 h-8 text-muted-foreground" />
       </div>
       <div>
-        <h3 className="font-semibold text-base font-mono">No results for "{query}"</h3>
+        <h2 className="font-semibold text-base font-mono">No results for "{query}"</h2>
         <p className="text-sm text-muted-foreground mt-1">
           Try a different query, or run <code className="text-primary">omnicli search index .</code> to index files first.
         </p>

@@ -16,15 +16,14 @@ pub fn list_snippets(
     conn: &Connection,
     language: Option<&str>,
 ) -> Result<Vec<Snippet>, WorkspaceError> {
-    let (sql, use_lang) = match language {
-        Some(_) => ("SELECT id, name, language, body, created_at FROM snippets WHERE language = ?1 ORDER BY name", true),
-        None    => ("SELECT id, name, language, body, created_at FROM snippets ORDER BY name", false),
+    let sql = match language {
+        Some(_) => "SELECT id, name, language, body, created_at FROM snippets WHERE language = ?1 ORDER BY name",
+        None => "SELECT id, name, language, body, created_at FROM snippets ORDER BY name",
     };
     let mut stmt = conn.prepare(sql)?;
-    let rows = if use_lang {
-        stmt.query_map(params![language.unwrap()], row_to_snippet)?
-    } else {
-        stmt.query_map([], row_to_snippet)?
+    let rows = match language {
+        Some(lang) => stmt.query_map(params![lang], row_to_snippet)?,
+        None => stmt.query_map([], row_to_snippet)?,
     };
     rows.collect::<Result<Vec<_>, _>>()
         .map_err(WorkspaceError::from)

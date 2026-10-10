@@ -20,6 +20,9 @@ on:
       - 'pnpm-workspace.yaml'
       - '.github/workflows/typescript.yml'
 
+permissions:
+  contents: read
+
 env:
   PNPM_VERSION: 10.x
 
@@ -73,22 +76,80 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Cargo
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: omnicli
+
+      - name: Build the omnicli binary
+        working-directory: omnicli
+        run: cargo build
+
       - name: Build API server
         working-directory: artifacts/api-server
         run: pnpm build
 
-      - name: Push DB schema
-        working-directory: lib/db
-        run: pnpm push
-        env:
-          DB_PATH: '/tmp/omni-ci-test.db'
-
+      # No `pnpm push` here on purpose: opening the database creates the schema
+      # (lib/db schema-on-open DDL), which is exactly what a fresh deployment
+      # runs. This smoke test therefore verifies that path — if the DDL drifts,
+      # this job fails loudly (drift is also covered by tests/schema.test.ts).
       - name: Start API server and health-check
+        env:
+          OMNICLI_ROOT: ${{ github.workspace }}
         run: |
-          PORT=8080 DB_PATH=/tmp/omni-ci-test.db node --enable-source-maps \
-            artifacts/api-server/dist/index.mjs &
-          sleep 3
+          PORT=8080 DB_PATH=/tmp/omni-ci-test.db OMNICLI_ROOT="$OMNICLI_ROOT" \
+            node --enable-source-maps artifacts/api-server/dist/index.mjs &
+          SERVER_PID=$!
+          for i in $(seq 1 20); do
+            curl -sf http://localhost:8080/api/healthz >/dev/null && break
+            sleep 1
+          done
+          # /api/healthz is the API liveness probe.
           curl --fail http://localhost:8080/api/healthz
+          # These read real state from the binary, so they only answer 200 when
+          # the CLI is wired up correctly (503 otherwise — the check is intended
+          # to fail loudly if the integration regresses).
           curl --fail http://localhost:8080/api/dashboard/stats
           curl --fail http://localhost:8080/api/dashboard/module-status
-          kill %1
+          curl --fail http://localhost:8080/api/convert/formats
+          kill "$SERVER_PID"
+
+  api-tests:
+    name: API integration tests (real CLI + real SQLite)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Cargo
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: omnicli
+
+      - name: Build the omnicli binary
+        working-directory: omnicli
+        run: cargo build
+
+      # The suite creates its own sandbox (temp HOME/XDG/DB) in globalSetup and
+      # pushes the Drizzle schema there, then exercises the API against the real
+      # binary — no mocks.
+      - name: Run API integration tests
+        run: pnpm --filter @workspace/api-server test

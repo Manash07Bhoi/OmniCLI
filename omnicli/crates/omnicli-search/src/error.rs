@@ -8,7 +8,7 @@ pub enum SearchError {
     #[error("I/O error: {0}")]
     Io(#[from] std::io::Error),
 
-    #[error("Index not found. Run `omni search index <path>` first.")]
+    #[error("Index not found. Run `omnicli search index <path>` first.")]
     IndexNotFound,
 
     #[error("Regex error: {0}")]

@@ -1,3 +1,6 @@
-<svg width="180" height="180" viewBox="0 0 180 180" fill="none" xmlns="http://www.w3.org/2000/svg">
-<rect width="180" height="180" rx="36" fill="#FF3C00"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="OmniCLI">
+  <rect width="64" height="64" rx="14" fill="#120f0e"/>
+  <rect x="1.5" y="1.5" width="61" height="61" rx="12.5" fill="none" stroke="#ff3c00" stroke-width="3"/>
+  <path d="M15 24l8 8-8 8" fill="none" stroke="#ff3c00" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M31 40h18" fill="none" stroke="#f5f0ee" stroke-width="5" stroke-linecap="round"/>
 </svg>

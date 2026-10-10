@@ -5,11 +5,41 @@ on:
     tags:
       - 'v*'
 
+permissions:
+  contents: read
+
 env:
   CARGO_TERM_COLOR: always
 
 jobs:
+  # A tag is a promise about what the artifacts contain. This job refuses to
+  # publish when the tag and the Cargo workspace version disagree, which is how
+  # the historical `v1.0.0` tag ended up shipping a binary that reported 0.1.0.
+  verify-version:
+    name: Verify tag matches the source version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Compare tag and Cargo version
+        shell: bash
+        run: |
+          set -euo pipefail
+          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          # The version lives in the binary crate manifest, not the workspace
+          # root (the root has no [workspace.package] version). Grepping the
+          # root yields an empty string and would refuse every tag.
+          CARGO_VERSION="$(grep -m1 -E '^version[[:space:]]*=' omnicli/crates/omnicli-cli/Cargo.toml | sed -E 's/.*"(.*)".*/\1/')"
+          echo "tag:   $TAG_VERSION"
+          echo "cargo: $CARGO_VERSION"
+          if [ "$TAG_VERSION" != "$CARGO_VERSION" ]; then
+            echo "::error::Tag v$TAG_VERSION does not match omnicli/crates/omnicli-cli/Cargo.toml version $CARGO_VERSION."
+            echo "Bump the binary-crate version (or retag a matching version) before releasing."
+            exit 1
+          fi
+
   build-release:
+    needs: verify-version
     name: Build ${{ matrix.target }}
     runs-on: ${{ matrix.os }}
     strategy:
@@ -35,6 +65,32 @@ jobs:
             archive: omnicli-windows-x86_64.zip
             binary: omnicli.exe
 
+          # macOS (Intel)
+          - os: macos-13
+            target: x86_64-apple-darwin
+            archive: omnicli-macos-x86_64.tar.gz
+            binary: omnicli
+
+          # macOS (Apple Silicon)
+          - os: macos-14
+            target: aarch64-apple-darwin
+            archive: omnicli-macos-aarch64.tar.gz
+            binary: omnicli
+
+          # Termux / Android ARM64 (static musl)
+          - os: ubuntu-latest
+            target: aarch64-unknown-linux-musl
+            archive: omnicli-linux-aarch64-musl.tar.gz
+            binary: omnicli
+            cross: true
+
+          # Termux / Android ARMv7 (static musl, 32-bit)
+          - os: ubuntu-latest
+            target: armv7-unknown-linux-musleabihf
+            archive: omnicli-linux-armv7-musl.tar.gz
+            binary: omnicli
+            cross: true
+
     steps:
       - uses: actions/checkout@v4
 
@@ -55,7 +111,10 @@ jobs:
       - name: Install cross (for cross-compilation)
         if: matrix.cross
         shell: bash
-        run: cargo install cross --git https://github.com/cross-rs/cross
+        # Pinned tag + --locked: installing from the unpinned default branch
+        # would let a upstream commit change the toolchain that builds release
+        # artifacts (supply-chain integrity).
+        run: cargo install cross --git https://github.com/cross-rs/cross --tag v0.2.5 --locked
 
       - name: Install system dependencies (native Linux)
         if: runner.os == 'Linux' && !matrix.cross
@@ -81,8 +140,35 @@ jobs:
           BINARY="omnicli/target/${{ matrix.target }}/release/${{ matrix.binary }}"
           if command -v strip &> /dev/null; then strip "$BINARY" || true; fi
 
+      - name: Verify the binary reports the tagged version
+        # Only targets that can execute on the runner are verified here; the
+        # cross-compiled and other-OS artifacts are build-verified only.
+        if: matrix.target == 'x86_64-unknown-linux-gnu' || matrix.target == 'x86_64-apple-darwin' || matrix.target == 'aarch64-apple-darwin'
+        shell: bash
+        run: |
+          set -euo pipefail
+          BINARY="omnicli/target/${{ matrix.target }}/release/${{ matrix.binary }}"
+          REPORTED="$("$BINARY" --version)"
+          echo "reported: $REPORTED"
+          echo "$REPORTED" | grep -q "${GITHUB_REF_NAME#v}" || {
+            echo "::error::The built binary reports '$REPORTED' but the tag is $GITHUB_REF_NAME"
+            exit 1
+          }
+
       - name: Package archive (Linux)
         if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          BINARY="omnicli/target/${{ matrix.target }}/release/${{ matrix.binary }}"
+          mkdir -p dist
+          cp "$BINARY" dist/omnicli
+          cp omnicli/scripts/install.sh dist/ 2>/dev/null || true
+          cp README.md dist/
+          cd dist
+          tar czf "../${{ matrix.archive }}" .
+
+      - name: Package archive (macOS)
+        if: runner.os == 'macOS'
         shell: bash
         run: |
           BINARY="omnicli/target/${{ matrix.target }}/release/${{ matrix.binary }}"
@@ -115,6 +201,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      id-token: write         # build provenance attestation
+      attestations: write
 
     steps:
       - uses: actions/checkout@v4
@@ -129,16 +217,37 @@ jobs:
       - name: Generate checksums
         shell: bash
         run: |
-          cd dist
-          for file in *; do
-            if [ -f "$file" ]; then
-              sha256sum "$file" >> SHA256SUMS.txt
-            fi
-          done
-          cat SHA256SUMS.txt
+          set -euo pipefail
+          # Checksums are emitted against flat basenames, even when
+          # download-artifact nested the archives in subdirectories. The
+          # installer verifies against these exact names.
+          : > dist/SHA256SUMS.txt
+          find dist -type f \( -name '*.tar.gz' -o -name '*.zip' \) -print0 \
+            | sort -z \
+            | while IFS= read -r -d '' f; do
+                printf '%s  %s\n' "$(sha256sum "$f" | cut -d' ' -f1)" "$(basename "$f")" \
+                  >> dist/SHA256SUMS.txt
+              done
+          echo "Note: the release body documents the *published* asset names."
+          cat dist/SHA256SUMS.txt
+          test -s dist/SHA256SUMS.txt
+
+      - name: Attest build provenance for every artifact
+        # Signs the SHA-256 digest of each archive with the workflow's OIDC
+        # identity, so users can run
+        #   gh attestation verify omnicli-linux-x86_64.tar.gz --repo <owner>/<repo>
+        # and confirm the file was built by this workflow from this repository.
+        # Non-fatal: a repository/org that restricts attestations must not block
+        # a release, and the checksums below remain the primary verification.
+        continue-on-error: true
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: |
+            dist/**/*.tar.gz
+            dist/**/*.zip
 
       - name: Create Release
-        uses: softprops/action-gh-release@v2
+        uses: actions/softprops/action-gh-release@v2
         with:
           draft: false
           prerelease: ${{ contains(github.ref_name, '-') }}
@@ -157,6 +266,27 @@ jobs:
             ```bash
             curl -fsSL https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/omnicli-linux-x86_64.tar.gz | tar xz
             sudo install -m 755 omnicli /usr/local/bin/omnicli
+            ```
+
+            ### macOS
+            ```bash
+            curl -fsSL https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/omnicli-macos-aarch64.tar.gz | tar xz
+            sudo install -m 755 omnicli /usr/local/bin/omnicli
+            ```
+
+            ### Termux (Android, static musl)
+            ```bash
+            curl -fsSL https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/omnicli-linux-aarch64-musl.tar.gz | tar xz
+            install -m 755 omnicli "$PREFIX/bin/omnicli"
+            ```
+
+            ### Verify the download
+            ```bash
+            # SHA-256 (every release ships SHA256SUMS.txt)
+            sha256sum -c SHA256SUMS.txt --ignore-missing
+
+            # Build provenance (signed by the release workflow)
+            gh attestation verify omnicli-linux-x86_64.tar.gz --repo ${{ github.repository }}
             ```
 
             ### Build from source

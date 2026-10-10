@@ -1,15 +1,17 @@
 import { Router, type IRouter } from "express";
 import { promises as fs, type Dirent } from "fs";
 import path from "path";
-import os from "os";
 import {
   SearchFilesQueryParams,
   SearchFilesResponse,
   GetSearchIndexInfoResponse,
   TriggerSearchIndexBody,
+  TriggerSearchIndexResponse,
 } from "@workspace/api-zod";
 import { db } from "@workspace/db";
 import { activityLogTable } from "@workspace/db";
+import { omniJsonOk, isOmniUnavailable } from "../lib/exec";
+import { invalidRequest, missingRequiredParams } from "../lib/validation";
 
 const router: IRouter = Router();
 
@@ -39,9 +41,18 @@ async function* walkDir(
 }
 
 router.get("/search", async (req, res): Promise<void> => {
+  // `q` is required in the OpenAPI spec; `zod.coerce.string()` would coerce a
+  // missing value to "undefined" and search for that literal word.
+  const missing = missingRequiredParams(req.query as Record<string, unknown>, ["q"]);
+  if (missing.length > 0) {
+    invalidRequest(res, {
+      issues: missing.map((name) => ({ path: [name], message: "Required" })),
+    });
+    return;
+  }
   const parsed = SearchFilesQueryParams.safeParse(req.query);
   if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.message });
+    invalidRequest(res, parsed.error);
     return;
   }
 
@@ -50,11 +61,14 @@ router.get("/search", async (req, res): Promise<void> => {
 
   let pattern: RegExp;
   try {
+    // `m` keeps ^/$ anchored per line, matching the CLI's line-oriented search
+    // (a plain `^foo$` pattern would otherwise never match file content).
+    const flags = `m${caseSensitive ? "" : "i"}`;
     if (regex) {
-      pattern = new RegExp(q, caseSensitive ? "" : "i");
+      pattern = new RegExp(q, flags);
     } else {
       const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-      pattern = new RegExp(escaped, caseSensitive ? "" : "i");
+      pattern = new RegExp(escaped, flags);
     }
   } catch (e: unknown) {
     res.status(400).json({ error: `Invalid pattern: ${String(e)}` });
@@ -141,67 +155,105 @@ router.get("/search", async (req, res): Promise<void> => {
   );
 });
 
-router.get("/search/index", async (_req, res): Promise<void> => {
-  const dbPath = path.join(
-    process.env["XDG_DATA_HOME"] ?? path.join(os.homedir(), ".local", "share"),
-    "omni",
-    "search.db"
-  );
+/** `omnicli search info --json` payload. */
+interface SearchInfoOutput {
+  db_path?: string;
+  status?: string;
+  total_entries?: number;
+}
 
-  let totalEntries = 0;
+/** `omnicli search index --json` payload. */
+interface SearchIndexOutput {
+  files_indexed?: number;
+  files_skipped?: number;
+  content_docs_indexed?: number;
+}
+
+async function readIndexInfo() {
+  const info = await omniJsonOk<SearchInfoOutput>(["search", "info"]);
+
   let lastUpdated: string | null = null;
-  let status: "ready" | "empty" | "error" = "empty";
-
-  try {
-    await fs.access(dbPath);
-    status = "ready";
-    totalEntries = 1; // We have the DB but can't query it directly without better-sqlite3
-  } catch {
-    status = "empty";
+  if (info.db_path) {
+    // Real modification time of the index database.
+    const stat = await fs.stat(info.db_path).catch(() => null);
+    if (stat) lastUpdated = stat.mtime.toISOString();
   }
 
-  res.json(
-    GetSearchIndexInfoResponse.parse({
-      totalEntries,
-      lastUpdated,
-      indexPath: dbPath,
-      status,
-      indexedPaths: [],
-    })
-  );
+  return {
+    totalEntries: info.total_entries ?? 0,
+    lastUpdated,
+    indexPath: info.db_path ?? "",
+    status: (info.status === "ready" ? "ready" : "empty") as "ready" | "empty",
+  };
+}
+
+router.get("/search/index", async (_req, res): Promise<void> => {
+  try {
+    res.json(GetSearchIndexInfoResponse.parse(await readIndexInfo()));
+  } catch (err: unknown) {
+    if (isOmniUnavailable(err)) {
+      res.status(503).json({ error: (err as Error).message });
+      return;
+    }
+    res.status(502).json({ error: `Could not read index info: ${(err as Error).message}` });
+  }
 });
 
 router.post("/search/index", async (req, res): Promise<void> => {
   const parsed = TriggerSearchIndexBody.safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.message });
+    invalidRequest(res, parsed.error);
     return;
   }
 
-  const dbPath = path.join(
-    process.env["XDG_DATA_HOME"] ?? path.join(os.homedir(), ".local", "share"),
-    "omni",
-    "search.db"
-  );
+  const { paths } = parsed.data;
 
-  // Log the index trigger
-  await db
-    .insert(activityLogTable)
-    .values({
-      type: "search",
-      description: `Index triggered for ${parsed.data.paths.join(", ")}`,
-    })
-    .catch(() => {});
+  const missing: string[] = [];
+  for (const p of paths) {
+    const stat = await fs.stat(p).catch(() => null);
+    if (!stat?.isDirectory()) missing.push(p);
+  }
+  if (missing.length > 0) {
+    res.status(400).json({ error: `Not a directory: ${missing.join(", ")}` });
+    return;
+  }
 
-  res.json(
-    GetSearchIndexInfoResponse.parse({
-      totalEntries: 0,
-      lastUpdated: new Date().toISOString(),
-      indexPath: dbPath,
-      status: "empty" as const,
-      indexedPaths: parsed.data.paths,
-    })
-  );
+  try {
+    // Index each requested path with the real indexer, then report the index's
+    // actual state instead of an optimistic placeholder.
+    const results: SearchIndexOutput[] = [];
+    for (const p of paths) {
+      results.push(await omniJsonOk<SearchIndexOutput>(["search", "index", p], 300_000));
+    }
+
+    const info = await readIndexInfo();
+
+    await db
+      .insert(activityLogTable)
+      .values({
+        type: "search",
+        description:
+          `Indexed ${paths.join(", ")} — ` +
+          `${results.reduce((a, r) => a + (r.files_indexed ?? 0), 0)} files`,
+      })
+      .catch(() => {});
+
+    res.json(
+      TriggerSearchIndexResponse.parse({
+        totalEntries: info.totalEntries,
+        lastUpdated: new Date().toISOString(),
+        indexPath: info.indexPath,
+        status: info.status,
+        indexedPaths: paths,
+      })
+    );
+  } catch (err: unknown) {
+    if (isOmniUnavailable(err)) {
+      res.status(503).json({ error: (err as Error).message });
+      return;
+    }
+    res.status(502).json({ error: `Indexing failed: ${(err as Error).message}` });
+  }
 });
 
 export default router;

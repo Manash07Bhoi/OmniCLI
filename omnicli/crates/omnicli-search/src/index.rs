@@ -66,6 +66,7 @@ pub fn rebuild_index(
     paths: &[PathBuf],
     exclude: &[String],
     rebuild: bool,
+    quiet: bool,
 ) -> Result<IndexStats, SearchError> {
     if rebuild {
         conn.execute_batch("DELETE FROM search_index; DELETE FROM search_content_fts;")?;
@@ -82,9 +83,17 @@ pub fn rebuild_index(
             .template("{spinner:.cyan} Indexing… {pos} files  {elapsed_precise}")
             .unwrap_or_else(|_| ProgressStyle::default_spinner()),
     );
-    pb.enable_steady_tick(Duration::from_millis(100));
+    if quiet {
+        pb.set_draw_target(indicatif::ProgressDrawTarget::hidden());
+    } else {
+        pb.enable_steady_tick(Duration::from_millis(100));
+    }
 
     let tx = conn.transaction()?;
+    tx.execute(
+        "CREATE TEMP TABLE IF NOT EXISTS _ft_stage (path TEXT PRIMARY KEY, content TEXT)",
+        [],
+    )?;
     let now = std::time::SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .unwrap_or_default()
@@ -160,18 +169,35 @@ pub fn rebuild_index(
             // Advance the spinner counter (indicatif reads `pos` for {pos} in template)
             pb.set_position(files_indexed);
 
-            // Index text content for searchable file types
+            // Index text content for searchable file types. Extracted text is
+            // staged in a temp table and applied after the walk: replacing a
+            // file's content per-iteration means an unindexed lookup inside the
+            // FTS table for every file, which is quadratic on large trees.
             if ft.is_file() {
-                let content = extract_text_content(entry.path(), size_bytes as u64);
-                if let Some(text) = content {
+                if let Some(text) = extract_text_content(entry.path(), size_bytes as u64) {
                     tx.execute(
-                        "INSERT INTO search_content_fts (path, content) VALUES (?1, ?2)",
+                        "INSERT OR REPLACE INTO _ft_stage (path, content) VALUES (?1, ?2)",
                         params![path_str, text],
                     )?;
                     content_docs_indexed += 1;
                 }
             }
         }
+    }
+
+    if content_docs_indexed > 0 {
+        // One scan of the FTS table instead of one per file, and no duplicate
+        // rows afterwards: the same file is indexed exactly once, so a re-index
+        // never makes it appear several times in results.
+        tx.execute(
+            "DELETE FROM search_content_fts WHERE path IN (SELECT path FROM _ft_stage)",
+            [],
+        )?;
+        tx.execute(
+            "INSERT INTO search_content_fts (path, content) SELECT path, content FROM _ft_stage",
+            [],
+        )?;
+        tx.execute("DELETE FROM _ft_stage", [])?;
     }
 
     tx.commit()?;
@@ -296,10 +322,83 @@ mod tests {
         .unwrap();
 
         let mut conn = open_index_db(&db_path).unwrap();
-        let stats = rebuild_index(&mut conn, &[dir.path().to_owned()], &[], true).unwrap();
+        let stats = rebuild_index(&mut conn, &[dir.path().to_owned()], &[], true, true).unwrap();
 
         assert!(stats.files_indexed >= 2);
         assert!(stats.content_docs_indexed >= 2);
+    }
+
+    #[test]
+    fn reindexing_does_not_duplicate_content_rows() {
+        // Regression: every `search index` run used to append another content
+        // row for the same file, so one file showed up several times in results
+        // and the index grew on each run.
+        let dir = tempdir().unwrap();
+        let root = dir.path().join("corpus");
+        std::fs::create_dir_all(&root).unwrap();
+        for i in 0..3 {
+            std::fs::write(
+                root.join(format!("file{i}.txt")),
+                format!("needle content {i}"),
+            )
+            .unwrap();
+        }
+
+        let db_path = dir.path().join("index.db");
+        let mut conn = open_index_db(&db_path).unwrap();
+        for _ in 0..3 {
+            rebuild_index(&mut conn, std::slice::from_ref(&root), &[], false, true).unwrap();
+        }
+
+        let content_rows: i64 = conn
+            .query_row("SELECT COUNT(*) FROM search_content_fts", [], |r| r.get(0))
+            .unwrap();
+        let distinct: i64 = conn
+            .query_row(
+                "SELECT COUNT(DISTINCT path) FROM search_content_fts",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(content_rows, distinct, "one content row per file");
+        assert_eq!(distinct, 3);
+
+        // Directories are indexed too, so count the file rows explicitly.
+        let stats: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM search_index WHERE file_type = 'file'",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(stats, 3, "the file table is upserted, not duplicated");
+    }
+
+    #[test]
+    fn rebuild_flag_clears_previous_rows() {
+        let dir = tempdir().unwrap();
+        let root = dir.path().join("corpus");
+        std::fs::create_dir_all(&root).unwrap();
+        std::fs::write(root.join("a.txt"), "alpha").unwrap();
+
+        let db_path = dir.path().join("index.db");
+        let mut conn = open_index_db(&db_path).unwrap();
+        rebuild_index(&mut conn, std::slice::from_ref(&root), &[], false, true).unwrap();
+
+        // A file disappears, and a rebuild must drop its row.
+        std::fs::remove_file(root.join("a.txt")).unwrap();
+        std::fs::write(root.join("b.txt"), "beta").unwrap();
+        rebuild_index(&mut conn, std::slice::from_ref(&root), &[], true, true).unwrap();
+
+        let paths: Vec<String> = conn
+            .prepare("SELECT path FROM search_index WHERE file_type = 'file'")
+            .unwrap()
+            .query_map([], |r| r.get(0))
+            .unwrap()
+            .map(|r| r.unwrap())
+            .collect();
+        assert_eq!(paths.len(), 1, "only the new file remains: {paths:?}");
+        assert!(paths[0].ends_with("b.txt"), "paths: {paths:?}");
     }
 
     #[test]
@@ -316,6 +415,7 @@ mod tests {
             &mut conn,
             &[dir.path().to_owned()],
             &["node_modules".to_string()],
+            true,
             true,
         )
         .unwrap();

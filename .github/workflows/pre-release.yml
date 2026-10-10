@@ -1,12 +1,20 @@
 name: Pre-release Gate
 
 on:
-  # Trigger when a release tag is about to be pushed; also runnable manually.
+  # Runs automatically for every release tag and can be re-run manually. Without
+  # the tag trigger this gate never ran before a release, which is how an
+  # artifact layout that the installer could not consume shipped unnoticed.
+  push:
+    tags:
+      - 'v*'
   workflow_dispatch:
     inputs:
       version:
         description: 'Version tag (e.g. v1.2.0)'
         required: true
+
+permissions:
+  contents: read
 
 env:
   CARGO_TERM_COLOR: always
@@ -20,11 +28,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Check Cargo.toml version matches tag
-        if: github.event.inputs.version != ''
         working-directory: omnicli
+        env:
+          # On a tag push `inputs` is empty, so fall back to the pushed ref.
+          TAG: ${{ github.event.inputs.version || github.ref_name }}
         run: |
-          TAG="${{ github.event.inputs.version }}"
-          CARGO_VER=$(grep '^version' Cargo.toml | head -1 | sed 's/.*= "\(.*\)"/\1/')
+          # The version lives in the binary crate manifest, not the workspace root.
+          CARGO_VER=$(grep -m1 '^version' crates/omnicli-cli/Cargo.toml | head -1 | sed 's/.*= "\(.*\)"/\1/')
           if [ "v${CARGO_VER}" != "${TAG}" ]; then
             echo "::error::Cargo.toml version v${CARGO_VER} != tag ${TAG}"
             exit 1

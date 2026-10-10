@@ -72,7 +72,7 @@ impl ArchiveFormat {
     }
 }
 
-/// Result of `omni archive create`.
+/// Result of `omnicli archive create`.
 #[derive(Debug, Serialize)]
 pub struct CreateResult {
     pub output: String,
@@ -105,7 +105,12 @@ pub fn create_archive(output: &Path, inputs: &[PathBuf]) -> Result<CreateResult,
         ArchiveFormat::TarXz => create_tar(output, inputs, &pb, TarCompression::Xz)?,
         ArchiveFormat::TarBz2 => create_tar(output, inputs, &pb, TarCompression::Bz2)?,
         ArchiveFormat::Tar => create_tar(output, inputs, &pb, TarCompression::None)?,
-        ArchiveFormat::SevenZip => unreachable!(),
+        ArchiveFormat::SevenZip => {
+            return Err(ArchiveError::UnsupportedFormat(
+                "7z creation is not supported. Use .zip, .tar.gz, .tar.xz, .tar.bz2, or .tar."
+                    .to_owned(),
+            ))
+        }
     };
 
     pb.finish_and_clear();
@@ -140,27 +145,67 @@ fn create_zip(
     let mut files_added = 0u64;
     let mut bytes_uncompressed = 0u64;
 
+    let mut seen: std::collections::HashSet<String> = std::collections::HashSet::new();
+
     for input in inputs {
         if input.is_file() {
-            let name = input.file_name().and_then(|n| n.to_str()).unwrap_or("file");
-            pb.set_message(name.to_owned());
-            zip.start_file(name, options)?;
+            let name = input
+                .file_name()
+                .and_then(|n| n.to_str())
+                .ok_or_else(|| {
+                    ArchiveError::Other(anyhow::anyhow!(
+                        "Cannot derive an archive entry name from {}",
+                        input.display()
+                    ))
+                })?
+                .to_owned();
+            record_entry(&mut seen, &name)?;
+            pb.set_message(name.clone());
+            zip.start_file(&name, options)?;
             let mut f = fs::File::open(input)?;
             bytes_uncompressed += io::copy(&mut f, &mut zip)?;
             files_added += 1;
         } else if input.is_dir() {
+            // Directory inputs keep their top-level name so the archive mirrors
+            // the layout the user asked for (`omnicli archive create out.zip src` →
+            // `src/...`), instead of flattening every file into the archive root.
+            let root_name = input
+                .file_name()
+                .and_then(|n| n.to_str())
+                .ok_or_else(|| {
+                    ArchiveError::Other(anyhow::anyhow!(
+                        "Cannot derive a directory name from {}",
+                        input.display()
+                    ))
+                })?
+                .to_owned();
+
             for entry in WalkDir::new(input).follow_links(false) {
                 let entry = entry.map_err(|e| ArchiveError::Other(e.into()))?;
-                if !entry.file_type().is_file() {
-                    continue;
-                }
                 let rel = entry
                     .path()
                     .strip_prefix(input)
                     .map_err(|e| ArchiveError::Other(e.into()))?;
-                let name = rel.to_string_lossy();
-                pb.set_message(name.to_string());
-                zip.start_file(name.as_ref(), options)?;
+                let name = if rel.as_os_str().is_empty() {
+                    root_name.clone()
+                } else {
+                    format!("{root_name}/{}", rel.to_string_lossy().replace('\\', "/"))
+                };
+
+                if entry.file_type().is_dir() {
+                    // Explicit directory entries preserve empty directories.
+                    record_dir_entry(&mut seen, &name);
+                    zip.add_directory(format!("{name}/"), options)?;
+                    continue;
+                }
+                if !entry.file_type().is_file() {
+                    // Symlinks and special files are not archived.
+                    continue;
+                }
+
+                record_entry(&mut seen, &name)?;
+                pb.set_message(name.clone());
+                zip.start_file(&name, options)?;
                 let mut f = fs::File::open(entry.path())?;
                 bytes_uncompressed += io::copy(&mut f, &mut zip)?;
                 files_added += 1;
@@ -259,23 +304,75 @@ fn add_to_tar<W: Write>(
         *bytes_uncompressed += size;
         *files_added += 1;
     } else if input.is_dir() {
+        // Directory inputs keep their top-level name (see `create_zip`).
+        let root_name = input
+            .file_name()
+            .and_then(|n| n.to_str())
+            .ok_or_else(|| {
+                ArchiveError::Other(anyhow::anyhow!(
+                    "Cannot derive a directory name from {}",
+                    input.display()
+                ))
+            })?
+            .to_owned();
+
         for entry in WalkDir::new(input).follow_links(false) {
             let entry = entry.map_err(|e| ArchiveError::Other(e.into()))?;
-            if !entry.file_type().is_file() {
-                continue;
-            }
             let rel = entry
                 .path()
                 .strip_prefix(input)
                 .map_err(|e| ArchiveError::Other(e.into()))?;
-            pb.set_message(rel.display().to_string());
+            let name = if rel.as_os_str().is_empty() {
+                root_name.clone()
+            } else {
+                format!("{root_name}/{}", rel.to_string_lossy().replace('\\', "/"))
+            };
+
+            if entry.file_type().is_dir() {
+                let mut header = tar::Header::new_gnu();
+                header.set_entry_type(tar::EntryType::Directory);
+                header.set_size(0);
+                header.set_mode(0o755);
+                header.set_cksum();
+                tar.append_data(&mut header, &name, io::empty())?;
+                continue;
+            }
+            if !entry.file_type().is_file() {
+                continue;
+            }
+            pb.set_message(name.clone());
             let size = entry.metadata().map(|m| m.len()).unwrap_or(0);
-            tar.append_path_with_name(entry.path(), rel)?;
+            tar.append_path_with_name(entry.path(), &name)?;
             *bytes_uncompressed += size;
             *files_added += 1;
         }
     }
     Ok(())
+}
+
+/// Record an entry name, refusing duplicates.
+///
+/// Two inputs that would map onto the same archive path (e.g. `a/report.txt` and
+/// `b/report.txt` passed as two directories both named `report.txt`) previously
+/// produced an archive that silently lost one of them on extraction.
+fn record_entry(
+    seen: &mut std::collections::HashSet<String>,
+    name: &str,
+) -> Result<(), ArchiveError> {
+    let normalized = name.trim_end_matches('/').to_owned();
+    if !seen.insert(normalized.clone()) {
+        return Err(ArchiveError::Other(anyhow::anyhow!(
+            "duplicate archive entry '{normalized}': two inputs would overwrite each other. \
+             Archive the conflicting paths separately, or rename one of them."
+        )));
+    }
+    Ok(())
+}
+
+/// Record a directory entry name. Directories do not conflict with the files
+/// they contain, so only an exact directory duplicate is rejected.
+fn record_dir_entry(seen: &mut std::collections::HashSet<String>, name: &str) {
+    seen.insert(format!("{}/", name.trim_end_matches('/')));
 }
 
 #[cfg(test)]
@@ -326,5 +423,83 @@ mod tests {
     fn test_format_detection_error() {
         let result = ArchiveFormat::from_path(Path::new("file.unknown"));
         assert!(matches!(result, Err(ArchiveError::UnsupportedFormat(_))));
+    }
+
+    #[test]
+    fn test_seven_zip_creation_reports_support_error() {
+        let result = ArchiveFormat::from_path(Path::new("bundle.7z"));
+        assert!(matches!(result, Err(ArchiveError::UnsupportedFormat(_))));
+    }
+
+    #[test]
+    fn test_zip_preserves_directory_name_and_nesting() {
+        use crate::list::list_archive;
+
+        let dir = tempdir().unwrap();
+        let root = dir.path().join("project");
+        std::fs::create_dir_all(root.join("src")).unwrap();
+        fs::write(root.join("src/main.rs"), b"fn main() {}").unwrap();
+        fs::create_dir_all(root.join("empty")).unwrap();
+
+        let out = dir.path().join("bundle.zip");
+        create_archive(&out, std::slice::from_ref(&root)).unwrap();
+
+        let names: Vec<String> = list_archive(&out)
+            .unwrap()
+            .into_iter()
+            .map(|e| e.name)
+            .collect();
+        assert!(
+            names.iter().any(|n| n == "project/src/main.rs"),
+            "nested path must keep the directory prefix, got {names:?}"
+        );
+        assert!(
+            names.iter().any(|n| n.starts_with("project/empty")),
+            "empty directories must be preserved, got {names:?}"
+        );
+    }
+
+    #[test]
+    fn test_tar_gz_preserves_directory_name_and_nesting() {
+        use crate::list::list_archive;
+
+        let dir = tempdir().unwrap();
+        let root = dir.path().join("project");
+        std::fs::create_dir_all(root.join("src")).unwrap();
+        fs::write(root.join("src/main.rs"), b"fn main() {}").unwrap();
+
+        let out = dir.path().join("bundle.tar.gz");
+        create_archive(&out, &[root]).unwrap();
+
+        let names: Vec<String> = list_archive(&out)
+            .unwrap()
+            .into_iter()
+            .map(|e| e.name)
+            .collect();
+        assert!(
+            names.iter().any(|n| n == "project/src/main.rs"),
+            "nested path must keep the directory prefix, got {names:?}"
+        );
+    }
+
+    #[test]
+    fn test_colliding_entry_names_are_rejected() {
+        let dir = tempdir().unwrap();
+        let a = dir.path().join("a");
+        let b = dir.path().join("b");
+        std::fs::create_dir_all(&a).unwrap();
+        std::fs::create_dir_all(&b).unwrap();
+        fs::write(a.join("same.txt"), b"from a").unwrap();
+        fs::write(b.join("same.txt"), b"from b").unwrap();
+
+        // Both directories would contribute an entry called "same.txt" if
+        // passed as files; passing the files themselves reproduces the old
+        // flattening collision.
+        let out = dir.path().join("collide.zip");
+        let err = create_archive(&out, &[a.join("same.txt"), b.join("same.txt")]).unwrap_err();
+        assert!(
+            err.to_string().contains("duplicate archive entry"),
+            "expected a duplicate-entry error, got: {err}"
+        );
     }
 }

@@ -81,7 +81,6 @@ export default function SearchPage() {
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 className="font-mono h-11 sm:h-12 text-sm sm:text-base"
-                autoFocus
               />
             </div>
             <Input

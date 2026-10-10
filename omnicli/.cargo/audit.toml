@@ -1,2 +1,8 @@
 [advisories]
-ignore = ["RUSTSEC-2024-0370", "RUSTSEC-2025-0119"]
+# RUSTSEC-2024-0370: proc-macro-error 1.x is unmaintained. It is a build-time
+# proc-macro pulled in by `age` 0.10 (i18n-embed-fl) and is not present in any
+# runtime code path; age has no release that drops it yet. Re-check on the next
+# `age` upgrade.
+# RUSTSEC-2025-0119 (number_prefix) was fixed rather than ignored: indicatif
+# 0.18 depends on the maintained unit-prefix fork.
+ignore = ["RUSTSEC-2024-0370"]

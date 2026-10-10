@@ -1,6 +1,6 @@
 [package]
 name = "omnicli-file"
-version = "0.1.1"
+version = "0.2.0"
 edition = "2021"
 license = "MIT"
 description = "Core library component of the OmniCLI full-stack toolkit."
@@ -9,15 +9,14 @@ repository = "https://github.com/Manash07Bhoi/OmniCLI"
 
 
 [dependencies]
-omnicli-core = { path = "../omnicli-core", version = "0.1.1" }
-omnicli-archive = { path = "../omnicli-archive", version = "0.1.1" }
+omnicli-core = { path = "../omnicli-core", version = "0.2.0" }
+omnicli-archive = { path = "../omnicli-archive", version = "0.2.0" }
 
 anyhow = { workspace = true }
 thiserror = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 walkdir = { workspace = true }
-notify = { workspace = true }
 glob = { workspace = true }
 chrono = { workspace = true }
 blake3 = { workspace = true }
