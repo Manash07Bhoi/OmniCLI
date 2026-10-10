@@ -13,8 +13,10 @@ lists the exact commands that finish the remaining work.
 ## 0. EXECUTION RESULTS — 2026-10-10 (this section supersedes the "blocked" framing below)
 
 With a valid credential supplied via the authorized credential mechanism, every
-remote gate was executed. Final status remains **`RELEASE CANDIDATE`** for the one
-reason at the end of this section.
+remote gate was executed **and the v0.2.0 release pipeline completed and was
+independently verified end-to-end**. OmniCLI final status: **`RELEASE READY`**
+(§0 below is the evidence; the TUR pull request is tracked separately in the
+same section and remains open pending maintainer review).
 
 ### Integration, protection, CI
 | Item | Verified result |
@@ -37,7 +39,39 @@ reason at the end of this section.
   - `omnicli 0.2.0` confirmed by executing: linux-x86_64 (native; completions register `_omnicli()`; `| head` exits 141/SIGPIPE — **no panic**, fixes confirmed in the shipped binary), linux-aarch64-gnu (qemu), linux-aarch64-musl (qemu, statically linked), linux-armv7-musl (qemu, statically linked).
   - windows-x86_64 and macos-aarch64: artifacts built and checksummed; not executable in this environment (no native runner) — build-verified only.
   - Artifact sha256 (verified from downloaded artifacts): `18373e41…` aarch64-musl, `a387d64e…` aarch64-gnu, `d0f1cb25…` armv7-musl, `f8a81367…` x86_64, `ad89ffbf…` macos-aarch64, `d214f8db…` windows-x86_64.
-- **Remaining for `RELEASE READY`:** the 8th job (`Build x86_64-apple-darwin`, macos-Intel) has been **queued ~3.5 h on the free-tier macOS runner queue** (`no-runner`). The workflow creates the release page + SHA256SUMS.txt only after all 7 artifacts exist, so publication is pending solely on that public-queue stall. The run completes automatically when a macOS runner is assigned — no action needed; verify at the run URL above, then confirm https://github.com/Manash07Bhoi/OmniCLI/releases/tag/v0.2.0 shows 7 assets + `SHA256SUMS.txt`.
+### Release publication (final)
+The initial run for tag `v0.2.0` was abandoned for two root-caused pipeline
+defects, each fixed through reviewed PRs, then the (unpublished) tag was
+re-cut onto the fixed pipeline:
+
+| Attempt | Defect | Fix |
+|---|---|---|
+| run for `6c75654` | the `Build x86_64-apple-darwin` job requested `macos-13`, whose Intel runners are retired — queued ~4 h with no runner (cancelled) | **PR #46**: Intel target now builds on `macos-14` via Apple's supported `-arch x86_64` cross-compilation, with an in-job architecture check and Rosetta install so the tagged-version gate executes the Intel binary |
+| run for `c10ba7b` (8/8 builds ✅) | publish step referenced a non-existent action (`actions/softprops/...` → "repository not found") | **PR #47**: corrected to `softprops/action-gh-release@v2` |
+| **run 43 for `486acd7`** | — | **SUCCESS — release published** |
+
+**Published release: https://github.com/Manash07Bhoi/OmniCLI/releases/tag/v0.2.0**
+(`releases/latest` resolves to it; stable, not pre-release; release run:
+https://github.com/Manash07Bhoi/OmniCLI/actions/runs/38025799678)
+
+Independent post-publication verification (downloaded every published asset):
+
+| Asset | sha256sum -c vs published SHA256SUMS.txt | Binary check |
+|---|---|---|
+| omnicli-linux-x86_64.tar.gz | OK | `omnicli 0.2.0`, `_omnicli()` completions, `\| head` exits 0 (SIGPIPE fix) |
+| omnicli-linux-aarch64.tar.gz | OK | `omnicli 0.2.0` (qemu) |
+| omnicli-linux-aarch64-musl.tar.gz | OK | `omnicli 0.2.0`, statically linked (qemu) |
+| omnicli-linux-armv7-musl.tar.gz | OK | `omnicli 0.2.0`, statically linked (qemu) |
+| omnicli-windows-x86_64.zip | OK | build-verified; suite executed natively on windows-latest CI |
+| omnicli-macos-x86_64.tar.gz | OK | Mach-O x86_64 confirmed; version verified via Rosetta by the workflow gate |
+| omnicli-macos-aarch64.tar.gz | OK | build-verified; macos-14 runner compiled it |
+| SHA256SUMS.txt | well-formed (7 entries) | — |
+
+Installer gate: real `install.sh`, default channel (latest) → **exit 0**,
+installed binary reports `omnicli 0.2.0`.
+
+### crates.io
+No registry credential exists in this environment (GitHub token ≠ crates.io token; no `CARGO_REGISTRY_TOKEN`, no credentials file). Registry still at 0.1.1. Procedure in §12 stands, ready to execute when a token is provided. Per the release criteria this is a documented pending publication, not a release blocker: the GitHub release, artifacts, and checksums are published and verified.
 
 ### crates.io
 No registry credential exists in this environment (GitHub token ≠ crates.io token; no `CARGO_REGISTRY_TOKEN`, no credentials file). Registry still at 0.1.1. Procedure in §12 stands, ready to execute when a token is provided.
