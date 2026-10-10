@@ -35,7 +35,7 @@ hex = "0.4"
 sha1 = "0.10"
 
 # Database
-rusqlite = { version = "0.32", features = ["bundled"] }
+rusqlite = { version = "0.40", features = ["bundled"] }
 
 # Filesystem / traversal
 walkdir = "2"
@@ -45,7 +45,7 @@ indicatif = "0.18"
 # Reset SIGPIPE to its default disposition so `omnicli … | head` behaves like
 # every other Unix tool instead of panicking on a closed pipe.
 libc = "0.2"
-console = "0.15"
+console = "0.16"
 
 # Compression / archiving
 flate2 = "1"
@@ -60,13 +60,13 @@ image = { version = "0.25", default-features = false, features = ["png", "webp",
 
 # Utilities
 regex = "1"
-base64 = "0.22"
+base64 = "0.23"
 uuid = { version = "1", features = ["v4", "v7"] }
 chrono = { version = "0.4", features = ["serde"] }
 age = "0.10"
 glob = "0.3"
 tempfile = "3"
-lopdf = "0.44"
+lopdf = "0.45"
 bzip2 = "0.4"
 clap_complete = "4"
 is-terminal = "0.4"

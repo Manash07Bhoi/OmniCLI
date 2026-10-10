@@ -20,7 +20,7 @@ toml = { workspace = true }
 csv = { workspace = true }
 pulldown-cmark = { workspace = true }
 image = { workspace = true }
-lopdf = "0.44"
+lopdf = "0.45"
 chrono = { workspace = true }
 console = { workspace = true }
 tempfile = { workspace = true }
