@@ -260,7 +260,7 @@ jobs:
         # Non-fatal: a repository/org that restricts attestations must not block
         # a release, and the checksums below remain the primary verification.
         continue-on-error: true
-        uses: actions/attest-build-provenance@v2
+        uses: actions/attest-build-provenance@v4
         with:
           subject-path: |
             dist/**/*.tar.gz
