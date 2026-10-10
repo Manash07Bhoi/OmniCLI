@@ -156,7 +156,7 @@ pub fn scan_permissions(root: &Path) -> Result<ScanReport> {
 }
 
 #[cfg(not(unix))]
-pub fn scan_permissions(root: &Path) -> Result<ScanReport> {
+pub fn scan_permissions(_root: &Path) -> Result<ScanReport> {
     anyhow::bail!(
         "`omnicli security permissions` needs POSIX permission bits and is not available on {}. \
          Nothing was scanned.",
@@ -409,7 +409,9 @@ fn mode_of(path: &Path) -> Option<u32> {
 pub fn audit_config() -> ConfigAudit {
     let config_path = platform::config_file_path();
     let data_dir = platform::data_dir();
-    let mut findings = Vec::new();
+    // Explicit element type: on non-UNIX the cfg(unix) pushes below compile out,
+    // and inference alone cannot name the element type (E0282 on Windows).
+    let mut findings: Vec<Finding> = Vec::new();
 
     #[cfg(unix)]
     {
