@@ -45,7 +45,7 @@ indicatif = "0.18"
 # Reset SIGPIPE to its default disposition so `omnicli … | head` behaves like
 # every other Unix tool instead of panicking on a closed pipe.
 libc = "0.2"
-console = "0.15"
+console = "0.16"
 
 # Compression / archiving
 flate2 = "1"
