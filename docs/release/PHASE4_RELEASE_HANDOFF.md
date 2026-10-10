@@ -80,7 +80,7 @@ Dependabot (activated by the new `dependabot.yml`) opened 18 update PRs. Outcome
 | | #48 (own PR superseding #30) | **zip 2 → 8**: builds + 276/276 tests pass; the only #30 failure was `cargo-deny licenses` — zip 8's new pure-Rust bzip2 stack (`libbz2-rs-sys`/`bzip2` 0.6) is licensed `bzip2-1.0.6` (permissive BSD-style), added to the allowlist with a comment; advisories stayed ok |
 | **Closed (2)** | #27 | dtolnay/rust-toolchain 1.88→1.120: the MSRV job **intentionally pins 1.88.0** (declared minimum); bumping would nullify the gate |
 | | #30 | superseded by #48 |
-| **Open — need deliberate work (7)** | #36 | age 0.10→0.12: **fails the MSRV job** — would silently raise the declared minimum; maintainer decision required (documented on the PR) |
+| **Open — need deliberate work (8)** | #36 | age 0.10→0.12: **fails the MSRV job** — would silently raise the declared minimum; maintainer decision required (documented on the PR) |
 | | #33 | sha1 0.10→0.11: API rewrite (new traits) + MSRV raise — real migration |
 | | #44 | zod 3→4: typecheck/API-tests/audit fail — validation-layer migration |
 | | #37 #40 #41 #42 #43 | radix-ui dev-dep bumps: failing checks of the same class (peer/lockfile); dashboard-only dev dependencies, no user impact |
