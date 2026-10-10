@@ -66,7 +66,7 @@ chrono = { version = "0.4", features = ["serde"] }
 age = "0.10"
 glob = "0.3"
 tempfile = "3"
-lopdf = "0.44"
+lopdf = "0.45"
 bzip2 = "0.4"
 clap_complete = "4"
 is-terminal = "0.4"
