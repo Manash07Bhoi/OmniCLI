@@ -60,7 +60,7 @@ image = { version = "0.25", default-features = false, features = ["png", "webp",
 
 # Utilities
 regex = "1"
-base64 = "0.22"
+base64 = "0.23"
 uuid = { version = "1", features = ["v4", "v7"] }
 chrono = { version = "0.4", features = ["serde"] }
 age = "0.10"
