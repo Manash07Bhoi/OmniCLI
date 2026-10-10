@@ -10,6 +10,46 @@ lists the exact commands that finish the remaining work.
 
 ---
 
+## 0. EXECUTION RESULTS — 2026-10-10 (this section supersedes the "blocked" framing below)
+
+With a valid credential supplied via the authorized credential mechanism, every
+remote gate was executed. Final status remains **`RELEASE CANDIDATE`** for the one
+reason at the end of this section.
+
+### Integration, protection, CI
+| Item | Verified result |
+|---|---|
+| Push | `reconstruction/phase3-4` → `0a1703a`, verified via ls-remote. First push was **rejected by GitHub Push Protection** (two synthetic `#[cfg(test)]` fixtures in `security.rs` matching Slack/Stripe token patterns); resolved through the official secret-scanning push-protection-bypass API with reason `used_in_tests` (both bypasses expire in 24 h). No test was weakened; the fixtures are unchanged. |
+| Pull request | **[#26](https://github.com/Manash07Bhoi/OmniCLI/pull/26)** — merged into `main` as `6c75654` after all required checks passed |
+| CI failures found & fixed | (1) installer scripts committed with mode `100644` → CI `Permission denied` (exit 126); fixed to `100755` (first fix touched the index only and `git add` reverted it — re-fixed on-disk, commit `332c036`). (2) `security.rs` `audit_config()`: on non-UNIX the `cfg(unix)` pushes compile out, so `Vec` element inference failed (rustc E0282 on windows-latest); fixed with an explicit `Vec<Finding>` annotation + `_root` for the intentionally-unused non-UNIX parameter. |
+| Final CI on merged head `332c036` | **13/13 checks green** — Rust tests (ubuntu-22.04, ubuntu-latest), MSRV, Windows/macOS/ubuntu build & smoke, cargo-audit, pnpm-audit, cargo-deny, Typecheck & Build, API smoke, API integration, Installer E2E — all executed on real GitHub runners |
+| Branch protection for `main` | **ACTIVE, read back via API**: 13 required status checks (exact names from the run), branches up-to-date required, force-push blocked, deletion blocked, conversation resolution required, admin bypass intentionally allowed (documented) |
+
+### Repository maintenance
+- Branches: deleted `audit/post-release-v0.1.0-…` (verified merged), `reconstruction/phase3-4` (merged via #26), `tur-pr-2763-report-…` and `add-omnicli-…` (both empty-diff PRs #25/#24, closed with explanatory comments). Remaining branches: `main` + 13 dependabot update branches (opened by the newly added `dependabot.yml`, incl. `age 0.12.1` which would drop the unmaintained-advisory chain — left for review with their own CI).
+- Metadata: description + 10 topics updated via API and **verified by readback**.
+- `v1.0.0` release: **deprecated** — deprecation notice prepended, marked `pre-release` (verified 200). Assets preserved as evidence; nothing deleted.
+
+### Release v0.2.0
+- Tag `v0.2.0` pushed (tag object `8f97a06` → merge commit `6c75654`; tag ↔ manifest version gate satisfied).
+- **Pre-release Gate: SUCCESS** (first tag-triggered run ever — version consistency, smoke matrix, TypeScript gate).
+- Release workflow: [run](https://github.com/Manash07Bhoi/OmniCLI/actions/runs/38013485221) — **7 of 8 build jobs completed; all 6 of their artifacts downloaded and independently verified**:
+  - `omnicli 0.2.0` confirmed by executing: linux-x86_64 (native; completions register `_omnicli()`; `| head` exits 141/SIGPIPE — **no panic**, fixes confirmed in the shipped binary), linux-aarch64-gnu (qemu), linux-aarch64-musl (qemu, statically linked), linux-armv7-musl (qemu, statically linked).
+  - windows-x86_64 and macos-aarch64: artifacts built and checksummed; not executable in this environment (no native runner) — build-verified only.
+  - Artifact sha256 (verified from downloaded artifacts): `18373e41…` aarch64-musl, `a387d64e…` aarch64-gnu, `d0f1cb25…` armv7-musl, `f8a81367…` x86_64, `ad89ffbf…` macos-aarch64, `d214f8db…` windows-x86_64.
+- **Remaining for `RELEASE READY`:** the 8th job (`Build x86_64-apple-darwin`, macos-Intel) has been **queued ~3.5 h on the free-tier macOS runner queue** (`no-runner`). The workflow creates the release page + SHA256SUMS.txt only after all 7 artifacts exist, so publication is pending solely on that public-queue stall. The run completes automatically when a macOS runner is assigned — no action needed; verify at the run URL above, then confirm https://github.com/Manash07Bhoi/OmniCLI/releases/tag/v0.2.0 shows 7 assets + `SHA256SUMS.txt`.
+
+### crates.io
+No registry credential exists in this environment (GitHub token ≠ crates.io token; no `CARGO_REGISTRY_TOKEN`, no credentials file). Registry still at 0.1.1. Procedure in §12 stands, ready to execute when a token is provided.
+
+### TUR PR #2763 (independent project — reported separately)
+- State verified live: **open, not merged**. Maintainer feedback (GourangaDasSamrat, 2026-09-14) = squash 4 commits into 1 titled `addpkg(tur/omnicli): 0.1.1`.
+- Executed: squashed to a single commit `bea2d43` on current TUR `master` (tree built from master + only `tur/omnicli/build.sh`, exactly 1 file / +20; an intermediate wrong-squash that reverted unrelated upstream files was caught and force-replaced within the same session before any review), force-pushed to the contributor-owned fork branch (feature branch, not `main`), PR title set to the requested string, factual comment posted ([link](https://github.com/termux-user-repository/tur/pull/2763#issuecomment-6092027810)).
+- Recipe checksum **independently re-verified**: fresh download of `refs/tags/v0.1.1.tar.gz` hashes to `9732f3b96f51246f878d00af15c2245f8df6cdc62535dfb067b82e6e63614a6c`, matching `TERMUX_PKG_SHA256`.
+- TUR CI (their build bot): still `pending`, 0 statuses — their infrastructure has not picked up the PR; maintainer review is the remaining gate. **Not merged; not claimed as accepted.**
+
+---
+
 ## 1. Verified initial repository state
 
 Measured, not assumed (this session, commands shown):
